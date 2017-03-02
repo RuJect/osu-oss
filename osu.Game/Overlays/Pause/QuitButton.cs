@@ -5,10 +5,11 @@ using OpenTK.Graphics;
 using osu.Framework.Allocation;
 using osu.Framework.Audio;
 using osu.Game.Graphics;
+using osu.Game.Graphics.UserInterface;
 
 namespace osu.Game.Overlays.Pause
 {
-    public class QuitButton : PauseButton
+    public class QuitButton : DialogButton
     {
         [BackgroundDependencyLoader]
         private void load(AudioManager audio)
