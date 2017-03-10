@@ -21,8 +21,6 @@ namespace osu.Game.Modes
 
     public abstract class Ruleset
     {
-        public abstract KeyCounter[] CreateGameplayKeys { get; }
-
         private static ConcurrentDictionary<PlayMode, Type> availableRulesets = new ConcurrentDictionary<PlayMode, Type>();
 
         public static IEnumerable<PlayMode> PlayModes => availableRulesets.Keys;
@@ -46,6 +44,8 @@ namespace osu.Game.Modes
         public virtual FontAwesome Icon => FontAwesome.fa_question_circle;
 
         public abstract string Description { get; }
+
+        public abstract IEnumerable<KeyCounter> CreateGameplayKeys();
 
         public virtual Score CreateAutoplayScore(Beatmap beatmap) => null;
 
