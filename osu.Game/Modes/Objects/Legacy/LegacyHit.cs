@@ -7,7 +7,7 @@ using OpenTK;
 namespace osu.Game.Modes.Objects.Legacy
 {
     /// <summary>
-    /// Base Hit-type, used for parsing Beatmaps.
+    /// Legacy Hit-type, used for parsing Beatmaps.
     /// </summary>
     public sealed class LegacyHit : HitObject, IHasPosition, IHasCombo
     {
