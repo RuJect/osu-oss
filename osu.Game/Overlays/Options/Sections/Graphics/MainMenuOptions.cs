@@ -31,16 +31,6 @@ namespace osu.Game.Overlays.Options.Sections.Graphics
                     LabelText = "Menu tips",
                     Bindable = config.GetBindable<bool>(OsuConfig.ShowMenuTips)
                 },
-                new OsuCheckbox
-                {
-                    LabelText = "Interface voices",
-                    Bindable = config.GetBindable<bool>(OsuConfig.MenuVoice)
-                },
-                new OsuCheckbox
-                {
-                    LabelText = "osu! music theme",
-                    Bindable = config.GetBindable<bool>(OsuConfig.MenuMusic)
-                },
             };
         }
     }
