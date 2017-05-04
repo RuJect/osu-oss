@@ -17,52 +17,14 @@ namespace osu.Game.Overlays.Options
     {
     }
 
-    public class OptionSlider<T, U> : FillFlowContainer
+    public class OptionSlider<T, U> : OptionItem<T>
         where T : struct
         where U : SliderBar<T>, new()
     {
-        private readonly SliderBar<T> slider;
-        private readonly SpriteText text;
-
-        public string LabelText
+        protected override Drawable CreateControl() => new U()
         {
-            get { return text.Text; }
-            set
-            {
-                text.Text = value;
-                text.Alpha = string.IsNullOrEmpty(value) ? 0 : 1;
-            }
-        }
-
-        private Bindable<T> bindable;
-
-        public Bindable<T> Bindable
-        {
-            set
-            {
-                bindable = value;
-                slider.Current.BindTo(bindable);
-            }
-        }
-
-        public OptionSlider()
-        {
-            RelativeSizeAxes = Axes.X;
-            AutoSizeAxes = Axes.Y;
-            Padding = new MarginPadding { Right = 5 };
-
-            Children = new Drawable[]
-            {
-                text = new OsuSpriteText
-                {
-                    Alpha = 0,
-                },
-                slider = new U()
-                {
-                    Margin = new MarginPadding { Top = 5, Bottom = 5 },
-                    RelativeSizeAxes = Axes.X
-                }
-            };
-        }
+            Margin = new MarginPadding { Top = 5, Bottom = 5 },
+            RelativeSizeAxes = Axes.X
+        };
     }
 }
