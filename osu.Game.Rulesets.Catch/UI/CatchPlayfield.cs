@@ -2,7 +2,6 @@
 // Licensed under the MIT Licence - https://raw.githubusercontent.com/ppy/osu/master/LICENCE
 
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Shapes;
 using osu.Game.Rulesets.Catch.Objects;
 using osu.Game.Rulesets.UI;
 using OpenTK;
@@ -14,11 +13,21 @@ namespace osu.Game.Rulesets.Catch.UI
     {
         public CatchPlayfield()
         {
-            Size = new Vector2(1, 0.9f);
-            Anchor = Anchor.BottomCentre;
-            Origin = Anchor.BottomCentre;
+            Size = new Vector2(1);
 
-            Add(new Box { RelativeSizeAxes = Axes.Both, Alpha = 0.5f });
+            Anchor = Anchor.TopCentre;
+            Origin = Anchor.TopCentre;
+
+            Children = new Drawable[]
+            {
+                new CatcherArea
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Anchor = Anchor.BottomLeft,
+                    Origin = Anchor.TopLeft,
+                    Height = 0.3f
+                }
+            };
         }
     }
 }
