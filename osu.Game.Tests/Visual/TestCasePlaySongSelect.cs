@@ -13,6 +13,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Rulesets;
 using osu.Game.Screens.Select;
+using osu.Game.Screens.Select.Carousel;
 using osu.Game.Screens.Select.Filter;
 using osu.Game.Tests.Platform;
 
@@ -28,8 +29,20 @@ namespace osu.Game.Tests.Visual
 
         public override IReadOnlyList<Type> RequiredTypes => new[]
         {
-            typeof(BeatmapCarousel),
             typeof(SongSelect),
+            typeof(BeatmapCarousel),
+
+            typeof(CarouselItem),
+            typeof(CarouselGroup),
+            typeof(CarouselGroupEagerSelect),
+            typeof(CarouselBeatmap),
+            typeof(CarouselBeatmapSet),
+
+            typeof(DrawableCarouselItem),
+            typeof(CarouselItemState),
+
+            typeof(DrawableCarouselBeatmap),
+            typeof(DrawableCarouselBeatmapSet),
         };
 
         protected override IReadOnlyDependencyContainer CreateLocalDependencies(IReadOnlyDependencyContainer parent) => dependencies = new DependencyContainer(parent);
