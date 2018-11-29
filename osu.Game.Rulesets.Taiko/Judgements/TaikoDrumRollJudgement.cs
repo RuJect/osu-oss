@@ -9,6 +9,8 @@ namespace osu.Game.Rulesets.Taiko.Judgements
     {
         public override bool AffectsCombo => false;
 
+        public override bool AffectsHP => false;
+
         protected override int NumericResultFor(HitResult result) => 0;
     }
 }
