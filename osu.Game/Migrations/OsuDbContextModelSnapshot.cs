@@ -384,9 +384,16 @@ namespace osu.Game.Migrations
 
                     b.Property<bool>("DeletePending");
 
+                    b.Property<string>("Hash");
+
                     b.Property<string>("Name");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("DeletePending");
+
+                    b.HasIndex("Hash")
+                        .IsUnique();
 
                     b.ToTable("SkinInfo");
                 });
