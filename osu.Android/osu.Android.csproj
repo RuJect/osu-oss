@@ -62,8 +62,7 @@
     <Reference Include="Mono.Android" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GameView.cs" />
-    <Compile Include="MainActivity.cs" />
+    <Compile Include="OsuGameActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -83,18 +82,12 @@
     <AndroidNativeLibrary Include="lib\armeabi-v7a\libbass_fx.so">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </AndroidNativeLibrary>
-    <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
   </ItemGroup>
   <ItemGroup>
-    <AndroidResource Include="Resources\layout\activity_main.axml">
-      <SubType>Designer</SubType>
-    </AndroidResource>
     <AndroidResource Include="Resources\values\colors.xml" />
     <AndroidResource Include="Resources\values\ic_launcher_background.xml" />
-    <AndroidResource Include="Resources\values\strings.xml" />
-    <AndroidResource Include="Resources\values\styles.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher.xml" />
     <AndroidResource Include="Resources\mipmap-anydpi-v26\ic_launcher_round.xml" />
     <AndroidResource Include="Resources\mipmap-hdpi\ic_launcher.png" />
@@ -114,6 +107,12 @@
     <AndroidResource Include="Resources\mipmap-xxxhdpi\ic_launcher_round.png" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="ppy.osu.Framework">
+      <Version>0.0.7879</Version>
+    </PackageReference>
+    <PackageReference Include="ppy.osu.Framework.Android">
+      <Version>0.0.7879</Version>
+    </PackageReference>
     <PackageReference Include="SharpCompress">
       <Version>0.22.0</Version>
     </PackageReference>
@@ -129,14 +128,6 @@
     <PackageReference Include="Xamarin.Android.Support.Design" Version="27.0.2.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\osu-framework\osu.Framework.Android\osu.Framework.Android.csproj">
-      <Project>{0fd409e8-a359-42bd-bc52-6a4745a122e5}</Project>
-      <Name>osu.Framework.Android</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\osu-framework\osu.Framework\osu.Framework.csproj">
-      <Project>{0a8ba083-9d08-45ad-8653-796db1653388}</Project>
-      <Name>osu.Framework</Name>
-    </ProjectReference>
     <ProjectReference Include="..\osu-resources\osu.Game.Resources\osu.Game.Resources.csproj">
       <Project>{d9a367c9-4c1a-489f-9b05-a0cea2b53b58}</Project>
       <Name>osu.Game.Resources</Name>
