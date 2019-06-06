@@ -166,6 +166,8 @@ namespace osu.Game.Migrations
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<DateTimeOffset>("DateAdded");
+
                     b.Property<bool>("DeletePending");
 
                     b.Property<string>("Hash");
