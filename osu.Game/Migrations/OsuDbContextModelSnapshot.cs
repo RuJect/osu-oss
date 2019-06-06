@@ -203,12 +203,16 @@ namespace osu.Game.Migrations
 
                     b.Property<int?>("RulesetID");
 
+                    b.Property<int?>("SkinInfoID");
+
                     b.Property<string>("StringValue")
                         .HasColumnName("Value");
 
                     b.Property<int?>("Variant");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("SkinInfoID");
 
                     b.HasIndex("RulesetID", "Variant");
 
@@ -440,6 +444,13 @@ namespace osu.Game.Migrations
                     b.HasOne("osu.Game.Beatmaps.BeatmapMetadata", "Metadata")
                         .WithMany("BeatmapSets")
                         .HasForeignKey("MetadataID");
+                });
+
+            modelBuilder.Entity("osu.Game.Configuration.DatabasedSetting", b =>
+                {
+                    b.HasOne("osu.Game.Skinning.SkinInfo")
+                        .WithMany("Settings")
+                        .HasForeignKey("SkinInfoID");
                 });
 
             modelBuilder.Entity("osu.Game.Scoring.ScoreFileInfo", b =>
