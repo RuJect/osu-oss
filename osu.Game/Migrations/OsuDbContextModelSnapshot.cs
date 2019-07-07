@@ -61,6 +61,8 @@ namespace osu.Game.Migrations
 
                     b.Property<bool>("Hidden");
 
+                    b.Property<double>("Length");
+
                     b.Property<bool>("LetterboxInBreaks");
 
                     b.Property<string>("MD5Hash");
@@ -165,6 +167,8 @@ namespace osu.Game.Migrations
                 {
                     b.Property<int>("ID")
                         .ValueGeneratedOnAdd();
+
+                    b.Property<double>("BPM");
 
                     b.Property<DateTimeOffset>("DateAdded");
 
