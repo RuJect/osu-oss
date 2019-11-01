@@ -10,6 +10,6 @@ namespace osu.Game.Online.API.Requests
     public class GetUsersResponse : ResponseWithCursor
     {
         [JsonProperty("ranking")]
-        public List<APIUser> Users;
+        public List<APIUserRankings> Users;
     }
 }
