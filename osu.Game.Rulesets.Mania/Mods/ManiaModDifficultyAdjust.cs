@@ -3,12 +3,9 @@
 
 using osu.Game.Rulesets.Mods;
 
-namespace osu.Game.Online.API.Requests.Responses
+namespace osu.Game.Rulesets.Mania.Mods
 {
-    public class APIMod : IMod
+    public class ManiaModDifficultyAdjust : ModDifficultyAdjust
     {
-        public string Acronym { get; set; }
-
-        public bool Equals(IMod other) => Acronym == other?.Acronym;
     }
 }
