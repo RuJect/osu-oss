@@ -141,6 +141,8 @@ namespace osu.Game.Migrations
 
                     b.Property<string>("VideoFile");
 
+                    b.Property<int>("VideoOffset");
+
                     b.HasKey("ID");
 
                     b.ToTable("BeatmapMetadata");
