@@ -1,36 +1,52 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osuTK;
 using osu.Framework.Graphics.Shapes;
+using osu.Game.Graphics;
 
 namespace osu.Game.Rulesets.Taiko.Objects.Drawables.Pieces
 {
-    /// <summary>
-    /// The symbol used for centre hit pieces.
-    /// </summary>
-    public class CentreHitSymbolPiece : Container
+    public class CentreHitCirclePiece : CirclePiece
     {
-        public CentreHitSymbolPiece()
+        public CentreHitCirclePiece()
         {
-            Anchor = Anchor.Centre;
-            Origin = Anchor.Centre;
+            Add(new CentreHitSymbolPiece());
+        }
 
-            RelativeSizeAxes = Axes.Both;
-            Size = new Vector2(CirclePiece.SYMBOL_SIZE);
-            Padding = new MarginPadding(CirclePiece.SYMBOL_BORDER);
+        [BackgroundDependencyLoader]
+        private void load(OsuColour colours)
+        {
+            AccentColour = colours.PinkDarker;
+        }
 
-            Children = new[]
+        /// <summary>
+        /// The symbol used for centre hit pieces.
+        /// </summary>
+        public class CentreHitSymbolPiece : Container
+        {
+            public CentreHitSymbolPiece()
             {
-                new CircularContainer
+                Anchor = Anchor.Centre;
+                Origin = Anchor.Centre;
+
+                RelativeSizeAxes = Axes.Both;
+                Size = new Vector2(SYMBOL_SIZE);
+                Padding = new MarginPadding(SYMBOL_BORDER);
+
+                Children = new[]
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Masking = true,
-                    Children = new[] { new Box { RelativeSizeAxes = Axes.Both } }
-                }
-            };
+                    new CircularContainer
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Masking = true,
+                        Children = new[] { new Box { RelativeSizeAxes = Axes.Both } }
+                    }
+                };
+            }
         }
     }
 }
