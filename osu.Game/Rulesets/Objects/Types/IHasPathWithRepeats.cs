@@ -1,7 +1,6 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using osuTK;
 
 namespace osu.Game.Rulesets.Objects.Types
@@ -9,14 +8,8 @@ namespace osu.Game.Rulesets.Objects.Types
     /// <summary>
     /// A HitObject that has a curve.
     /// </summary>
-#pragma warning disable 618
-    public interface IHasPathWithRepeats : IHasCurve
-#pragma warning restore 618
-    {
-    }
-
-    [Obsolete("Use IHasPathWithRepeats instead.")] // can be removed 20201126
-    public interface IHasCurve : IHasPath, IHasRepeats
+    // ReSharper disable once RedundantExtendsListEntry
+    public interface IHasPathWithRepeats : IHasPath, IHasRepeats
     {
     }
 
