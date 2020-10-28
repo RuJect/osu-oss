@@ -7,18 +7,24 @@ using osu.Framework.Screens;
 using osu.Game.Beatmaps;
 using osu.Game.Online.Spectator;
 using osu.Game.Scoring;
+using osu.Game.Screens.Ranking;
 
 namespace osu.Game.Screens.Play
 {
     public class SpectatorPlayer : ReplayPlayer
     {
-        [Resolved]
-        private SpectatorStreamingClient spectatorStreaming { get; set; }
-
         public SpectatorPlayer(Score score)
             : base(score)
         {
         }
+
+        protected override ResultsScreen CreateResults(ScoreInfo score)
+        {
+            return new SpectatorResultsScreen(score);
+        }
+
+        [Resolved]
+        private SpectatorStreamingClient spectatorStreaming { get; set; }
 
         [BackgroundDependencyLoader]
         private void load()
@@ -30,6 +36,14 @@ namespace osu.Game.Screens.Play
         {
             if (userId == Score.ScoreInfo.UserID)
                 Schedule(this.Exit);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (spectatorStreaming != null)
+                spectatorStreaming.OnUserBeganPlaying -= userBeganPlaying;
         }
 
         protected override GameplayClockContainer CreateGameplayClockContainer(WorkingBeatmap beatmap, double gameplayStart)
