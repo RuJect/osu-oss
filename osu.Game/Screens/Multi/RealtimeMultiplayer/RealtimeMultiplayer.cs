@@ -28,31 +28,31 @@ namespace osu.Game.Screens.Multi.RealtimeMultiplayer
 
         protected override void UpdatePollingRate(bool isIdle)
         {
-            var timeshiftManager = (RealtimeRoomManager)RoomManager;
+            var playlistsManager = (RealtimeRoomManager)RoomManager;
 
             if (!this.IsCurrentScreen())
             {
-                timeshiftManager.TimeBetweenListingPolls.Value = 0;
-                timeshiftManager.TimeBetweenSelectionPolls.Value = 0;
+                playlistsManager.TimeBetweenListingPolls.Value = 0;
+                playlistsManager.TimeBetweenSelectionPolls.Value = 0;
             }
             else
             {
                 switch (CurrentSubScreen)
                 {
                     case LoungeSubScreen _:
-                        timeshiftManager.TimeBetweenListingPolls.Value = isIdle ? 120000 : 15000;
-                        timeshiftManager.TimeBetweenSelectionPolls.Value = isIdle ? 120000 : 15000;
+                        playlistsManager.TimeBetweenListingPolls.Value = isIdle ? 120000 : 15000;
+                        playlistsManager.TimeBetweenSelectionPolls.Value = isIdle ? 120000 : 15000;
                         break;
 
                     // Don't poll inside the match or anywhere else.
                     default:
-                        timeshiftManager.TimeBetweenListingPolls.Value = 0;
-                        timeshiftManager.TimeBetweenSelectionPolls.Value = 0;
+                        playlistsManager.TimeBetweenListingPolls.Value = 0;
+                        playlistsManager.TimeBetweenSelectionPolls.Value = 0;
                         break;
                 }
             }
 
-            Logger.Log($"Polling adjusted (listing: {timeshiftManager.TimeBetweenListingPolls.Value}, selection: {timeshiftManager.TimeBetweenSelectionPolls.Value})");
+            Logger.Log($"Polling adjusted (listing: {playlistsManager.TimeBetweenListingPolls.Value}, selection: {playlistsManager.TimeBetweenSelectionPolls.Value})");
         }
 
         protected override Room CreateNewRoom()
