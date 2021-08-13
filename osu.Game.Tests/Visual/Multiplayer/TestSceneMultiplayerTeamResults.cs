@@ -18,7 +18,7 @@ namespace osu.Game.Tests.Visual.Multiplayer
         [TestCase(7483253, 1048576)]
         [TestCase(1048576, 7483253)]
         [TestCase(1048576, 1048576)]
-        public void TestDisplayWithTeams(int team1Score, int team2Score)
+        public void TestDisplayTeamResults(int team1Score, int team2Score)
         {
             MultiplayerResultsScreen screen = null;
 
@@ -53,41 +53,6 @@ namespace osu.Game.Tests.Visual.Multiplayer
                 };
 
                 Stack.Push(screen = new MultiplayerTeamResultsScreen(score, 1, playlistItem, teamScores));
-            });
-
-            AddUntilStep("wait for loaded", () => screen.IsLoaded);
-        }
-
-        [Test]
-        public void TestDisplayWithoutTeams()
-        {
-            MultiplayerResultsScreen screen = null;
-
-            AddStep("show results screen", () =>
-            {
-                var rulesetInfo = new OsuRuleset().RulesetInfo;
-                var beatmapInfo = CreateBeatmap(rulesetInfo).BeatmapInfo;
-
-                var score = new ScoreInfo
-                {
-                    Rank = ScoreRank.B,
-                    TotalScore = 987654,
-                    Accuracy = 0.8,
-                    MaxCombo = 500,
-                    Combo = 250,
-                    Beatmap = beatmapInfo,
-                    User = new User { Username = "Test user" },
-                    Date = DateTimeOffset.Now,
-                    OnlineScoreID = 12345,
-                    Ruleset = rulesetInfo,
-                };
-
-                PlaylistItem playlistItem = new PlaylistItem
-                {
-                    BeatmapID = beatmapInfo.ID,
-                };
-
-                Stack.Push(screen = new MultiplayerResultsScreen(score, 1, playlistItem));
             });
 
             AddUntilStep("wait for loaded", () => screen.IsLoaded);
