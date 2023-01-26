@@ -18,9 +18,8 @@ namespace osu.Game.Graphics.UserInterface
             Size = new Vector2(EXPANDED_SIZE, HEIGHT);
         }
 
-        protected override Container CreateNubContainer()
-        {
-            return new CircularContainer
+        protected override Container CreateNubContainer() =>
+            new CircularContainer
             {
                 BorderColour = Colour4.White,
                 BorderThickness = BORDER_WIDTH,
@@ -29,6 +28,5 @@ namespace osu.Game.Graphics.UserInterface
                 Anchor = Anchor.TopCentre,
                 Origin = Anchor.TopCentre,
             };
-        }
     }
 }
