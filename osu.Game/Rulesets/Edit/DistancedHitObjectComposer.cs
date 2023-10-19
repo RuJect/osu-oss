@@ -44,7 +44,7 @@ namespace osu.Game.Rulesets.Edit
             Precision = 0.01,
         };
 
-        IBindable<double> IDistanceSnapProvider.DistanceSpacingMultiplier => DistanceSpacingMultiplier;
+        Bindable<double> IDistanceSnapProvider.DistanceSpacingMultiplier => DistanceSpacingMultiplier;
 
         private ExpandableSlider<double, SizeSlider<double>> distanceSpacingSlider;
         private ExpandableButton currentDistanceSpacingButton;
@@ -52,7 +52,7 @@ namespace osu.Game.Rulesets.Edit
         [Resolved(canBeNull: true)]
         private OnScreenDisplay onScreenDisplay { get; set; }
 
-        protected readonly Bindable<TernaryState> DistanceSnapToggle = new Bindable<TernaryState>();
+        public readonly Bindable<TernaryState> DistanceSnapToggle = new Bindable<TernaryState>();
 
         private bool distanceSnapMomentary;
 
