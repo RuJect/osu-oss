@@ -15,7 +15,7 @@ using osuTK;
 
 namespace osu.Game.Rulesets.Osu.Tests.Mods
 {
-    public partial class TestSceneOsuModPerfect : ModPerfectTestScene
+    public partial class TestSceneOsuModPerfect : ModFailConditionTestScene
     {
         protected override Ruleset CreatePlayerRuleset() => new OsuRuleset();
 
@@ -59,7 +59,7 @@ namespace osu.Game.Rulesets.Osu.Tests.Mods
         public void TestMissSliderTail() => CreateModTest(new ModTestData
         {
             Mod = new OsuModPerfect(),
-            PassCondition = () => ((PerfectModTestPlayer)Player).CheckFailed(true),
+            PassCondition = () => ((ModFailConditionTestPlayer)Player).CheckFailed(true),
             Autoplay = false,
             Beatmap = new Beatmap
             {

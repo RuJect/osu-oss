@@ -13,7 +13,7 @@ using osu.Game.Tests.Visual;
 
 namespace osu.Game.Rulesets.Mania.Tests.Mods
 {
-    public partial class TestSceneManiaModPerfect : ModPerfectTestScene
+    public partial class TestSceneManiaModPerfect : ModFailConditionTestScene
     {
         protected override Ruleset CreatePlayerRuleset() => new ManiaRuleset();
 
@@ -34,7 +34,7 @@ namespace osu.Game.Rulesets.Mania.Tests.Mods
         public void TestGreatHit() => CreateModTest(new ModTestData
         {
             Mod = new ManiaModPerfect(),
-            PassCondition = () => ((PerfectModTestPlayer)Player).CheckFailed(false),
+            PassCondition = () => ((ModFailConditionTestPlayer)Player).CheckFailed(false),
             Autoplay = false,
             Beatmap = new Beatmap
             {
@@ -57,7 +57,7 @@ namespace osu.Game.Rulesets.Mania.Tests.Mods
         public void TestBreakOnHoldNote() => CreateModTest(new ModTestData
         {
             Mod = new ManiaModPerfect(),
-            PassCondition = () => ((PerfectModTestPlayer)Player).CheckFailed(true) && Player.Results.Count == 2,
+            PassCondition = () => ((ModFailConditionTestPlayer)Player).CheckFailed(true) && Player.Results.Count == 2,
             Autoplay = false,
             Beatmap = new Beatmap
             {
