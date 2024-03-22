@@ -13,7 +13,9 @@ namespace osu.Game.Rulesets.Mania.Edit
     {
         private readonly List<ICheck> checks = new List<ICheck>
         {
+            // Settings
             new CheckKeyCount(),
+            new CheckManiaAbnormalDifficultySettings(),
         };
 
         public IEnumerable<Issue> Run(BeatmapVerifierContext context)
