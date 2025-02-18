@@ -3,11 +3,9 @@
 
 using System.Diagnostics;
 using osu.Framework.Allocation;
-using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Pooling;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Game.Graphics;
@@ -18,16 +16,12 @@ using osuTK.Graphics;
 
 namespace osu.Game.Screens.SelectV2
 {
-    public partial class PanelGroup : PoolableDrawable, ICarouselPanel
+    public partial class PanelGroup : PanelBase
     {
         public const float HEIGHT = CarouselItem.DEFAULT_HEIGHT;
 
         private const float duration = 500;
 
-        [Resolved]
-        private BeatmapCarousel? carousel { get; set; }
-
-        private CarouselPanelPiece panel = null!;
         private Drawable chevronIcon = null!;
         private OsuSpriteText titleText = null!;
 
@@ -39,57 +33,53 @@ namespace osu.Game.Screens.SelectV2
             RelativeSizeAxes = Axes.X;
             Height = HEIGHT;
 
-            InternalChild = panel = new CarouselPanelPiece(0)
+            Icon = chevronIcon = new SpriteIcon
             {
-                Action = () => carousel?.Activate(Item!),
-                Icon = chevronIcon = new SpriteIcon
+                AlwaysPresent = true,
+                Icon = FontAwesome.Solid.ChevronDown,
+                Size = new Vector2(12),
+                Margin = new MarginPadding { Horizontal = 5f },
+                X = 2f,
+                Colour = colourProvider.Background3,
+            };
+            Background = new Box
+            {
+                RelativeSizeAxes = Axes.Both,
+                Colour = colourProvider.Dark1,
+            };
+            AccentColour = colourProvider.Highlight1;
+            Content.Children = new Drawable[]
+            {
+                titleText = new OsuSpriteText
                 {
-                    AlwaysPresent = true,
-                    Icon = FontAwesome.Solid.ChevronDown,
-                    Size = new Vector2(12),
-                    Margin = new MarginPadding { Horizontal = 5f },
-                    X = 2f,
-                    Colour = colourProvider.Background3,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                    X = 10f,
                 },
-                Background = new Box
+                new CircularContainer
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Colour = colourProvider.Dark1,
-                },
-                AccentColour = colourProvider.Highlight1,
-                Children = new Drawable[]
-                {
-                    titleText = new OsuSpriteText
+                    Anchor = Anchor.CentreRight,
+                    Origin = Anchor.CentreRight,
+                    Size = new Vector2(50f, 14f),
+                    Margin = new MarginPadding { Right = 20f },
+                    Masking = true,
+                    Children = new Drawable[]
                     {
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
-                        X = 10f,
-                    },
-                    new CircularContainer
-                    {
-                        Anchor = Anchor.CentreRight,
-                        Origin = Anchor.CentreRight,
-                        Size = new Vector2(50f, 14f),
-                        Margin = new MarginPadding { Right = 20f },
-                        Masking = true,
-                        Children = new Drawable[]
+                        new Box
                         {
-                            new Box
-                            {
-                                RelativeSizeAxes = Axes.Both,
-                                Colour = Color4.Black.Opacity(0.7f),
-                            },
-                            new OsuSpriteText
-                            {
-                                Anchor = Anchor.Centre,
-                                Origin = Anchor.Centre,
-                                Font = OsuFont.Torus.With(size: 14.4f, weight: FontWeight.Bold),
-                                // TODO: requires Carousel/CarouselItem-side implementation
-                                Text = "43",
-                                UseFullGlyphHeight = false,
-                            }
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = Color4.Black.Opacity(0.7f),
                         },
-                    }
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Font = OsuFont.Torus.With(size: 14.4f, weight: FontWeight.Bold),
+                            // TODO: requires Carousel/CarouselItem-side implementation
+                            Text = "43",
+                            UseFullGlyphHeight = false,
+                        }
+                    },
                 }
             };
         }
@@ -99,14 +89,10 @@ namespace osu.Game.Screens.SelectV2
             base.LoadComplete();
 
             Expanded.BindValueChanged(_ => onExpanded(), true);
-            KeyboardSelected.BindValueChanged(k => panel.KeyboardActive.Value = k.NewValue, true);
         }
 
         private void onExpanded()
         {
-            panel.Active.Value = Expanded.Value;
-            panel.Flash();
-
             chevronIcon.ResizeWidthTo(Expanded.Value ? 12f : 0f, duration, Easing.OutQuint);
             chevronIcon.FadeTo(Expanded.Value ? 1f : 0f, duration, Easing.OutQuint);
         }
@@ -124,20 +110,5 @@ namespace osu.Game.Screens.SelectV2
             FinishTransforms(true);
             this.FadeInFromZero(500, Easing.OutQuint);
         }
-
-        #region ICarouselPanel
-
-        public CarouselItem? Item { get; set; }
-        public BindableBool Selected { get; } = new BindableBool();
-        public BindableBool Expanded { get; } = new BindableBool();
-        public BindableBool KeyboardSelected { get; } = new BindableBool();
-
-        public double DrawYPosition { get; set; }
-
-        public void Activated()
-        {
-        }
-
-        #endregion
     }
 }
