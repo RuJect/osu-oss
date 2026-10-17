@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Project">
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>osu-auth-supervisor</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <StartupObject>osu.Game.Auth.Isolation.Supervisor.Program</StartupObject>
+    <Description>Seccomp user-notification supervisor for the osu! auth isolation.</Description>
+  </PropertyGroup>
+
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\osu.Game.Auth.Isolation\osu.Game.Auth.Isolation.csproj"/>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Project">
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>Shared seccomp/libseccomp isolation primitives for the osu! auth module.</Description>
+    <!-- The public P/Invoke surface is the point of this assembly (see docs). -->
+    <NoWarn>$(NoWarn);CA1401</NoWarn>
+  </PropertyGroup>
+</Project>

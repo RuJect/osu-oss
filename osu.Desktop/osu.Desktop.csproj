@@ -9,8 +9,8 @@
     <Title>osu!</Title>
     <Product>osu!(lazer)</Product>
     <ApplicationIcon>lazer.ico</ApplicationIcon>
-    <Version>0.0.0</Version>
-    <FileVersion>0.0.0</FileVersion>
+    <Version>2026.1005.0</Version>
+    <FileVersion>2026.1005.0.0</FileVersion>
   </PropertyGroup>
 
   <!-- Required for deployment. -->
@@ -29,7 +29,60 @@
     <ProjectReference Include="..\osu.Game.Rulesets.Catch\osu.Game.Rulesets.Catch.csproj"/>
     <ProjectReference Include="..\osu.Game.Rulesets.Mania\osu.Game.Rulesets.Mania.csproj"/>
     <ProjectReference Include="..\osu.Game.Rulesets.Taiko\osu.Game.Rulesets.Taiko.csproj"/>
+    <!-- Open reimplementation of the auth/token-signing module (canonical assembly name). -->
+    <ProjectReference Include="..\osu.Game.Auth\osu.Game.Auth.csproj"/>
+    <!-- Seccomp user-notification supervisor (Linux). Built alongside the game and shipped next
+         to the executable; the game spawns it from osu.Game.Auth.Isolation. -->
+    <ProjectReference Include="..\osu.Game.Auth.Supervisor\osu.Game.Auth.Supervisor.csproj" ReferenceOutputAssembly="false"/>
   </ItemGroup>
+  <!-- Proprietary managed module used by the default "transplant" signing method
+       (see osu.Game.Auth/Transplant/TransplantSigner.cs). Renamed to avoid clashing with the
+       open reimplementation's identically-named output assembly.
+       The measured official assemblies are NOT shipped; they are fetched at runtime
+       from the matching release (see osu.Game.Auth/Provisioning/OfficialFileCache.cs). -->
+  <ItemGroup Label="Auth Blobs">
+    <Content Include="Auth\osu.Game.Auth.dll" Link="osu.Game.Auth.transplant.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Measurement redirect shim (source: osu.Game.Auth/Redirect/native/authredirect.c).
+       Linux/macOS: built from source into the output directory by the imported targets
+       below and injected by re-executing the process (osu.Game.Auth.Redirect.RedirectBootstrap).
+       Windows: built from source when BuildAuthRedirectShim=true (MSVC, or mingw when
+       cross-publishing win-*); loaded in-process by
+       osu.Game.Auth.Redirect.RedirectShim. A prebuilt shim dropped in Auth/ is copied as-is. -->
+  <ItemGroup Label="Auth Redirect Shim">
+    <Content Include="Auth\authredirect.dll" Link="authredirect.dll" Condition="Exists('Auth\authredirect.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Auth\authredirect.dylib" Link="authredirect.dylib" Condition="Exists('Auth\authredirect.dylib')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Auth\authredirect.so" Link="authredirect.so" Condition="Exists('Auth\authredirect.so')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <!-- Auto-compile the redirect shim (Linux/macOS by default, Windows opt-in). -->
+  <Import Project="..\osu.Game.Auth\Redirect\native\AuthRedirectShim.targets"/>
+  <!-- Ship the seccomp supervisor (apphost + deps) next to the game so the Linux isolation can
+       spawn it. The project reference (built above) only exists to force the build; its outputs
+       are copied here, since the apphost is not a referenced assembly. -->
+  <Target Name="CopyAuthSupervisor"
+          AfterTargets="Build"
+          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <ItemGroup>
+      <AuthSupervisorBuildFiles Include="$(MSBuildProjectDirectory)/../osu.Game.Auth.Supervisor/bin/$(Configuration)/$(TargetFramework)/*"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(AuthSupervisorBuildFiles)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true"/>
+  </Target>
+  <Target Name="PublishAuthSupervisor"
+          AfterTargets="Publish"
+          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <ItemGroup>
+      <AuthSupervisorBuildFiles Include="$(MSBuildProjectDirectory)/../osu.Game.Auth.Supervisor/bin/$(Configuration)/$(TargetFramework)/*"/>
+    </ItemGroup>
+    <Copy SourceFiles="@(AuthSupervisorBuildFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true"/>
+  </Target>
   <ItemGroup Label="Package References">
     <PackageReference Include="System.IO.Packaging" Version="10.0.12"/>
     <!-- Held back due to invite bug in newer versions. See https://github.com/Lachee/discord-rpc-csharp/issues/286 -->

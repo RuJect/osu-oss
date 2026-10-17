@@ -62,78 +62,75 @@ namespace osu.Game.Overlays.Settings.Sections.DebugSettings
                 }
             });
 
-            if (DebugUtils.IsDebugBuild)
+            AddRange(new Drawable[]
             {
-                AddRange(new Drawable[]
+                new SettingsButtonV2
                 {
-                    new SettingsButtonV2
+                    Text = @"Compact realm",
+                    Action = () =>
                     {
-                        Text = @"Compact realm",
-                        Action = () =>
+                        try
                         {
-                            try
+                            // Blocking operations implicitly causes a Compact().
+                            using (realm.BlockAllOperations(@"compact"))
                             {
-                                // Blocking operations implicitly causes a Compact().
-                                using (realm.BlockAllOperations(@"compact"))
-                                {
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Error(e, @"Compacting realm failed");
                             }
                         }
-                    },
-                    blockAction = new SettingsButtonV2
-                    {
-                        Text = @"Block realm",
-                    },
-                    unblockAction = new SettingsButtonV2
-                    {
-                        Text = @"Unblock realm",
-                    }
-                });
-
-                blockAction.Action = () =>
-                {
-                    try
-                    {
-                        IDisposable? token = realm.BlockAllOperations(@"maintenance");
-
-                        blockAction.Enabled.Value = false;
-
-                        // As a safety measure, unblock after 10 seconds.
-                        // This is to handle the case where a dev may block, but then something on the update thread
-                        // accesses realm and blocks for eternity.
-                        Task.Factory.StartNew(() =>
+                        catch (Exception e)
                         {
-                            Thread.Sleep(10000);
-                            unblock();
+                            Logger.Error(e, @"Compacting realm failed");
+                        }
+                    }
+                },
+                blockAction = new SettingsButtonV2
+                {
+                    Text = @"Block realm",
+                },
+                unblockAction = new SettingsButtonV2
+                {
+                    Text = @"Unblock realm",
+                }
+            });
+
+            blockAction.Action = () =>
+            {
+                try
+                {
+                    IDisposable? token = realm.BlockAllOperations(@"maintenance");
+
+                    blockAction.Enabled.Value = false;
+
+                    // As a safety measure, unblock after 10 seconds.
+                    // This is to handle the case where a dev may block, but then something on the update thread
+                    // accesses realm and blocks for eternity.
+                    Task.Factory.StartNew(() =>
+                    {
+                        Thread.Sleep(10000);
+                        unblock();
+                    });
+
+                    unblockAction.Action = unblock;
+
+                    void unblock()
+                    {
+                        if (token.IsNull())
+                            return;
+
+                        token.Dispose();
+                        token = null;
+
+                        Scheduler.Add(() =>
+                        {
+                            blockAction.Enabled.Value = true;
+                            unblockAction.Action = null;
                         });
-
-                        unblockAction.Action = unblock;
-
-                        void unblock()
-                        {
-                            if (token.IsNull())
-                                return;
-
-                            token.Dispose();
-                            token = null;
-
-                            Scheduler.Add(() =>
-                            {
-                                blockAction.Enabled.Value = true;
-                                unblockAction.Action = null;
-                            });
-                        }
                     }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e, @"Blocking realm failed");
-                    }
-                };
-            }
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, @"Blocking realm failed");
+                }
+            };
         }
 
         private enum GCLatencyMode

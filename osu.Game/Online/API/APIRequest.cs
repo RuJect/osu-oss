@@ -95,6 +95,14 @@ namespace osu.Game.Online.API
         /// </summary>
         public event APIFailureHandler? Failure;
 
+        /// <summary>
+        /// Signs a <see cref="WebRequest"/> before it is performed (adds integrity/auth tokens).
+        /// Assigned by the auth module at startup; no-op by default.
+        /// </summary>
+        public static Action<WebRequest> Sign = delegate
+        {
+        };
+
         private readonly Lock completionStateLock = new Lock();
 
         /// <summary>

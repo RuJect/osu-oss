@@ -42,9 +42,6 @@ namespace osu.Android
         {
             get
             {
-                if (!IsDeployedBuild)
-                    return @"local " + (DebugUtils.IsDebugBuild ? @"debug" : @"release");
-
                 return packageInfo.VersionName.AsNonNull();
             }
         }

@@ -111,7 +111,7 @@ namespace osu.Game.Overlays.Settings
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
                     Padding = new MarginPadding(5),
-                    Colour = DebugUtils.IsDebugBuild ? colours.Red : Color4.White,
+                    Colour = Color4.White,
                 });
             }
 

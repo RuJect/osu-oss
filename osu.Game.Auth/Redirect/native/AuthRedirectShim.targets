@@ -1,0 +1,84 @@
+<!--
+  Measurement redirect shim build logic, imported by the executable project
+  (osu.Desktop). The shim source lives next to this file, inside osu.Game.Auth;
+  the compiled shim must be emitted into the executable's output directory
+  because it is injected at process start (LD_PRELOAD / DYLD_INSERT_LIBRARIES)
+  or loaded in-process (Windows), never referenced as a managed assembly.
+
+  Linux/macOS: built from source by default. Failure is fatal on these platforms
+  because the default "transplant" signing method depends on the shim being present.
+
+  Windows: built from source when BuildAuthRedirectShim=true. On Windows this
+  defaults to false unless a Visual Studio developer environment is detected, so
+  ordinary dotnet builds do not require MSVC on PATH. Cross-publishing win-* from
+  Linux uses x86_64-w64-mingw32-gcc. Override AuthRedirectShimWindowsCompiler or
+  AuthRedirectShimWindowsToolchain if required.
+
+  Set -p:BuildAuthRedirectShim=false to opt out on all platforms.
+-->
+<Project>
+  <PropertyGroup Label="Auth Redirect Shim Build">
+    <BuildAuthRedirectShim Condition="'$(BuildAuthRedirectShim)' == '' and $([MSBuild]::IsOSPlatform('Windows')) and ('$(VCINSTALLDIR)' != '' or '$(VCToolsInstallDir)' != '')">true</BuildAuthRedirectShim>
+    <BuildAuthRedirectShim Condition="'$(BuildAuthRedirectShim)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">false</BuildAuthRedirectShim>
+    <BuildAuthRedirectShim Condition="'$(BuildAuthRedirectShim)' == ''">true</BuildAuthRedirectShim>
+
+    <AuthRedirectShimSource>$(MSBuildThisFileDirectory)authredirect.c</AuthRedirectShimSource>
+
+    <AuthRedirectShimWindows Condition="'$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">true</AuthRedirectShimWindows>
+    <AuthRedirectShimWindows Condition="'$(RuntimeIdentifier)' != '' and $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win'))">true</AuthRedirectShimWindows>
+    <AuthRedirectShimHostNative Condition="'$(AuthRedirectShimWindows)' != 'true' and ($([MSBuild]::IsOSPlatform('Linux')) or $([MSBuild]::IsOSPlatform('OSX')))">true</AuthRedirectShimHostNative>
+
+    <AuthRedirectShimCompiler Condition="'$(AuthRedirectShimCompiler)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">cc</AuthRedirectShimCompiler>
+    <AuthRedirectShimCompiler Condition="'$(AuthRedirectShimCompiler)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">clang</AuthRedirectShimCompiler>
+    <AuthRedirectShimFileName Condition="$([MSBuild]::IsOSPlatform('Linux'))">authredirect.so</AuthRedirectShimFileName>
+    <AuthRedirectShimFileName Condition="$([MSBuild]::IsOSPlatform('OSX'))">authredirect.dylib</AuthRedirectShimFileName>
+    <AuthRedirectShimBuildArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-shared -fPIC -O2</AuthRedirectShimBuildArgs>
+    <AuthRedirectShimBuildArgs Condition="$([MSBuild]::IsOSPlatform('OSX'))">-dynamiclib -O2</AuthRedirectShimBuildArgs>
+    <AuthRedirectShimLinkArgs Condition="$([MSBuild]::IsOSPlatform('Linux'))">-ldl</AuthRedirectShimLinkArgs>
+
+    <AuthRedirectShimWindowsToolchain Condition="'$(AuthRedirectShimWindowsToolchain)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">msvc</AuthRedirectShimWindowsToolchain>
+    <AuthRedirectShimWindowsToolchain Condition="'$(AuthRedirectShimWindowsToolchain)' == ''">mingw</AuthRedirectShimWindowsToolchain>
+    <AuthRedirectShimWindowsCompiler Condition="'$(AuthRedirectShimWindowsCompiler)' == '' and '$(AuthRedirectShimWindowsToolchain)' == 'msvc'">cl</AuthRedirectShimWindowsCompiler>
+    <AuthRedirectShimWindowsCompiler Condition="'$(AuthRedirectShimWindowsCompiler)' == ''">x86_64-w64-mingw32-gcc</AuthRedirectShimWindowsCompiler>
+    <AuthRedirectShimWindowsCompilerArgs Condition="'$(AuthRedirectShimWindowsToolchain)' == 'msvc'">/nologo /LD /O2</AuthRedirectShimWindowsCompilerArgs>
+    <AuthRedirectShimWindowsCompilerArgs Condition="'$(AuthRedirectShimWindowsToolchain)' != 'msvc'">-shared -O2 -static-libgcc</AuthRedirectShimWindowsCompilerArgs>
+  </PropertyGroup>
+
+  <Target Name="BuildAuthRedirectShim"
+          AfterTargets="Build"
+          Condition="'$(BuildAuthRedirectShim)' == 'true' and '$(AuthRedirectShimHostNative)' == 'true'"
+          Inputs="$(AuthRedirectShimSource)"
+          Outputs="$(TargetDir)$(AuthRedirectShimFileName)">
+    <Exec Command="$(AuthRedirectShimCompiler) $(AuthRedirectShimBuildArgs) -o &quot;$(TargetDir)$(AuthRedirectShimFileName)&quot; &quot;$(AuthRedirectShimSource)&quot; $(AuthRedirectShimLinkArgs)" />
+  </Target>
+
+  <Target Name="PublishAuthRedirectShim"
+          AfterTargets="Publish"
+          Condition="'$(BuildAuthRedirectShim)' == 'true' and '$(AuthRedirectShimHostNative)' == 'true'"
+          Inputs="$(AuthRedirectShimSource)"
+          Outputs="$(PublishDir)$(AuthRedirectShimFileName)">
+    <Exec Command="$(AuthRedirectShimCompiler) $(AuthRedirectShimBuildArgs) -o &quot;$(PublishDir)$(AuthRedirectShimFileName)&quot; &quot;$(AuthRedirectShimSource)&quot; $(AuthRedirectShimLinkArgs)" />
+  </Target>
+
+  <Target Name="BuildWindowsAuthRedirectShim"
+          AfterTargets="Build"
+          Condition="'$(BuildAuthRedirectShim)' == 'true' and '$(AuthRedirectShimWindows)' == 'true'"
+          Inputs="$(AuthRedirectShimSource)"
+          Outputs="$(TargetDir)authredirect.dll">
+    <Exec Condition="'$(AuthRedirectShimWindowsToolchain)' == 'msvc'"
+          Command="$(AuthRedirectShimWindowsCompiler) $(AuthRedirectShimWindowsCompilerArgs) /Fe:&quot;$(TargetDir)authredirect.dll&quot; /Fo:&quot;$(TargetDir)authredirect.obj&quot; &quot;$(AuthRedirectShimSource)&quot;" />
+    <Exec Condition="'$(AuthRedirectShimWindowsToolchain)' != 'msvc'"
+          Command="$(AuthRedirectShimWindowsCompiler) $(AuthRedirectShimWindowsCompilerArgs) -o &quot;$(TargetDir)authredirect.dll&quot; &quot;$(AuthRedirectShimSource)&quot;" />
+  </Target>
+
+  <Target Name="PublishWindowsAuthRedirectShim"
+          AfterTargets="Publish"
+          Condition="'$(BuildAuthRedirectShim)' == 'true' and '$(AuthRedirectShimWindows)' == 'true'"
+          Inputs="$(AuthRedirectShimSource)"
+          Outputs="$(PublishDir)authredirect.dll">
+    <Exec Condition="'$(AuthRedirectShimWindowsToolchain)' == 'msvc'"
+          Command="$(AuthRedirectShimWindowsCompiler) $(AuthRedirectShimWindowsCompilerArgs) /Fe:&quot;$(PublishDir)authredirect.dll&quot; /Fo:&quot;$(PublishDir)authredirect.obj&quot; &quot;$(AuthRedirectShimSource)&quot;" />
+    <Exec Condition="'$(AuthRedirectShimWindowsToolchain)' != 'msvc'"
+          Command="$(AuthRedirectShimWindowsCompiler) $(AuthRedirectShimWindowsCompilerArgs) -o &quot;$(PublishDir)authredirect.dll&quot; &quot;$(AuthRedirectShimSource)&quot;" />
+  </Target>
+</Project>

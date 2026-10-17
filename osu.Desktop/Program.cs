@@ -11,6 +11,7 @@ using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.Auth;
 using osu.Game.IPC;
 using osu.Game.Tournament;
 using SDL;
@@ -20,11 +21,7 @@ namespace osu.Desktop
 {
     public static class Program
     {
-#if DEBUG
-        private const string base_game_name = @"osu-development";
-#else
         private const string base_game_name = @"osu";
-#endif
 
         private static LegacyTcpIpcProvider? legacyIpc;
 
@@ -37,6 +34,11 @@ namespace osu.Desktop
             // This has bitten us in the rear before (bricked updater), and although the underlying issue from
             // last time has been fixed, let's not tempt fate.
             setupVelopack(args);
+
+            // Make the auth measurement redirect shim transparent on Linux/macOS by
+            // re-executing the process with it preloaded (no manual LD_PRELOAD).
+            // Returns immediately on Windows or when no re-exec is required.
+            RedirectBootstrap.EnsurePreloaded();
 
             if (OperatingSystem.IsWindows())
             {
@@ -91,7 +93,6 @@ namespace osu.Desktop
                         break;
 
                     case "--debug-client-id":
-                        if (!DebugUtils.IsDebugBuild)
                             throw new InvalidOperationException("Cannot use this argument in a non-debug build.");
 
                         if (!int.TryParse(val, out int clientID))
@@ -115,12 +116,8 @@ namespace osu.Desktop
                     if (trySendIPCMessage(host, cwd, args))
                         return;
 
-                    // we want to allow multiple instances to be started when in debug.
-                    if (!DebugUtils.IsDebugBuild)
-                    {
-                        Logger.Log(@"osu! does not support multiple running instances.", LoggingTarget.Runtime, LogLevel.Error);
-                        return;
-                    }
+                    Logger.Log(@"osu! does not support multiple running instances.", LoggingTarget.Runtime, LogLevel.Error);
+                    return;
                 }
 
                 if (host.IsPrimaryInstance)
@@ -141,11 +138,19 @@ namespace osu.Desktop
                     host.Run(new TournamentGame());
                 else
                 {
-                    host.Run(new OsuGameDesktop(args)
+                    var game = new OsuGameDesktop(args)
                     {
                         IsFirstRun = isFirstRun,
                         EnableWebSocketServer = Environment.GetEnvironmentVariable("OSU_WEBSOCKET_SERVER") == "1",
-                    });
+                    };
+
+                    // Proprietary auth transplant: initialises APIRequest.Sign /
+                    // HubClientConnector.Sign (token signing). Requires the native
+                    // auth module + file-measurement redirect (see Auth/).
+                    using (new Loader(host, game))
+                    {
+                        host.Run(game);
+                    }
                 }
             }
         }

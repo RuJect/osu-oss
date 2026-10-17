@@ -17,5 +17,11 @@ namespace osu.Game.Online.API
         }
 
         protected override string UserAgent => "osu!";
+
+        protected override void PrePerform()
+        {
+            base.PrePerform();
+            APIRequest.Sign(this);
+        }
     }
 }

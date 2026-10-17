@@ -124,7 +124,7 @@ namespace osu.Desktop
 
         public override bool RestartAppWhenExited()
         {
-            if (IsPackageManaged || !IsDeployedBuild)
+            if (IsPackageManaged)
                 return false;
 
             RestartOnExitAction = () => Velopack.UpdateExe.Start(waitPid: (uint)Environment.ProcessId);
@@ -151,8 +151,8 @@ namespace osu.Desktop
                     LoadComponentAsync(new GameplayWinKeyBlocker(), Add);
                     break;
 
-                case RuntimeInfo.Platform.macOS when !IsPackageManaged && IsDeployedBuild:
-                    if (!IsPackageManaged && IsDeployedBuild)
+                case RuntimeInfo.Platform.macOS when !IsPackageManaged:
+                    if (!IsPackageManaged)
                         LoadComponentAsync(new MacOSAppLocationChecker(), Add);
                     break;
             }

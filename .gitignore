@@ -344,3 +344,12 @@ FodyWeavers.xsd
 
 .idea/.idea.osu.Desktop/.idea/misc.xml
 .idea/.idea.osu.Android/.idea/deploymentTargetDropDown.xml
+
+
+.direnv
+artifacts/
+
+# prebuilt auth redirect shim dropped into osu.Desktop/Auth/ (source lives in
+# osu.Game.Auth/Redirect/native/authredirect.c and is normally built at compile time)
+osu.Desktop/Auth/authredirect.so
+osu.Desktop/Auth/authredirect.dylib

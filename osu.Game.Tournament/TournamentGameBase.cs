@@ -45,14 +45,6 @@ namespace osu.Game.Tournament
             return dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
         }
 
-        public override EndpointConfiguration CreateEndpoints()
-        {
-            if (UseDevelopmentServer)
-                return base.CreateEndpoints();
-
-            return new ProductionEndpointConfiguration();
-        }
-
         public override void SetHost(GameHost host)
         {
             base.SetHost(host);

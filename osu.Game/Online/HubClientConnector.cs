@@ -5,6 +5,7 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using osu.Framework;
@@ -18,6 +19,14 @@ namespace osu.Game.Online
 
         public const string VERSION_HASH_HEADER = @"X-Osu-Version-Hash";
         public const string CLIENT_SESSION_ID_HEADER = @"X-Client-Session-ID";
+
+        /// <summary>
+        /// Signs hub connection options before connect (adds integrity/auth tokens).
+        /// Assigned by the auth module at startup; no-op by default.
+        /// </summary>
+        public static Action<HttpConnectionOptions> Sign = delegate
+        {
+        };
 
         /// <summary>
         /// Invoked whenever a new hub connection is built, to configure it before it's started.
@@ -62,6 +71,7 @@ namespace osu.Game.Online
                     options.AccessTokenProvider = () => Task.FromResult<string?>(API.AccessToken);
                     options.Headers.Add(VERSION_HASH_HEADER, versionHash);
                     options.Headers.Add(CLIENT_SESSION_ID_HEADER, API.SessionIdentifier.ToString());
+                    Sign(options);
                 });
 
             builder.AddMessagePackProtocol(options =>

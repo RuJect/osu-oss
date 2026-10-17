@@ -98,12 +98,7 @@ namespace osu.Game
     [Cached(typeof(OsuGame))]
     public partial class OsuGame : OsuGameBase, IKeyBindingHandler<GlobalAction>, ILocalUserPlayInfo, IPerformFromScreenRunner, IOverlayManager, ILinkHandler
     {
-#if DEBUG
-        // Different port allows running release and debug builds alongside each other.
-        public const string IPC_PIPE_NAME = "osu-lazer-debug";
-#else
         public const string IPC_PIPE_NAME = "osu-lazer";
-#endif
 
         /// <summary>
         /// The amount of global offset to apply when a left/right anchored overlay is displayed (ie. settings or notifications).
@@ -1176,8 +1171,7 @@ namespace osu.Game
                 Margin = new MarginPadding(5),
             }, topMostOverlayContent.Add);
 
-            if (!IsDeployedBuild)
-                loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);
+            loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);
 
             loadComponentSingleFile(osuLogo, _ =>
             {
@@ -1319,7 +1313,7 @@ namespace osu.Game
             string version = Version;
 
             // only show a notification if we've previously saved a version to the config file (ie. not the first run).
-            if (IsDeployedBuild && !string.IsNullOrEmpty(lastVersion) && version != lastVersion)
+            if (!string.IsNullOrEmpty(lastVersion) && version != lastVersion)
                 Notifications.Post(new UpdateCompleteNotification(version));
 
             // finally, update the version stored to the configuration.
@@ -1468,7 +1462,7 @@ namespace osu.Game
             {
                 LocalisableString message;
 
-                if (entry.Exception != null && IsDeployedBuild)
+                if (entry.Exception != null)
                     message = LocalisableString.Interpolate($"{entry.Message.Truncate(256)}\n\n{NotificationsStrings.ErrorAutomaticallyReported}");
                 else
                     message = entry.Message.Truncate(256);

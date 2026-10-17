@@ -31,9 +31,7 @@ namespace osu.Game.Updater
         /// <summary>
         /// Whether this UpdateManager should be or is capable of checking for updates.
         /// </summary>
-        public bool CanCheckForUpdate => game.IsDeployedBuild &&
-                                         // only implementations will actually check for updates.
-                                         GetType() != typeof(UpdateManager);
+        public bool CanCheckForUpdate => GetType() != typeof(UpdateManager);
 
         public virtual ReleaseStream? FixedReleaseStream => null;
 
@@ -56,22 +54,13 @@ namespace osu.Game.Updater
         {
             base.LoadComplete();
 
-            if (game.IsDeployedBuild)
-            {
-                // make sure the release stream setting matches the build which was just run.
-                if (FixedReleaseStream != null)
-                    config.SetValue(OsuSetting.ReleaseStream, FixedReleaseStream.Value);
+            // make sure the release stream setting matches the build which was just run.
+            if (FixedReleaseStream != null)
+                config.SetValue(OsuSetting.ReleaseStream, FixedReleaseStream.Value);
 
-                // notify the user if they're using a build that is not officially sanctioned.
-                if (RuntimeInfo.EntryAssembly.GetCustomAttribute<OfficialBuildAttribute>() == null)
-                    Notifications.Post(new SimpleNotification { Text = NotificationsStrings.NotOfficialBuild });
-            }
-            else
-            {
-                // log that this is not an official build, for if users build their own game without an assembly version.
-                // this is only logged because a notification would be too spammy in local test builds.
-                Logger.Log(NotificationsStrings.NotOfficialBuild.ToString());
-            }
+            // notify the user if they're using a build that is not officially sanctioned.
+            if (RuntimeInfo.EntryAssembly.GetCustomAttribute<OfficialBuildAttribute>() == null)
+                Notifications.Post(new SimpleNotification { Text = NotificationsStrings.NotOfficialBuild });
 
             config.BindWith(OsuSetting.ReleaseStream, releaseStream);
             releaseStream.BindValueChanged(_ => CheckForUpdate());

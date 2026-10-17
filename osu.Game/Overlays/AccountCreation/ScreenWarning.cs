@@ -34,7 +34,7 @@ namespace osu.Game.Overlays.AccountCreation
 
         public override void OnEntering(ScreenTransitionEvent e)
         {
-            if (string.IsNullOrEmpty(api?.ProvidedUsername) || game?.UseDevelopmentServer == true)
+            if (string.IsNullOrEmpty(api?.ProvidedUsername))
             {
                 this.FadeOut();
                 this.Push(new ScreenEntry());

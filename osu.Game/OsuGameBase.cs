@@ -77,11 +77,7 @@ namespace osu.Game
     [Cached(typeof(OsuGameBase))]
     public partial class OsuGameBase : Framework.Game, ICanAcceptFiles, IBeatSyncProvider
     {
-#if DEBUG
-        public const string GAME_NAME = "osu! (development)";
-#else
         public const string GAME_NAME = "osu!";
-#endif
 
         public const string OSU_PROTOCOL = "osu://";
 
@@ -104,10 +100,7 @@ namespace osu.Game
         /// </summary>
         private const double global_track_volume_adjust = 0.8;
 
-        public virtual bool UseDevelopmentServer => DebugUtils.IsDebugBuild;
-
-        public virtual EndpointConfiguration CreateEndpoints() =>
-            UseDevelopmentServer ? new DevelopmentEndpointConfiguration() : new ProductionEndpointConfiguration();
+        public virtual EndpointConfiguration CreateEndpoints() => new ProductionEndpointConfiguration();
 
         protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore();
 
@@ -118,15 +111,10 @@ namespace osu.Game
         /// </summary>
         public string VersionHash { get; private set; }
 
-        public bool IsDeployedBuild => AssemblyVersion.Major > 0;
-
         public virtual string Version
         {
             get
             {
-                if (!IsDeployedBuild)
-                    return @"local " + (DebugUtils.IsDebugBuild ? @"debug" : @"release");
-
                 string informationalVersion = Assembly.GetEntryAssembly()?
                     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
                     .InformationalVersion;
@@ -254,7 +242,7 @@ namespace osu.Game
         /// If the count hits zero, the game will crash.
         /// Each second, the count is incremented until reaching the value specified.
         /// </remarks>
-        protected virtual int UnhandledExceptionsBeforeCrash => DebugUtils.IsDebugBuild ? 0 : 1;
+        protected virtual int UnhandledExceptionsBeforeCrash => 0;
 
         public OsuGameBase()
         {
@@ -513,10 +501,8 @@ namespace osu.Game
 
             var localeMappings = Enum.GetValues<Language>().Select(language =>
             {
-#if DEBUG
                 if (language == Language.debug)
                     return new LocaleMapping("debug", new DebugLocalisationStore());
-#endif
 
                 string cultureCode = language.ToCultureCode();
 
@@ -544,9 +530,7 @@ namespace osu.Game
             // may be non-null for certain tests
             Storage ??= host.Storage;
 
-            LocalConfig ??= UseDevelopmentServer
-                ? new DevelopmentOsuConfigManager(Storage)
-                : new OsuConfigManager(Storage);
+            LocalConfig ??= new OsuConfigManager(Storage);
 
             host.ExceptionThrown += onExceptionThrown;
         }
