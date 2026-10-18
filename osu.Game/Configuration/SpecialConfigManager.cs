@@ -28,6 +28,8 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.AllowIncompatibleMods, false);
             SetDefault(SpecialSetting.ShowSystemMods, false);
             SetDefault(SpecialSetting.ShowFavouriteBeatmapsDownloadButton, false);
+            SetDefault(SpecialSetting.AllowBreakSkip, false);
+            SetDefault(SpecialSetting.AutoSkip, AutoSkipMode.None);
         }
     }
 
@@ -45,5 +47,11 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether the "Download all favourites" button is displayed in the favourite beatmaps section of user profiles.</summary>
         ShowFavouriteBeatmapsDownloadButton,
+
+        /// <summary>Whether break times can be skipped during gameplay (via the skip button or skip hotkey).</summary>
+        AllowBreakSkip,
+
+        /// <summary>Which parts of a beatmap's dead time are automatically skipped during gameplay.</summary>
+        AutoSkip,
     }
 }

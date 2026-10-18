@@ -226,7 +226,8 @@ namespace osu.Game.Screens.OnlinePlay.Multiplayer
         protected override void RequestIntroSkip()
         {
             // If the room is set up such that the intro is automatically skipped, there's no need to vote on it.
-            if (Configuration.AutomaticallySkipIntro)
+            // This also applies when the osu!oss "auto skip intro/outro" setting is enabled, which force-skips regardless of votes.
+            if (Configuration.AutomaticallySkipIntro || AutoSkipIntroEnabled)
             {
                 base.RequestIntroSkip();
                 return;

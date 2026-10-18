@@ -43,6 +43,16 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Show \"Download all favourites\" button",
                     Current = config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Allow skipping break times",
+                    Current = config.GetBindable<bool>(SpecialSetting.AllowBreakSkip),
+                },
+                new SettingsEnumDropdown<AutoSkipMode>
+                {
+                    LabelText = "Automatically skip",
+                    Current = config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -67,6 +77,8 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods).Value = false;
                 config.GetBindable<bool>(SpecialSetting.ShowSystemMods).Value = false;
                 config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton).Value = false;
+                config.GetBindable<bool>(SpecialSetting.AllowBreakSkip).Value = false;
+                config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }

@@ -20,6 +20,7 @@ using osu.Framework.Screens;
 using osu.Framework.Threading;
 using osu.Game.Audio;
 using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Extensions;
@@ -156,6 +157,43 @@ namespace osu.Game.Screens.Play
 
         protected SkipOverlay SkipIntroOverlay { get; private set; }
         private SkipOverlay skipOutroOverlay;
+
+        /// <summary>
+        /// Whether the player may currently be affected by the osu!oss skip settings.
+        /// This is only the case during actual local gameplay, not while watching a replay or spectating another user.
+        /// </summary>
+        private bool isLocalGameplay => LoadedBeatmapSuccessfully
+                                        && this is not ReplayPlayer
+                                        && this is not SpectatorPlayer
+                                        && !DrawableRuleset.HasReplayLoaded.Value;
+
+        [Resolved(CanBeNull = true)]
+        private SpecialConfigManager specialConfig { get; set; }
+
+        private Bindable<bool> allowBreakSkip = new BindableBool();
+        private Bindable<AutoSkipMode> autoSkip = new Bindable<AutoSkipMode>();
+
+        private Container breakSkipOverlayContainer;
+        private SkipOverlay activeBreakSkipOverlay;
+        private BreakPeriod activeBreak;
+        private bool activeBreakAutoSkipped;
+        private bool outroSkipPending;
+
+        /// <summary>
+        /// The break which has been requested to be skipped, pending application at the start of the next update.
+        /// The seek must be applied before the <see cref="DrawableRuleset"/> updates so the <see cref="FrameStabilityContainer"/>
+        /// observes frame-stable playback as disabled on the frame the seek takes effect.
+        /// </summary>
+        private BreakPeriod pendingBreakSkip;
+
+        private bool autoSkipBreaks => autoSkip.Value is AutoSkipMode.Breaks or AutoSkipMode.BreaksAndIntroOutro;
+
+        private bool autoSkipIntroOutro => autoSkip.Value is AutoSkipMode.IntroOutro or AutoSkipMode.BreaksAndIntroOutro;
+
+        /// <summary>
+        /// Whether the intro should currently be skipped automatically by the osu!oss settings.
+        /// </summary>
+        protected bool AutoSkipIntroEnabled => isLocalGameplay && autoSkipIntroOutro;
 
         protected ScoreProcessor ScoreProcessor { get; private set; }
 
@@ -431,6 +469,13 @@ namespace osu.Game.Screens.Play
 
             IsBreakTime.BindTo(breakTracker.IsBreakTime);
             IsBreakTime.BindValueChanged(onBreakTimeChanged, true);
+
+            if (specialConfig != null)
+            {
+                allowBreakSkip = specialConfig.GetBindable<bool>(SpecialSetting.AllowBreakSkip);
+                autoSkip = specialConfig.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip);
+                autoSkip.BindValueChanged(_ => onAutoSkipChanged());
+            }
         }
 
         protected virtual GameplayClockContainer CreateGameplayClockContainer(WorkingBeatmap beatmap, double gameplayStart) => new MasterGameplayClockContainer(beatmap, gameplayStart);
@@ -516,6 +561,10 @@ namespace osu.Game.Screens.Play
                         RequestSkip = () => progressToResults(false),
                         Alpha = 0
                     },
+                    breakSkipOverlayContainer = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                    },
                     DrawableRuleset.ResumeOverlay?.CreateProxy() ?? new Container(),
                     PauseOverlay = new PauseOverlay
                     {
@@ -543,6 +592,128 @@ namespace osu.Game.Screens.Play
             updateGameplayState();
             updatePauseOnFocusLostState();
             HUDOverlay.InputCountController.IsCounting.Value = !isBreakTime.NewValue;
+        }
+
+        private void onAutoSkipChanged()
+        {
+            if (!isLocalGameplay)
+                return;
+
+            if (autoSkipIntroOutro && SkipIntroOverlay != null && SkipIntroOverlay.IsAlive)
+                SkipIntroOverlay.SkipWhenReady();
+
+            if (autoSkipIntroOutro && outroSkipPending)
+            {
+                outroSkipPending = false;
+                progressToResults(false);
+            }
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+            processPendingBreakSkip();
+            updateBreakSkipping();
+        }
+
+        private void updateBreakSkipping()
+        {
+            if (breakSkipOverlayContainer == null)
+                return;
+
+            BreakPeriod current = findCurrentBreak();
+
+            if (current == null || (!allowBreakSkip.Value && !autoSkipBreaks))
+            {
+                clearBreakSkipOverlay();
+                return;
+            }
+
+            if (activeBreakSkipOverlay == null || activeBreak != current)
+            {
+                clearBreakSkipOverlay();
+
+                activeBreak = current;
+                activeBreakSkipOverlay = createBreakSkipOverlay(current);
+                breakSkipOverlayContainer.Add(activeBreakSkipOverlay);
+                activeBreakAutoSkipped = false;
+            }
+
+            if (autoSkipBreaks && !activeBreakAutoSkipped)
+            {
+                activeBreakAutoSkipped = true;
+                activeBreakSkipOverlay.SkipWhenReady();
+            }
+        }
+
+        private BreakPeriod findCurrentBreak()
+        {
+            if (!isLocalGameplay || !DrawableRuleset.AllowGameplayOverlays)
+                return null;
+
+            if (GameplayState.HasPassed || GameplayState.HasFailed || GameplayClockContainer.IsPaused.Value)
+                return null;
+
+            double time = GameplayClockContainer.CurrentTime;
+
+            return Beatmap.Value.Beatmap.Breaks.FirstOrDefault(b => b.HasEffect && b.Contains(time));
+        }
+
+        private SkipOverlay createBreakSkipOverlay(BreakPeriod breakPeriod)
+        {
+            // skip overlays interpret their start time as the moment just after which the button fades out.
+            // offsetting by the minimum skip time makes the overlay's skippable period span the entire break.
+            return new SkipOverlay(breakPeriod.EndTime + MasterGameplayClockContainer.MINIMUM_SKIP_TIME)
+            {
+                RequestSkip = () => performBreakSkip(breakPeriod)
+            };
+        }
+
+        private void clearBreakSkipOverlay()
+        {
+            if (activeBreakSkipOverlay == null)
+                return;
+
+            activeBreakSkipOverlay.RemoveAndDisposeImmediately();
+            activeBreakSkipOverlay = null;
+            activeBreak = null;
+            activeBreakAutoSkipped = false;
+        }
+
+        /// <summary>
+        /// Skip forward to the end of a break period.
+        /// </summary>
+        private void performBreakSkip(BreakPeriod breakPeriod)
+        {
+            // user requested skip
+            // disable sample playback to stop currently playing samples and perform skip
+            samplePlaybackDisabled.Value = true;
+            updateSampleDisabledState();
+
+            // the actual seek is deferred to the start of the next update (see processPendingBreakSkip)
+            // so that the FrameStabilityContainer updates on the same frame that frame-stable playback is disabled.
+            pendingBreakSkip = breakPeriod;
+        }
+
+        private void processPendingBreakSkip()
+        {
+            if (pendingBreakSkip == null)
+                return;
+
+            BreakPeriod breakPeriod = pendingBreakSkip;
+            pendingBreakSkip = null;
+
+            if (frameStablePlaybackResetDelegate?.Cancelled == false && !frameStablePlaybackResetDelegate.Completed)
+                frameStablePlaybackResetDelegate.RunTask();
+
+            bool wasFrameStable = DrawableRuleset.FrameStablePlayback;
+            DrawableRuleset.FrameStablePlayback = false;
+
+            GameplayClockContainer.Seek(breakPeriod.EndTime);
+
+            // delay resetting frame-stable playback for one frame to give the FrameStabilityContainer a chance to seek.
+            // without this, the seek is discarded as a likely-invalid time value and gameplay freezes.
+            frameStablePlaybackResetDelegate = ScheduleAfterChildren(() => DrawableRuleset.FrameStablePlayback = wasFrameStable);
         }
 
         private void updateGameplayState()
@@ -822,6 +993,7 @@ namespace osu.Game.Screens.Play
 
                 GameplayState.HasPassed = false;
                 ValidForResume = true;
+                outroSkipPending = false;
                 skipOutroOverlay.Hide();
                 return;
             }
@@ -842,7 +1014,17 @@ namespace osu.Game.Screens.Play
             // Alternatively, the user may press the outro skip button, forcing immediate display of the results screen.
             if (storyboardStillRunning)
             {
-                skipOutroOverlay.Show();
+                if (autoSkipIntroOutro && isLocalGameplay)
+                {
+                    outroSkipPending = false;
+                    progressToResults(false);
+                }
+                else
+                {
+                    outroSkipPending = true;
+                    skipOutroOverlay.Show();
+                }
+
                 return;
             }
 
@@ -860,6 +1042,8 @@ namespace osu.Game.Screens.Play
         {
             if (!Configuration.ShowResults)
                 return;
+
+            outroSkipPending = false;
 
             // Setting this early in the process means that even if something were to go wrong in the order of events following, there
             // is no chance that a user could return to the (already completed) Player instance from a child screen.
@@ -1173,7 +1357,7 @@ namespace osu.Game.Screens.Play
 
             GameplayClockContainer.Reset(startClock: true);
 
-            if (Configuration.AutomaticallySkipIntro)
+            if (Configuration.AutomaticallySkipIntro || AutoSkipIntroEnabled)
                 SkipIntroOverlay.SkipWhenReady();
         }
 
