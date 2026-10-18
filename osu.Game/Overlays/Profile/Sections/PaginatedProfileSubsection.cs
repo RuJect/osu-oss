@@ -52,13 +52,16 @@ namespace osu.Game.Overlays.Profile.Sections
             this.missingText = missingText;
         }
 
-        protected override Drawable CreateContent() => new FillFlowContainer
+        protected override Drawable CreateContent()
         {
-            RelativeSizeAxes = Axes.X,
-            AutoSizeAxes = Axes.Y,
-            Direction = FillDirection.Vertical,
-            Children = new Drawable[]
-            {
+            var children = new List<Drawable>();
+
+            Drawable? aboveItems = CreateAboveItemsContent();
+
+            if (aboveItems != null)
+                children.Add(aboveItems);
+
+            children.Add(
                 // reverse ID flow is required for correct Z-ordering of the items (last item should be front-most).
                 // particularly important in PaginatedBeatmapContainer, as it uses beatmap cards, which have expandable overhanging content.
                 ItemsContainer = new ReverseChildIDFillFlowContainer<Drawable>
@@ -68,23 +71,37 @@ namespace osu.Game.Overlays.Profile.Sections
                     Spacing = new Vector2(0, 2),
                     // ensure the container and its contents are in front of the "more" button.
                     Depth = float.MinValue
-                },
-                moreButton = new ShowMoreButton
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.TopCentre,
-                    Alpha = 0,
-                    Margin = new MarginPadding { Top = 10 },
-                    Action = showMore,
-                },
-                missing = new OsuSpriteText
-                {
-                    Font = OsuFont.GetFont(size: 15),
-                    Text = missingText ?? string.Empty,
-                    Alpha = 0,
-                }
-            }
-        };
+                });
+
+            children.Add(moreButton = new ShowMoreButton
+            {
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.TopCentre,
+                Alpha = 0,
+                Margin = new MarginPadding { Top = 10 },
+                Action = showMore,
+            });
+
+            children.Add(missing = new OsuSpriteText
+            {
+                Font = OsuFont.GetFont(size: 15),
+                Text = missingText ?? string.Empty,
+                Alpha = 0,
+            });
+
+            return new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Children = children
+            };
+        }
+
+        /// <summary>
+        /// Creates an optional drawable to be placed above the paginated items.
+        /// </summary>
+        protected virtual Drawable? CreateAboveItemsContent() => null;
 
         protected override void LoadComplete()
         {

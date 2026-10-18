@@ -64,6 +64,10 @@ namespace osu.Game.Overlays.Profile.Sections.Beatmaps
             }
         }
 
+        protected override Drawable? CreateAboveItemsContent() => type == BeatmapSetType.Favourite
+            ? new FavouriteBeatmapsDownloadButton(User)
+            : null;
+
         protected override APIRequest<List<APIBeatmapSet>> CreateRequest(UserProfileData user, PaginationParameters pagination) =>
             new GetUserBeatmapsRequest(user.User.Id, type, pagination);
 

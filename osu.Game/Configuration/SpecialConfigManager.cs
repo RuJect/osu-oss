@@ -27,6 +27,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.ShowDevBuildBanner, false);
             SetDefault(SpecialSetting.AllowIncompatibleMods, false);
             SetDefault(SpecialSetting.ShowSystemMods, false);
+            SetDefault(SpecialSetting.ShowFavouriteBeatmapsDownloadButton, false);
         }
     }
 
@@ -41,5 +42,8 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether system mods are displayed as a selectable column in mod select overlays.</summary>
         ShowSystemMods,
+
+        /// <summary>Whether the "Download all favourites" button is displayed in the favourite beatmaps section of user profiles.</summary>
+        ShowFavouriteBeatmapsDownloadButton,
     }
 }

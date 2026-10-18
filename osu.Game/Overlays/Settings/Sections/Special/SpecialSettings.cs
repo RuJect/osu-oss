@@ -38,6 +38,11 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Show system mods",
                     Current = config.GetBindable<bool>(SpecialSetting.ShowSystemMods),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Show \"Download all favourites\" button",
+                    Current = config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -61,6 +66,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner).Value = false;
                 config.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods).Value = false;
                 config.GetBindable<bool>(SpecialSetting.ShowSystemMods).Value = false;
+                config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton).Value = false;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }
