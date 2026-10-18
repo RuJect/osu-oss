@@ -340,6 +340,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ToggleFPSCounter => new TranslatableString(getKey(@"toggle_fps_counter"), @"Toggle FPS counter");
 
         /// <summary>
+        /// "Toggle scripting console"
+        /// </summary>
+        public static LocalisableString ToggleScriptingConsole => new TranslatableString(getKey(@"toggle_scripting_console"), @"Toggle scripting console");
+
+        /// <summary>
         /// "Previous volume meter"
         /// </summary>
         public static LocalisableString PreviousVolumeMeter => new TranslatableString(getKey(@"previous_volume_meter"), @"Previous volume meter");

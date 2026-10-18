@@ -3,6 +3,8 @@
     "path": "osu.sln",
     "projects": [
       "osu.Desktop\\osu.Desktop.csproj",
+      "osu.Game.API.UI\\osu.Game.API.UI.csproj",
+      "osu.Game.API\\osu.Game.API.csproj",
       "osu.Game.Auth\\osu.Game.Auth.csproj",
       "osu.Game.Auth.Isolation\\osu.Game.Auth.Isolation.csproj",
       "osu.Game.Auth.Supervisor\\osu.Game.Auth.Supervisor.csproj",

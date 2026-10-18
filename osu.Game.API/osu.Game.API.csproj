@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Project">
+    <AssemblyName>osu.Game.API</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>Public extension API and JavaScript scripting runtime for osu!oss.</Description>
+  </PropertyGroup>
+  <ItemGroup Label="Project References">
+    <ProjectReference Include="..\osu.Game\osu.Game.csproj" />
+  </ItemGroup>
+  <ItemGroup Label="Package References">
+    <PackageReference Include="Jint" Version="4.17.0" />
+  </ItemGroup>
+</Project>

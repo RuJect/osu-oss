@@ -120,6 +120,12 @@ namespace osu.Game
 
         public Toolbar Toolbar { get; private set; }
 
+        /// <summary>
+        /// Invoked when <see cref="GlobalAction.ToggleScriptingConsole"/> is pressed.
+        /// Assigned by the optional scripting module (see osu.Game.API); null by default.
+        /// </summary>
+        public Action ToggleScriptingConsole { get; set; }
+
         private ChatOverlay chatOverlay;
 
         private ChannelManager channelManager;
@@ -326,6 +332,17 @@ namespace osu.Game
 
             overlayContainer.Expire();
         });
+
+        /// <summary>
+        /// Registers an externally-owned overlay (created outside of <see cref="OsuGame"/>) so that it is
+        /// displayed at the game level with correct ordering and background dim handling.
+        /// </summary>
+        /// <remarks>
+        /// Intended for optional modules (e.g. the scripting console) that are composed at runtime by
+        /// osu.Desktop and need to host an overlay without <see cref="OsuGame"/> referencing them.
+        /// </remarks>
+        /// <returns>An <see cref="IDisposable"/> that unregisters and expires the overlay when disposed.</returns>
+        public IDisposable RegisterExternalOverlay(OverlayContainer overlay) => ((IOverlayManager)this).RegisterBlockingOverlay(overlay);
 
         #endregion
 
@@ -1638,6 +1655,10 @@ namespace osu.Game
 
                 case GlobalAction.ToggleFPSDisplay:
                     fpsCounter.ToggleVisibility();
+                    return true;
+
+                case GlobalAction.ToggleScriptingConsole:
+                    ToggleScriptingConsole?.Invoke();
                     return true;
 
                 case GlobalAction.ToggleSkinEditor:

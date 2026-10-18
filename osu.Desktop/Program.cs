@@ -11,6 +11,7 @@ using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
 using osu.Game.IPC;
 using osu.Game.Tournament;
@@ -148,6 +149,8 @@ namespace osu.Desktop
                     // HubClientConnector.Sign (token signing). Requires the native
                     // auth module + file-measurement redirect (see Auth/).
                     using (new Loader(host, game))
+                    // JavaScript scripting subsystem: hosts the runtime and the Ctrl+F4 console overlay.
+                    using (new ScriptingBootstrap(host, game))
                     {
                         host.Run(game);
                     }

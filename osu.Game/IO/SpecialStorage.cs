@@ -18,6 +18,12 @@ namespace osu.Game.IO
         /// <summary>Where proprietary authentication blobs are cached.</summary>
         public const string AUTH_BLOBS_FOLDER = "auth-blobs";
 
+        /// <summary>Where user scripts live.</summary>
+        public const string SCRIPTS_FOLDER = "scripts";
+
+        /// <summary>Where scripts may persist arbitrary data files (relative to <see cref="SCRIPTS_FOLDER"/>).</summary>
+        public const string SCRIPT_DATA_FOLDER = "data";
+
         /// <summary>Config file name (relative to <see cref="ROOT_FOLDER"/>).</summary>
         public const string CONFIG_FILENAME = "config.ini";
 
@@ -26,6 +32,12 @@ namespace osu.Game.IO
 
         /// <summary>Returns the storage scoped to the <c>osu-oss/auth-blobs</c> directory, creating it if required.</summary>
         public static Storage GetAuthBlobs(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(AUTH_BLOBS_FOLDER);
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/scripts</c> directory, creating it if required.</summary>
+        public static Storage GetScripts(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(SCRIPTS_FOLDER);
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/scripts/data</c> directory, creating it if required.</summary>
+        public static Storage GetScriptData(Storage osuStorage) => GetScripts(osuStorage).GetStorageForDirectory(SCRIPT_DATA_FOLDER);
 
         /// <summary>Absolute path of the <c>osu-oss</c> directory.</summary>
         public static string GetRootPath(Storage osuStorage) => osuStorage.GetFullPath(ROOT_FOLDER);

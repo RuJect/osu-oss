@@ -31,6 +31,8 @@
     <ProjectReference Include="..\osu.Game.Rulesets.Taiko\osu.Game.Rulesets.Taiko.csproj"/>
     <!-- Open reimplementation of the auth/token-signing module (canonical assembly name). -->
     <ProjectReference Include="..\osu.Game.Auth\osu.Game.Auth.csproj"/>
+    <!-- JavaScript scripting subsystem (behaviour + console UI). -->
+    <ProjectReference Include="..\osu.Game.API.UI\osu.Game.API.UI.csproj"/>
     <!-- Seccomp user-notification supervisor (Linux). Built alongside the game and shipped next
          to the executable; the game spawns it from osu.Game.Auth.Isolation. -->
     <ProjectReference Include="..\osu.Game.Auth.Supervisor\osu.Game.Auth.Supervisor.csproj" ReferenceOutputAssembly="false"/>
