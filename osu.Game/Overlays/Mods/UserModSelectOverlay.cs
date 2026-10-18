@@ -4,7 +4,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Input.Bindings;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select;
@@ -16,6 +18,11 @@ namespace osu.Game.Overlays.Mods
     {
         private ModSpeedHotkeyHandler modSpeedHotkeyHandler = null!;
 
+        private Bindable<bool>? allowIncompatibleMods;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
         public UserModSelectOverlay(OverlayColourScheme colourScheme = OverlayColourScheme.Green)
             : base(colourScheme)
         {
@@ -24,6 +31,8 @@ namespace osu.Game.Overlays.Mods
         [BackgroundDependencyLoader]
         private void load()
         {
+            allowIncompatibleMods = specialConfig?.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods);
+
             Add(modSpeedHotkeyHandler = new ModSpeedHotkeyHandler());
         }
 
@@ -31,6 +40,9 @@ namespace osu.Game.Overlays.Mods
 
         protected override IReadOnlyList<Mod> ComputeNewModsFromSelection(IReadOnlyList<Mod> oldSelection, IReadOnlyList<Mod> newSelection)
         {
+            if (allowIncompatibleMods?.Value == true)
+                return newSelection.ToList();
+
             var addedMods = newSelection.Except(oldSelection);
             var removedMods = oldSelection.Except(newSelection);
 

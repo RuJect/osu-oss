@@ -28,6 +28,16 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Show developer build banner",
                     Current = config.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Allow incompatible mods",
+                    Current = config.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Show system mods",
+                    Current = config.GetBindable<bool>(SpecialSetting.ShowSystemMods),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -49,6 +59,8 @@ namespace osu.Game.Overlays.Settings.Sections.Special
 
                 // restore in-memory defaults; the config file is recreated on next persist.
                 config.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner).Value = false;
+                config.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods).Value = false;
+                config.GetBindable<bool>(SpecialSetting.ShowSystemMods).Value = false;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }

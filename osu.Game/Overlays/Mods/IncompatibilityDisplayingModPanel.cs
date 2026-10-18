@@ -7,6 +7,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Cursor;
+using osu.Game.Configuration;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Utils;
 
@@ -16,11 +17,18 @@ namespace osu.Game.Overlays.Mods
     {
         private readonly BindableBool incompatible = new BindableBool();
 
+        private Bindable<bool>? allowIncompatibleMods;
+
         [Resolved]
         private OverlayColourProvider overlayColourProvider { get; set; } = null!;
 
         [Resolved]
         private Bindable<IReadOnlyList<Mod>> selectedMods { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        private bool allowIncompatible => allowIncompatibleMods?.Value == true;
 
         public IncompatibilityDisplayingModPanel(ModState modState)
             : base(modState)
@@ -32,9 +40,16 @@ namespace osu.Game.Overlays.Mods
         {
         }
 
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            allowIncompatibleMods = specialConfig?.GetBindable<bool>(SpecialSetting.AllowIncompatibleMods);
+        }
+
         protected override void LoadComplete()
         {
             selectedMods.BindValueChanged(_ => updateIncompatibility(), true);
+            allowIncompatibleMods?.BindValueChanged(_ => updateIncompatibility(), true);
             incompatible.BindValueChanged(_ => Scheduler.AddOnce(UpdateState));
             // base call will run `UpdateState()` first time and finish transforms.
             base.LoadComplete();
@@ -42,7 +57,8 @@ namespace osu.Game.Overlays.Mods
 
         private void updateIncompatibility()
         {
-            incompatible.Value = selectedMods.Value.Count > 0
+            incompatible.Value = !allowIncompatible
+                                 && selectedMods.Value.Count > 0
                                  && selectedMods.Value.All(selected => selected.GetType() != Mod.GetType())
                                  && !ModUtils.CheckCompatibleSet(selectedMods.Value.Append(Mod));
         }
@@ -58,7 +74,9 @@ namespace osu.Game.Overlays.Mods
 
         #region IHasCustomTooltip
 
-        public ITooltip<Mod> GetCustomTooltip() => new IncompatibilityDisplayingTooltip(overlayColourProvider);
+        public ITooltip<Mod> GetCustomTooltip() => allowIncompatible
+            ? new ModButtonTooltip(overlayColourProvider)
+            : new IncompatibilityDisplayingTooltip(overlayColourProvider);
 
         public Mod TooltipContent => Mod;
 

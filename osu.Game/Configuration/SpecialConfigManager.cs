@@ -25,6 +25,8 @@ namespace osu.Game.Configuration
             base.InitialiseDefaults();
 
             SetDefault(SpecialSetting.ShowDevBuildBanner, false);
+            SetDefault(SpecialSetting.AllowIncompatibleMods, false);
+            SetDefault(SpecialSetting.ShowSystemMods, false);
         }
     }
 
@@ -33,5 +35,11 @@ namespace osu.Game.Configuration
     {
         /// <summary>Whether the "DEVELOPER BUILD" banner should be displayed on the intro/main menu.</summary>
         ShowDevBuildBanner,
+
+        /// <summary>Whether incompatible mods can be selected in user mod select overlays without being automatically deselected or highlighted.</summary>
+        AllowIncompatibleMods,
+
+        /// <summary>Whether system mods are displayed as a selectable column in mod select overlays.</summary>
+        ShowSystemMods,
     }
 }

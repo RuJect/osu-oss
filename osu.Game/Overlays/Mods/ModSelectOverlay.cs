@@ -111,6 +111,13 @@ namespace osu.Game.Overlays.Mods
 
         private Bindable<bool> textSearchStartsActive = null!;
 
+        private Bindable<bool>? showSystemMods;
+        private ModColumn? systemModsColumn;
+        private ColumnDimContainer? systemModsColumnContainer;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
         private ColumnScrollContainer columnScroll = null!;
         private ColumnFlowContainer columnFlow = null!;
 
@@ -137,6 +144,8 @@ namespace osu.Game.Overlays.Mods
         {
             Header.Title = ModSelectOverlayStrings.ModSelectTitle;
             Header.Description = ModSelectOverlayStrings.ModSelectDescription;
+
+            showSystemMods = specialConfig?.GetBindable<bool>(SpecialSetting.ShowSystemMods);
 
             columnAppearSample = audio.Samples.Get(@"SongSelect/mod-column-pop-in");
 
@@ -221,6 +230,8 @@ namespace osu.Game.Overlays.Mods
         {
             // this is called before base call so that the mod state is populated early, and the transition in `PopIn()` can play out properly.
             globalAvailableMods.BindValueChanged(_ => createLocalMods(), true);
+
+            showSystemMods?.BindValueChanged(onShowSystemModsChanged);
 
             base.LoadComplete();
 
@@ -332,15 +343,20 @@ namespace osu.Game.Overlays.Mods
             yield return createModColumnContent(ModType.Automation);
             yield return createModColumnContent(ModType.Conversion);
             yield return createModColumnContent(ModType.Fun);
+
+            if (showSystemMods?.Value == true)
+            {
+                systemModsColumn = CreateModColumn(ModType.System);
+                yield return systemModsColumnContainer = createModColumnContent(systemModsColumn);
+            }
         }
 
-        private ColumnDimContainer createModColumnContent(ModType modType)
+        private ColumnDimContainer createModColumnContent(ModType modType) => createModColumnContent(CreateModColumn(modType));
+
+        private ColumnDimContainer createModColumnContent(ModColumn column)
         {
-            var column = CreateModColumn(modType).With(column =>
-            {
-                // spacing applied here rather than via `columnFlow.Spacing` to avoid uneven gaps when some of the columns are hidden.
-                column.Margin = new MarginPadding { Right = 10 };
-            });
+            // spacing applied here rather than via `columnFlow.Spacing` to avoid uneven gaps when some of the columns are hidden.
+            column.Margin = new MarginPadding { Right = 10 };
 
             return new ColumnDimContainer(column);
         }
@@ -373,8 +389,34 @@ namespace osu.Game.Overlays.Mods
 
         private void filterMods()
         {
+            bool allowSystemMods = showSystemMods?.Value == true;
+
             foreach (var modState in AllAvailableMods)
-                modState.ValidForSelection.Value = modState.Mod.Type != ModType.System && modState.Mod.HasImplementation && IsValidMod.Invoke(modState.Mod);
+                modState.ValidForSelection.Value = (allowSystemMods || modState.Mod.Type != ModType.System) && modState.Mod.HasImplementation && IsValidMod.Invoke(modState.Mod);
+        }
+
+        private void onShowSystemModsChanged(ValueChangedEvent<bool> enabled)
+        {
+            if (enabled.NewValue)
+            {
+                if (systemModsColumn != null)
+                    return;
+
+                systemModsColumn = CreateModColumn(ModType.System);
+                systemModsColumnContainer = createModColumnContent(systemModsColumn);
+                columnFlow.Add(systemModsColumnContainer);
+                systemModsColumn.AvailableMods = AvailableMods.Value.GetValueOrDefault(ModType.System, Array.Empty<ModState>());
+                filterMods();
+            }
+            else
+            {
+                if (systemModsColumn == null)
+                    return;
+
+                columnFlow.Remove(systemModsColumnContainer!, true);
+                systemModsColumn = null;
+                systemModsColumnContainer = null;
+            }
         }
 
         private void updateCustomisation()
