@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Project">
     <!-- Canonical name: drop-in replacement for the proprietary module. -->
     <AssemblyName>osu.Game.Auth</AssemblyName>
@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup Label="Project References">
-    <ProjectReference Include="..\osu.Game\osu.Game.csproj"/>
-    <ProjectReference Include="..\osu.Game.Rulesets.Osu\osu.Game.Rulesets.Osu.csproj"/>
-    <ProjectReference Include="..\osu.Game.Auth.Isolation\osu.Game.Auth.Isolation.csproj"/>
+    <ProjectReference Include="..\osu.Game\osu.Game.csproj" />
+    <ProjectReference Include="..\osu.Game.Rulesets.Osu\osu.Game.Rulesets.Osu.csproj" />
+    <ProjectReference Include="..\osu.Game.Auth.Isolation\osu.Game.Auth.Isolation.csproj" />
   </ItemGroup>
   <ItemGroup Label="Package References">
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13"/>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4"/>
-    <PackageReference Include="ppy.osu.Framework" Version="2026.1008.0"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="ppy.osu.Framework" Version="2026.1008.0" />
   </ItemGroup>
 </Project>

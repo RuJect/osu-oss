@@ -136,6 +136,11 @@ namespace osu.Game
 
         protected OsuConfigManager LocalConfig { get; private set; }
 
+        /// <summary>
+        /// Config manager for osu!oss-specific settings, persisted to <c>osu-oss/config.ini</c>.
+        /// </summary>
+        protected SpecialConfigManager SpecialConfig { get; private set; }
+
         protected SessionStatics SessionStatics { get; private set; }
 
         protected OsuColour Colours { get; private set; }
@@ -285,6 +290,8 @@ namespace osu.Game
 
             dependencies.CacheAs(LocalConfig);
             dependencies.CacheAs<IGameplaySettings>(LocalConfig);
+
+            dependencies.CacheAs(SpecialConfig);
 
             InitialiseFonts();
 
@@ -531,6 +538,7 @@ namespace osu.Game
             Storage ??= host.Storage;
 
             LocalConfig ??= new OsuConfigManager(Storage);
+            SpecialConfig ??= new SpecialConfigManager(SpecialStorage.GetRoot(Storage));
 
             host.ExceptionThrown += onExceptionThrown;
         }
@@ -774,6 +782,7 @@ namespace osu.Game
 
             RulesetStore?.Dispose();
             LocalConfig?.Dispose();
+            SpecialConfig?.Dispose();
 
             beatmapUpdater?.Dispose();
 

@@ -225,6 +225,8 @@ namespace osu.Game
 
         private Bindable<string> configRuleset;
 
+        private Bindable<bool> showDevBuildBanner;
+
         private Bindable<bool> applySafeAreaConsiderations;
 
         private Bindable<float> uiScale;
@@ -1061,6 +1063,9 @@ namespace osu.Game
         {
             base.LoadComplete();
 
+            showDevBuildBanner = SpecialConfig.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner);
+            showDevBuildBanner.BindValueChanged(_ => updateDevBuildBannerVisibility(), true);
+
             // The next time this is updated is in UpdateAfterChildren, which occurs too late and results
             // in the cursor being shown for a few frames during the intro.
             // This prevents the cursor from showing until we have a screen with CursorVisible = true
@@ -1773,6 +1778,17 @@ namespace osu.Game
             overlayContent.X = horizontalOffsetAdjust * 1.2f;
         }
 
+        private void updateDevBuildBannerVisibility()
+        {
+            bool shouldShow = showDevBuildBanner?.Value == true
+                              && (ScreenStack.CurrentScreen is IntroScreen || ScreenStack.CurrentScreen is MainMenu);
+
+            if (shouldShow)
+                devBuildBanner?.Show();
+            else
+                devBuildBanner?.Hide();
+        }
+
         protected virtual void ScreenChanged([CanBeNull] IOsuScreen current, [CanBeNull] IOsuScreen newScreen)
         {
             SentrySdk.ConfigureScope(scope =>
@@ -1800,12 +1816,12 @@ namespace osu.Game
             {
                 case IntroScreen intro:
                     introScreen = intro;
-                    devBuildBanner?.Show();
+                    updateDevBuildBannerVisibility();
                     break;
 
                 case MainMenu menu:
                     menuScreen = menu;
-                    devBuildBanner?.Show();
+                    updateDevBuildBannerVisibility();
                     break;
 
                 case Player player:

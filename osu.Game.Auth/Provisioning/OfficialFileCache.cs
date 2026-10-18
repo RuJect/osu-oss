@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using osu.Framework.IO.Network;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.IO;
 
 namespace osu.Game.Auth
 {
@@ -29,7 +30,6 @@ namespace osu.Game.Auth
         /// <summary>Environment variable consumed by the measurement redirect shim.</summary>
         public const string DIR_ENV = "AUTH_OFFICIAL_DIR";
 
-        private const string directory_name = "Official";
         private const string marker_file_name = ".version";
 
         private const string release_base_url = "https://github.com/ppy/osu/releases/download/";
@@ -67,8 +67,8 @@ namespace osu.Game.Auth
 
         public OfficialFileCache(Storage rootStorage, string gameVersion, bool isTachyon)
         {
-            directory = rootStorage.GetStorageForDirectory(directory_name);
-            Directory = rootStorage.GetFullPath(directory_name, true);
+            directory = SpecialStorage.GetAuthBlobs(rootStorage);
+            Directory = SpecialStorage.GetRoot(rootStorage).GetFullPath(SpecialStorage.AUTH_BLOBS_FOLDER, true);
             ReleaseTag = $"{normalizeVersion(gameVersion)}-{(isTachyon ? "tachyon" : "lazer")}";
         }
 

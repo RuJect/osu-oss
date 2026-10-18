@@ -14,25 +14,29 @@
 
     devShells = forAllSystems (pkgs: let
       sdk = pkgs.dotnet-sdk_10;
-      tools = with pkgs; [ python314 uv bun ];
+      tools = with pkgs; [ python314 uv bun libseccomp ];
       runtimeLibs = with pkgs; [
-        libseccomp
         libGL
         vulkan-loader
         wayland
         libxkbcommon
-        xorg.libX11
-        xorg.libXcursor
-        xorg.libXext
-        xorg.libXi
-        xorg.libXrandr
-        xorg.libxcb
+        libx11
+        libxcursor
+        libxext
+        libxi
+        libxrandr
+        libxcb
         alsa-lib
         ffmpeg
       ];
     in {
       default = pkgs.mkShell {
-        packages = [sdk] ++ tools ++ runtimeLibs;
+        packages = [sdk] ++ tools ++ runtimeLibs ++ [
+          (pkgs.writeShellScriptBin "run-osu" ''
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            dotnet run --project osu.Desktop -c Release
+          '')
+        ];
 
         env = {
           DOTNET_ROOT = "${sdk}/share/dotnet";
@@ -43,7 +47,7 @@
         shellHook = ''
           export DOTNET_CLI_HOME="''${XDG_CACHE_HOME:-$HOME/.cache}/dotnet"
           export NUGET_PACKAGES="''${DOTNET_CLI_HOME}/NuGet/packages"
-          export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH"
+          # export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH"
         '';
       };
     });
