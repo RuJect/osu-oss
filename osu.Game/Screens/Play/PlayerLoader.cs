@@ -23,6 +23,7 @@ using osu.Game.Audio;
 using osu.Game.Audio.Effects;
 using osu.Game.Beatmaps;
 using osu.Game.Configuration;
+using osu.Game.Events;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input;
@@ -192,6 +193,9 @@ namespace osu.Game.Screens.Play
 
         [Resolved]
         private LeaderboardManager? leaderboardManager { get; set; }
+
+        [Resolved]
+        private GameEventHub events { get; set; } = null!;
 
         public PlayerLoader(Func<Player> createPlayer)
         {
@@ -555,6 +559,8 @@ namespace osu.Game.Screens.Play
             CurrentPlayer.Configuration.AutomaticallySkipIntro |= QuickRestart;
             CurrentPlayer.RestartCount = restartCount++;
             CurrentPlayer.PrepareLoaderForRestart = prepareForRestart;
+
+            events.RaiseGameplayLoadingStarted(CurrentPlayer);
 
             LoadTask = LoadComponentAsync(CurrentPlayer, _ =>
             {

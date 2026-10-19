@@ -32,6 +32,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Collections;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Events;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
@@ -159,6 +160,9 @@ namespace osu.Game.Screens.Select
 
         [Resolved]
         private IOverlayManager? overlayManager { get; set; }
+
+        [Resolved]
+        private GameEventHub events { get; set; } = null!;
 
         private InputManager inputManager = null!;
 
@@ -591,6 +595,8 @@ namespace osu.Game.Screens.Select
                 return;
 
             carousel.CurrentGroupedBeatmap = groupedBeatmap;
+
+            events.RaiseBeatmapSelected(groupedBeatmap.Beatmap, this);
 
             // Debounce consideration is to avoid beatmap churn on key repeat selection.
             debounceQueueSelection(groupedBeatmap.Beatmap);

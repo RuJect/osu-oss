@@ -189,7 +189,7 @@ namespace osu.Game.Database
             notification.State = ProgressNotificationState.Completed;
         }
 
-        public bool Delete(TModel item)
+        public virtual bool Delete(TModel item)
         {
             // Importantly, begin the realm write *before* re-fetching, else the update realm may not be in a consistent state
             // (ie. if an async import finished very recently).

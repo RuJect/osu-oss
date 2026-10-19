@@ -40,6 +40,7 @@ using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Events;
 using osu.Game.Extensions;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Cursor;
@@ -198,6 +199,11 @@ namespace osu.Game
         /// </summary>
         public readonly Bindable<Dictionary<ModType, IReadOnlyList<Mod>>> AvailableMods = new Bindable<Dictionary<ModType, IReadOnlyList<Mod>>>(new Dictionary<ModType, IReadOnlyList<Mod>>());
 
+        /// <summary>
+        /// Central transport for game-wide events, consumed by external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public GameEventHub Events { get; private set; }
+
         private BeatmapDifficultyCache difficultyCache;
 
         private IBeatmapUpdater beatmapUpdater;
@@ -328,6 +334,13 @@ namespace osu.Game
             dependencies.CacheAs<IWorkingBeatmapCache>(BeatmapManager);
 
             dependencies.Cache(BeatmapDownloader = new BeatmapModelDownloader(BeatmapManager, API));
+
+            // Downloads complete on a background thread, so marshal the notification to the update thread.
+            BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
+            {
+                foreach (Live<BeatmapSetInfo> live in downloaded)
+                    Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
+            });
             dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
 
             // Add after all the above cache operations as it depends on them.
@@ -354,6 +367,10 @@ namespace osu.Game
             var powerStatus = CreateBatteryInfo();
             if (powerStatus != null)
                 dependencies.CacheAs(powerStatus);
+
+            dependencies.Cache(Events = new GameEventHub());
+
+            BeatmapManager.Events = Events;
 
             dependencies.Cache(SessionStatics = new SessionStatics());
             dependencies.Cache(hitErrorTracker = new SessionAverageHitErrorTracker());
@@ -433,6 +450,11 @@ namespace osu.Game
             Ruleset.BindValueChanged(onRulesetChanged);
             Beatmap.BindValueChanged(onBeatmapChanged);
 
+            // a single user action (or external update) can touch this bindable more than once per frame
+            // (e.g. ModSelectOverlay updating its local selection in response to the change), so coalesce
+            // same-frame changes into a single notification carrying the final selection.
+            SelectedMods.BindValueChanged(_ => Scheduler.AddOnce(raiseSelectedModsChanged));
+
             // make config aware of how to lookup skins for on-screen display purposes.
             // if this becomes a more common thing, tracked settings should be reconsidered to allow local DI.
             LocalConfig.LookupSkinName = id => SkinManager.Query(s => s.ID == id)?.ToString() ?? "Unknown";
@@ -440,6 +462,8 @@ namespace osu.Game
         }
 
         private void updateLanguage() => CurrentLanguage.Value = LanguageExtensions.GetLanguageFor(frameworkLocale.Value, localisationParameters.Value);
+
+        private void raiseSelectedModsChanged() => Events.RaiseSelectedModsChanged(SelectedMods.Value, null);
 
         private void addFilesWarning()
         {
@@ -735,6 +759,8 @@ namespace osu.Game
             }
 
             AvailableMods.Value = dict;
+
+            Events.RaiseRulesetChanged(r.NewValue, null);
 
             if (SelectedMods.Disabled)
                 return;

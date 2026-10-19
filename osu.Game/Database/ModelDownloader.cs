@@ -25,6 +25,12 @@ namespace osu.Game.Database
 
         public event Action<ArchiveDownloadRequest<T>>? DownloadFailed;
 
+        /// <summary>
+        /// Raised after a download has completed and its contents were successfully imported.
+        /// This is invoked from a background thread; consumers which touch the game tree must marshal appropriately.
+        /// </summary>
+        public event Action<IReadOnlyList<Live<TModel>>>? DownloadCompleted;
+
         private readonly IModelImporter<TModel> importer;
         private readonly IAPIProvider? api;
 
@@ -66,19 +72,32 @@ namespace osu.Game.Database
                 Task.Factory.StartNew(async () =>
                 {
                     bool importSuccessful = false;
+                    IReadOnlyList<Live<TModel>>? imported = null;
 
                     try
                     {
                         if (originalModel != null)
-                            importSuccessful = (await importer.ImportAsUpdate(notification, new ImportTask(filename), originalModel).ConfigureAwait(false)) != null;
+                        {
+                            Live<TModel>? result = await importer.ImportAsUpdate(notification, new ImportTask(filename), originalModel).ConfigureAwait(false);
+                            importSuccessful = result != null;
+
+                            if (result != null)
+                                imported = new[] { result };
+                        }
                         else
-                            importSuccessful = (await importer.Import(notification, new[] { new ImportTask(filename) }).ConfigureAwait(false)).Any();
+                        {
+                            Live<TModel>[] results = (await importer.Import(notification, new[] { new ImportTask(filename) }).ConfigureAwait(false)).ToArray();
+                            importSuccessful = results.Length > 0;
+                            imported = results;
+                        }
                     }
                     finally
                     {
                         // for now a failed import will be marked as a failed download for simplicity.
                         if (!importSuccessful)
                             DownloadFailed?.Invoke(request);
+                        else if (imported != null)
+                            DownloadCompleted?.Invoke(imported);
 
                         CurrentDownloads.Remove(request);
                     }

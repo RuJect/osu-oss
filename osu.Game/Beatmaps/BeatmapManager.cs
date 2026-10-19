@@ -18,6 +18,7 @@ using osu.Framework.Platform;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Formats;
 using osu.Game.Database;
+using osu.Game.Events;
 using osu.Game.Extensions;
 using osu.Game.IO.Archives;
 using osu.Game.Localisation;
@@ -49,6 +50,11 @@ namespace osu.Game.Beatmaps
         private readonly LegacyBeatmapExporter legacyBeatmapExporter;
 
         public ProcessBeatmapDelegate? ProcessBeatmap { private get; set; }
+
+        /// <summary>
+        /// Optional transport used to raise game-wide events (assigned by <see cref="OsuGameBase"/>).
+        /// </summary>
+        public GameEventHub? Events { get; set; }
 
         public override bool PauseImports
         {
@@ -421,6 +427,16 @@ namespace osu.Game.Beatmaps
 
                 Delete(items.ToList(), silent);
             });
+        }
+
+        public override bool Delete(BeatmapSetInfo item)
+        {
+            bool deleted = base.Delete(item);
+
+            if (deleted)
+                Events?.RaiseBeatmapDeleted(item);
+
+            return deleted;
         }
 
         /// <summary>

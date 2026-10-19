@@ -23,6 +23,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.Timing;
 using osu.Game.Configuration;
 using osu.Game.Database;
+using osu.Game.Events;
 using osu.Game.Extensions;
 using osu.Game.Graphics.Containers;
 using osu.Game.IO.Archives;
@@ -139,6 +140,9 @@ namespace osu.Game.Screens.Play
 
         [Resolved]
         private OsuGameBase game { get; set; }
+
+        [Resolved]
+        private GameEventHub events { get; set; } = null!;
 
         public GameplayState GameplayState { get; private set; }
 
@@ -951,6 +955,8 @@ namespace osu.Game.Screens.Play
             skipExitTransition = quickRestart;
             PrepareLoaderForRestart?.Invoke(quickRestart);
 
+            events.RaiseGameplayRestarted(this);
+
             return PerformExit(quickRestart);
         }
 
@@ -1002,7 +1008,12 @@ namespace osu.Game.Screens.Play
             if (GameplayState.HasFailed)
                 return;
 
+            bool wasAlreadyPassed = GameplayState.HasPassed;
+
             GameplayState.HasPassed = true;
+
+            if (!wasAlreadyPassed)
+                events.RaiseGameplayPassed(this, Score.ScoreInfo);
 
             // Setting this early in the process means that even if something were to go wrong in the order of events following, there
             // is no chance that a user could return to the (already completed) Player instance from a child screen.
@@ -1162,6 +1173,8 @@ namespace osu.Game.Screens.Play
 
             GameplayState.HasFailed = true;
 
+            events.RaiseGameplayFailed(this, Score.ScoreInfo);
+
             updateGameplayState();
 
             // There is a chance that we could be in a paused state as the ruleset's internal clock (see FrameStabilityContainer)
@@ -1267,6 +1280,8 @@ namespace osu.Game.Screens.Play
             GameplayClockContainer.Stop();
             PauseOverlay.Show();
             lastPauseActionTime = GameplayClockContainer.CurrentTime;
+
+            events.RaiseGameplayPaused(this);
             return true;
         }
 
@@ -1287,6 +1302,8 @@ namespace osu.Game.Screens.Play
             {
                 GameplayClockContainer.Start();
                 IsResuming = false;
+
+                events.RaiseGameplayResumed(this);
             }
         }
 
@@ -1344,6 +1361,8 @@ namespace osu.Game.Screens.Play
 
             StartGameplay();
             OnGameplayStarted?.Invoke();
+
+            events.RaiseGameplayLoaded(this);
         }
 
         /// <summary>
@@ -1394,6 +1413,10 @@ namespace osu.Game.Screens.Play
                 if (DrawableRuleset.ReplayScore == null)
                     ScoreProcessor.FailScore(Score.ScoreInfo);
             }
+
+            // A restart also routes through exit; in that case the dedicated restart event covers it.
+            if (GameplayState.HasQuit && !isRestarting)
+                events.RaiseGameplayExited(this);
 
             // GameplayClockContainer performs seeks / start / stop operations on the beatmap's track.
             // as we are no longer the current screen, we cannot guarantee the track is still usable.
