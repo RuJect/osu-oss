@@ -195,6 +195,179 @@ namespace osu.Game
         protected readonly Bindable<IReadOnlyList<Mod>> SelectedMods = new Bindable<IReadOnlyList<Mod>>(Array.Empty<Mod>());
 
         /// <summary>
+        /// The mods currently applied to the player, exposed read-only for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public IReadOnlyList<Mod> CurrentMods => SelectedMods.Value;
+
+        /// <summary>
+        /// Replaces the player's mods with those matching <paramref name="acronyms"/>, exposed for external modules
+        /// (see <c>osu.Game.API</c>).
+        /// </summary>
+        /// <returns>Whether the mods were resolved and compatible.</returns>
+        public bool TrySetModsByAcronyms(IEnumerable<string> acronyms, out string error)
+        {
+            var available = ModUtils.FlattenMods(AvailableMods.Value.Values.SelectMany(m => m)).ToList();
+            var resolved = new List<Mod>();
+
+            foreach (string acronym in acronyms)
+            {
+                var mod = available.FirstOrDefault(m => string.Equals(m.Acronym, acronym.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                if (mod == null)
+                {
+                    error = $"unknown mod '{acronym}'";
+                    return false;
+                }
+
+                resolved.Add(mod.DeepClone());
+            }
+
+            if (!ModUtils.CheckCompatibleSet(resolved, out var invalidMods))
+            {
+                error = $"incompatible mods: {string.Join(", ", invalidMods.Select(m => m.Acronym))}";
+                return false;
+            }
+
+            SelectedMods.Value = resolved;
+            error = null;
+            return true;
+        }
+
+        /// <summary>
+        /// Clears all currently active mods, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void ClearMods() => SelectedMods.Value = Array.Empty<Mod>();
+
+        /// <summary>
+        /// The skins available for selection, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public IReadOnlyList<SkinInfo> AvailableSkins => SkinManager.GetAllUsableSkins().Select(s => s.Value).ToList();
+
+        /// <summary>
+        /// The currently selected skin, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public SkinInfo CurrentSkinInfo => SkinManager.CurrentSkinInfo.Value.Value;
+
+        /// <summary>
+        /// Selects the next available skin, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void SelectNextSkin() => SkinManager.SelectNextSkin();
+
+        /// <summary>
+        /// Selects a random skin, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void SelectRandomSkin() => SkinManager.SelectRandomSkin();
+
+        /// <summary>
+        /// Selects the skin with the given name, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        /// <param name="name">The name of the skin to select, or <c>random</c>.</param>
+        /// <param name="error">A human readable error if no matching skin was found.</param>
+        /// <returns>Whether a matching skin was selected.</returns>
+        public bool TrySelectSkin(string name, out string error)
+        {
+            name = name.Trim();
+
+            if (string.Equals(name, "random", StringComparison.OrdinalIgnoreCase))
+            {
+                SelectRandomSkin();
+                error = null;
+                return true;
+            }
+
+            var skins = SkinManager.GetAllUsableSkins();
+            string simplifiedName = simplifySkinName(name);
+
+            // prefer an exact name match, then fall back to the "common" name (e.g. `argon` for `osu! "argon" (2022)`).
+            var match = skins.FirstOrDefault(s => string.Equals(s.Value.Name, name, StringComparison.OrdinalIgnoreCase))
+                        ?? skins.FirstOrDefault(s => string.Equals(simplifySkinName(s.Value.Name), simplifiedName, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                error = $"unknown skin '{name}'";
+                return false;
+            }
+
+            if (match.Value.ID == SkinInfo.RANDOM_SKIN)
+                SelectRandomSkin();
+            else
+                SkinManager.CurrentSkinInfo.Value = match;
+
+            error = null;
+            return true;
+        }
+
+        private static string simplifySkinName(string name)
+        {
+            // turns `osu! "argon" (2022)` into `argon`, allowing built-in skins to be selected by their common name.
+            if (name.StartsWith("osu!", StringComparison.OrdinalIgnoreCase))
+                name = name.Substring(4);
+
+            name = name.Replace("\"", string.Empty).Trim();
+
+            int versionStart = name.LastIndexOf('(');
+
+            if (versionStart > 0 && name.EndsWith(')'))
+                name = name.Substring(0, versionStart).Trim();
+
+            return name;
+        }
+
+        /// <summary>
+        /// The rulesets available for selection, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public IReadOnlyList<RulesetInfo> AvailableRulesets => RulesetStore.AvailableRulesets.ToList();
+
+        /// <summary>
+        /// The currently selected ruleset, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public RulesetInfo CurrentRuleset => Ruleset.Value;
+
+        /// <summary>
+        /// Selects the next available ruleset, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void SelectNextRuleset()
+        {
+            var available = RulesetStore.AvailableRulesets.ToList();
+
+            if (available.Count == 0)
+                return;
+
+            int index = available.FindIndex(r => string.Equals(r.ShortName, Ruleset.Value.ShortName, StringComparison.OrdinalIgnoreCase));
+            Ruleset.Value = available[(index + 1 + available.Count) % available.Count];
+        }
+
+        /// <summary>
+        /// Selects the ruleset matching the given name, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        /// <param name="name">
+        /// A ruleset name or short name (e.g. <c>osu</c>, <c>taiko</c>, <c>fruits</c>/<c>catch</c>, <c>mania</c>).
+        /// </param>
+        /// <param name="error">A human readable error if no matching ruleset was found.</param>
+        /// <returns>Whether a matching ruleset was selected.</returns>
+        public bool TrySelectRuleset(string name, out string error)
+        {
+            name = name.Trim();
+
+            var match = AvailableRulesets.FirstOrDefault(r =>
+                string.Equals(r.ShortName, name, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(r.Name.TrimEnd('!'), name, StringComparison.OrdinalIgnoreCase)
+                // allows the trailing component of names like "osu!taiko" / "osu!catch" / "osu!mania".
+                || r.Name.EndsWith("!" + name, StringComparison.OrdinalIgnoreCase));
+
+            if (match == null)
+            {
+                error = $"unknown ruleset '{name}' (available: {string.Join(", ", AvailableRulesets.Select(r => r.ShortName))})";
+                return false;
+            }
+
+            Ruleset.Value = match;
+            error = null;
+            return true;
+        }
+
+        /// <summary>
         /// Mods available for the current <see cref="Ruleset"/>.
         /// </summary>
         public readonly Bindable<Dictionary<ModType, IReadOnlyList<Mod>>> AvailableMods = new Bindable<Dictionary<ModType, IReadOnlyList<Mod>>>(new Dictionary<ModType, IReadOnlyList<Mod>>());

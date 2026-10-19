@@ -119,6 +119,36 @@ namespace osu.Game.Screens.Select
 
         protected FilterControl FilterControl { get; private set; } = null!;
 
+        /// <summary>
+        /// Applies a search query to the beatmap carousel, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void Search(string query) => FilterControl.Search(query);
+
+        /// <summary>
+        /// Selects a random beatmap from the currently filtered carousel, exposed for external modules
+        /// (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void SelectRandomBeatmap() => selectRandomBeatmap(20);
+
+        private void selectRandomBeatmap(int retriesRemaining)
+        {
+            // the screen may have been exited while waiting for the carousel to finish filtering.
+            if (!this.IsCurrentScreen())
+                return;
+
+            if (IsFiltering)
+            {
+                // the carousel isn't ready yet (e.g. right after the screen was opened); try again shortly.
+                if (retriesRemaining > 0)
+                    Scheduler.AddDelayed(() => selectRandomBeatmap(retriesRemaining - 1), 200);
+
+                return;
+            }
+
+            if (!carousel.NextRandom())
+                errorSample?.Play();
+        }
+
         private BeatmapTitleWedge titleWedge = null!;
         private BeatmapDetailsArea detailsArea = null!;
         private FillFlowContainer wedgesContainer = null!;

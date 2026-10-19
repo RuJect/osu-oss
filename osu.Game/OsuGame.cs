@@ -126,6 +126,12 @@ namespace osu.Game
         /// </summary>
         public Action ToggleScriptingConsole { get; set; }
 
+        /// <summary>
+        /// Invoked when <see cref="GlobalAction.ToggleCommandPalette"/> is pressed.
+        /// Assigned by the optional command module (see osu.Game.API); null by default.
+        /// </summary>
+        public Action ToggleCommandPalette { get; set; }
+
         private ChatOverlay chatOverlay;
 
         private ChannelManager channelManager;
@@ -359,6 +365,11 @@ namespace osu.Game
 
             if (hideToolbar) Toolbar.Hide();
         }
+
+        /// <summary>
+        /// Posts a notification to the game-wide notification overlay, exposed for external modules (see <c>osu.Game.API</c>).
+        /// </summary>
+        public void Notify(Notification notification) => Schedule(() => Notifications.Post(notification));
 
         protected override UserInputManager CreateUserInputManager()
         {
@@ -1659,6 +1670,10 @@ namespace osu.Game
 
                 case GlobalAction.ToggleScriptingConsole:
                     ToggleScriptingConsole?.Invoke();
+                    return true;
+
+                case GlobalAction.ToggleCommandPalette:
+                    ToggleCommandPalette?.Invoke();
                     return true;
 
                 case GlobalAction.ToggleSkinEditor:

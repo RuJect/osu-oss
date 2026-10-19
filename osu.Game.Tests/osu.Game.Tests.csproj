@@ -16,6 +16,7 @@
     <GlobalAnalyzerConfigFiles Include="CodeAnalysis.tests.globalconfig"/>
   </ItemGroup>
   <ItemGroup Label="Project References">
+    <ProjectReference Include="..\osu.Game.API\osu.Game.API.csproj"/>
     <ProjectReference Include="..\osu.Game.Rulesets.Osu\osu.Game.Rulesets.Osu.csproj"/>
     <ProjectReference Include="..\osu.Game.Rulesets.Catch\osu.Game.Rulesets.Catch.csproj"/>
     <ProjectReference Include="..\osu.Game.Rulesets.Mania\osu.Game.Rulesets.Mania.csproj"/>

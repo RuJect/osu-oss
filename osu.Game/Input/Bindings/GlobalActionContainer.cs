@@ -113,6 +113,7 @@ namespace osu.Game.Input.Bindings
             new KeyBinding(new[] { InputKey.Shift, InputKey.F12 }, GlobalAction.TakeAndUploadScreeshot),
 
             new KeyBinding(new[] { InputKey.Control, InputKey.F4 }, GlobalAction.ToggleScriptingConsole),
+            new KeyBinding(new[] { InputKey.Control, InputKey.Space }, GlobalAction.ToggleCommandPalette),
         };
 
         private static IEnumerable<KeyBinding> overlayKeyBindings => new[]
@@ -640,6 +641,9 @@ namespace osu.Game.Input.Bindings
 
         [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.ToggleScriptingConsole))]
         ToggleScriptingConsole,
+
+        [LocalisableDescription(typeof(GlobalActionKeyBindingStrings), nameof(GlobalActionKeyBindingStrings.ToggleCommandPalette))]
+        ToggleCommandPalette,
     }
 
     public enum GlobalActionCategory

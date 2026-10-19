@@ -345,6 +345,11 @@ namespace osu.Game.Localisation
         public static LocalisableString ToggleScriptingConsole => new TranslatableString(getKey(@"toggle_scripting_console"), @"Toggle scripting console");
 
         /// <summary>
+        /// "Toggle command palette"
+        /// </summary>
+        public static LocalisableString ToggleCommandPalette => new TranslatableString(getKey(@"toggle_command_palette"), @"Toggle command palette");
+
+        /// <summary>
         /// "Previous volume meter"
         /// </summary>
         public static LocalisableString PreviousVolumeMeter => new TranslatableString(getKey(@"previous_volume_meter"), @"Previous volume meter");

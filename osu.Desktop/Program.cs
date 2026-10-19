@@ -12,6 +12,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.API.Events;
+using osu.Game.API.UI.Commands;
 using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
 using osu.Game.IPC;
@@ -154,6 +155,8 @@ namespace osu.Desktop
                     using (new ScriptingBootstrap(host, game))
                     // Game event API: independent event bus with notification-based test subscriber.
                     using (new OsuEventBootstrap(host, game))
+                    // Command API + Ctrl+Space command palette.
+                    using (new CommandPaletteBootstrap(game))
                     {
                         host.Run(game);
                     }
