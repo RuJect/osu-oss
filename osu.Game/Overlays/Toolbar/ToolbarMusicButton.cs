@@ -31,6 +31,23 @@ namespace osu.Game.Overlays.Toolbar
             ButtonContent.AutoSizeAxes = Axes.X;
         }
 
+        protected override void updateLayout()
+        {
+            base.updateLayout();
+
+            if (!Vertical)
+                ButtonContent.AutoSizeAxes = Axes.X;
+
+            Flow.Padding = Vertical
+                ? new MarginPadding { Vertical = Toolbar.HEIGHT / 4 }
+                : new MarginPadding { Horizontal = Toolbar.HEIGHT / 4 };
+
+            if (Vertical)
+                volumeDisplay?.Hide();
+            else
+                volumeDisplay?.Show();
+        }
+
         [BackgroundDependencyLoader(true)]
         private void load(NowPlayingOverlay music)
         {

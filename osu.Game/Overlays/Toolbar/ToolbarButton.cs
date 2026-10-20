@@ -10,6 +10,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Bindings;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
@@ -26,6 +27,32 @@ namespace osu.Game.Overlays.Toolbar
         public const float PADDING = 3;
 
         protected GlobalAction? Hotkey { get; set; }
+
+        /// <summary>
+        /// The current placement of the containing toolbar. Drives the orientation of this button.
+        /// </summary>
+        protected ToolbarPosition Placement { get; private set; } = ToolbarPosition.Top;
+
+        /// <summary>
+        /// Whether the containing toolbar is rendered as a vertical bar (i.e. docked to the left or right edge).
+        /// </summary>
+        public bool Vertical { get; private set; }
+
+        /// <summary>
+        /// The size of <see cref="ButtonContent"/> along the toolbar's main axis. Subclasses may enlarge this for buttons
+        /// which display extra content (e.g. the home button).
+        /// </summary>
+        protected float ContentWidth { get; set; } = Toolbar.HEIGHT;
+
+        /// <summary>
+        /// Updates this button's orientation to match the placement of the containing toolbar.
+        /// </summary>
+        public void SetPlacement(ToolbarPosition placement)
+        {
+            Placement = placement;
+            Vertical = placement is ToolbarPosition.Left or ToolbarPosition.Right;
+            updateLayout();
+        }
 
         public void SetIcon(Drawable icon)
         {
@@ -154,6 +181,105 @@ namespace osu.Game.Overlays.Toolbar
             };
         }
 
+        /// <summary>
+        /// Applies an orientation to this button based on the containing toolbar's <see cref="Placement"/>.
+        /// </summary>
+        protected virtual void updateLayout()
+        {
+            if (Vertical)
+            {
+                AutoSizeAxes = Axes.None;
+                RelativeSizeAxes = Axes.None;
+                RelativeSizeAxes = Axes.X;
+                Size = new Vector2(1, ContentWidth);
+
+                ButtonContent.AutoSizeAxes = Axes.None;
+                ButtonContent.RelativeSizeAxes = Axes.None;
+                ButtonContent.Size = new Vector2(Toolbar.HEIGHT, ContentWidth);
+
+                Flow.AutoSizeAxes = Axes.None;
+                Flow.Direction = FillDirection.Vertical;
+                Flow.Anchor = Anchor.CentreLeft;
+                Flow.Origin = Anchor.CentreLeft;
+                Flow.Padding = new MarginPadding { Top = Toolbar.HEIGHT / 2, Bottom = Toolbar.HEIGHT / 2 };
+                Flow.RelativeSizeAxes = Axes.X;
+                Flow.Width = 1;
+                Flow.AutoSizeAxes = Axes.Y;
+
+                IconContainer.Anchor = Anchor.TopCentre;
+                IconContainer.Origin = Anchor.TopCentre;
+            }
+            else
+            {
+                AutoSizeAxes = Axes.None;
+                RelativeSizeAxes = Axes.None;
+                RelativeSizeAxes = Axes.Y;
+                Size = new Vector2(ContentWidth, 1);
+                AutoSizeAxes = Axes.X;
+
+                ButtonContent.AutoSizeAxes = Axes.None;
+                ButtonContent.RelativeSizeAxes = Axes.None;
+                ButtonContent.RelativeSizeAxes = Axes.Y;
+                ButtonContent.Size = new Vector2(ContentWidth, 1);
+
+                Flow.AutoSizeAxes = Axes.None;
+                Flow.Direction = FillDirection.Horizontal;
+                Flow.Anchor = Anchor.TopCentre;
+                Flow.Origin = Anchor.TopCentre;
+                Flow.Padding = new MarginPadding { Left = Toolbar.HEIGHT / 2, Right = Toolbar.HEIGHT / 2 };
+                Flow.RelativeSizeAxes = Axes.Y;
+                Flow.Height = 1;
+                Flow.AutoSizeAxes = Axes.X;
+
+                IconContainer.Anchor = Anchor.CentreLeft;
+                IconContainer.Origin = Anchor.CentreLeft;
+            }
+
+            applyTooltipLayout();
+        }
+
+        private void applyTooltipLayout()
+        {
+            bool xLeft = TooltipAnchor.HasFlag(Anchor.x0);
+            Anchor childAnchor;
+
+            switch (Placement)
+            {
+                case ToolbarPosition.Bottom:
+                    childAnchor = xLeft ? Anchor.BottomLeft : Anchor.BottomRight;
+                    tooltipContainer.Anchor = xLeft ? Anchor.TopLeft : Anchor.TopRight;
+                    tooltipContainer.Origin = xLeft ? Anchor.BottomLeft : Anchor.BottomRight;
+                    tooltipContainer.Position = new Vector2(xLeft ? 5 : -5, -5);
+                    break;
+
+                case ToolbarPosition.Left:
+                    childAnchor = Anchor.CentreLeft;
+                    tooltipContainer.Anchor = Anchor.CentreRight;
+                    tooltipContainer.Origin = Anchor.CentreLeft;
+                    tooltipContainer.Position = new Vector2(5, 0);
+                    break;
+
+                case ToolbarPosition.Right:
+                    childAnchor = Anchor.CentreRight;
+                    tooltipContainer.Anchor = Anchor.CentreLeft;
+                    tooltipContainer.Origin = Anchor.CentreRight;
+                    tooltipContainer.Position = new Vector2(-5, 0);
+                    break;
+
+                default:
+                    childAnchor = TooltipAnchor;
+                    tooltipContainer.Anchor = xLeft ? Anchor.BottomLeft : Anchor.BottomRight;
+                    tooltipContainer.Origin = TooltipAnchor;
+                    tooltipContainer.Position = new Vector2(xLeft ? 5 : -5, 5);
+                    break;
+            }
+
+            tooltip1.Anchor = childAnchor;
+            tooltip1.Origin = childAnchor;
+            subTooltipFlow.Anchor = childAnchor;
+            subTooltipFlow.Origin = childAnchor;
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
@@ -167,6 +293,14 @@ namespace osu.Game.Overlays.Toolbar
                     Margin = new MarginPadding { Left = 3 },
                 });
             }
+        }
+
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+
+            // The toolbar may have been given a placement before this button was added to the tree.
+            updateLayout();
         }
 
         protected override bool OnMouseDown(MouseDownEvent e) => false;

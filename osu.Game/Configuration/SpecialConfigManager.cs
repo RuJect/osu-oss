@@ -30,6 +30,8 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.ShowFavouriteBeatmapsDownloadButton, false);
             SetDefault(SpecialSetting.AllowBreakSkip, false);
             SetDefault(SpecialSetting.AutoSkip, AutoSkipMode.None);
+            SetDefault(SpecialSetting.ToolbarPosition, ToolbarPosition.Top);
+            SetDefault(SpecialSetting.InvertToolbar, false);
         }
     }
 
@@ -53,5 +55,11 @@ namespace osu.Game.Configuration
 
         /// <summary>Which parts of a beatmap's dead time are automatically skipped during gameplay.</summary>
         AutoSkip,
+
+        /// <summary>The screen edge the toolbar is docked to.</summary>
+        ToolbarPosition,
+
+        /// <summary>Whether the toolbar is mirrored along its main axis (groups swapped, contents and ruleset list reversed).</summary>
+        InvertToolbar,
     }
 }

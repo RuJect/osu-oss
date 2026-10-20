@@ -35,9 +35,65 @@ namespace osu.Game.Overlays.Toolbar
 
         private OsuSpriteText usernameText = null!;
 
+        private Container avatarContainer = null!;
+
+        private TransientUserStatisticsUpdateDisplay? statisticsDisplay;
+
+        private bool statisticsDisplayInFlow = true;
+
         public ToolbarUserButton()
         {
             ButtonContent.AutoSizeAxes = Axes.X;
+        }
+
+        protected override void updateLayout()
+        {
+            base.updateLayout();
+
+            if (!Vertical)
+                ButtonContent.AutoSizeAxes = Axes.X;
+
+            if (avatarContainer == null)
+                return;
+
+            if (Vertical)
+            {
+                usernameText.Hide();
+
+                if (statisticsDisplay != null)
+                {
+                    statisticsDisplay.Hide();
+
+                    // the statistics display cannot be shown in a vertical toolbar. removing it from the flow entirely
+                    // also prevents it from affecting the flow's auto-size if an update arrives while vertical.
+                    if (statisticsDisplayInFlow)
+                    {
+                        Flow.Remove(statisticsDisplay, false);
+                        statisticsDisplayInFlow = false;
+                    }
+                }
+
+                avatarContainer.Anchor = Anchor.TopCentre;
+                avatarContainer.Origin = Anchor.TopCentre;
+            }
+            else
+            {
+                usernameText.Show();
+
+                if (statisticsDisplay != null)
+                {
+                    if (!statisticsDisplayInFlow)
+                    {
+                        Flow.Add(statisticsDisplay);
+                        statisticsDisplayInFlow = true;
+                    }
+
+                    statisticsDisplay.RelativeSizeAxes = Axes.Y;
+                }
+
+                avatarContainer.Anchor = Anchor.CentreLeft;
+                avatarContainer.Origin = Anchor.CentreLeft;
+            }
         }
 
         [BackgroundDependencyLoader]
@@ -51,7 +107,7 @@ namespace osu.Game.Overlays.Toolbar
                     Origin = Anchor.CentreLeft,
                     Margin = new MarginPadding { Right = 5 },
                 },
-                new Container
+                avatarContainer = new Container
                 {
                     Masking = true,
                     CornerRadius = 4,
@@ -89,7 +145,7 @@ namespace osu.Game.Overlays.Toolbar
                         },
                     }
                 },
-                new TransientUserStatisticsUpdateDisplay
+                statisticsDisplay = new TransientUserStatisticsUpdateDisplay
                 {
                     Alpha = 0,
                 }

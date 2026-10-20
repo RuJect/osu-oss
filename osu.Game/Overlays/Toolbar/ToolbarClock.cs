@@ -30,10 +30,94 @@ namespace osu.Game.Overlays.Toolbar
         private DigitalClockDisplay digital;
         private AnalogClockDisplay analog;
 
+        private Container clockContainer;
+        private FillFlowContainer clockFlow;
+        private bool vertical;
+
+        private ToolbarPosition placement = ToolbarPosition.Top;
+
         public ToolbarClock()
         {
             RelativeSizeAxes = Axes.Y;
             AutoSizeAxes = Axes.X;
+        }
+
+        /// <summary>
+        /// Updates the orientation of this clock to match the containing toolbar's placement.
+        /// When rendered in a vertical toolbar, only the analog clock is displayed.
+        /// </summary>
+        public void SetPlacement(ToolbarPosition placement)
+        {
+            this.placement = placement;
+            updateOrientation();
+        }
+
+        private void updateOrientation()
+        {
+            vertical = placement is ToolbarPosition.Left or ToolbarPosition.Right;
+
+            AutoSizeAxes = Axes.None;
+            RelativeSizeAxes = vertical ? Axes.X : Axes.Y;
+            Size = vertical ? new Vector2(1, Toolbar.HEIGHT) : new Vector2(0, 1);
+            AutoSizeAxes = vertical ? Axes.None : Axes.X;
+
+            // OsuClickableContainer wraps its children in an internal content container, which has to be
+            // oriented as well. Otherwise its auto-sized width would collapse to zero in the vertical toolbar.
+            Content.AutoSizeAxes = Axes.None;
+            Content.RelativeSizeAxes = vertical ? Axes.Both : Axes.Y;
+            Content.Size = vertical ? Vector2.One : new Vector2(0, 1);
+            Content.AutoSizeAxes = vertical ? Axes.None : Axes.X;
+
+            if (clockContainer != null)
+            {
+                clockContainer.AutoSizeAxes = Axes.None;
+                clockContainer.RelativeSizeAxes = vertical ? Axes.Both : Axes.Y;
+                if (vertical)
+                    clockContainer.Size = Vector2.One;
+                else
+                    clockContainer.Height = 1;
+                clockContainer.AutoSizeAxes = vertical ? Axes.None : Axes.X;
+            }
+
+            if (clockFlow != null)
+            {
+                clockFlow.AutoSizeAxes = Axes.None;
+                clockFlow.RelativeSizeAxes = vertical ? Axes.Both : Axes.Y;
+                if (vertical)
+                    clockFlow.Size = Vector2.One;
+                else
+                    clockFlow.Height = 1;
+                clockFlow.AutoSizeAxes = vertical ? Axes.None : Axes.X;
+
+                clockFlow.Direction = vertical ? FillDirection.Vertical : FillDirection.Horizontal;
+                clockFlow.Anchor = vertical ? Anchor.Centre : Anchor.CentreLeft;
+                clockFlow.Origin = vertical ? Anchor.Centre : Anchor.CentreLeft;
+                clockFlow.Padding = vertical ? new MarginPadding() : new MarginPadding(10);
+            }
+
+            if (analog != null)
+            {
+                analog.Anchor = analog.Origin = vertical ? Anchor.Centre : Anchor.CentreLeft;
+                digital.Anchor = digital.Origin = vertical ? Anchor.Centre : Anchor.CentreLeft;
+            }
+
+            update((ToolbarClockDisplayMode?)null);
+        }
+
+        private void update(ToolbarClockDisplayMode? displayMode)
+        {
+            ToolbarClockDisplayMode mode = displayMode ?? clockDisplayMode?.Value ?? ToolbarClockDisplayMode.Full;
+
+            bool showAnalog = vertical || mode == ToolbarClockDisplayMode.Analog || mode == ToolbarClockDisplayMode.Full;
+            bool showDigital = !vertical && mode != ToolbarClockDisplayMode.Analog;
+            bool showRuntime = !vertical && (mode == ToolbarClockDisplayMode.DigitalWithRuntime || mode == ToolbarClockDisplayMode.Full);
+
+            digital?.FadeTo(showDigital ? 1 : 0);
+
+            if (digital != null)
+                digital.ShowRuntime = showRuntime;
+
+            analog?.FadeTo(showAnalog ? 1 : 0);
         }
 
         [BackgroundDependencyLoader]
@@ -44,7 +128,7 @@ namespace osu.Game.Overlays.Toolbar
 
             Children = new Drawable[]
             {
-                new Container
+                clockContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Y,
                     AutoSizeAxes = Axes.X,
@@ -75,7 +159,7 @@ namespace osu.Game.Overlays.Toolbar
                                 },
                             }
                         },
-                        new FillFlowContainer
+                        clockFlow = new FillFlowContainer
                         {
                             RelativeSizeAxes = Axes.Y,
                             AutoSizeAxes = Axes.X,
@@ -105,19 +189,11 @@ namespace osu.Game.Overlays.Toolbar
         {
             base.LoadComplete();
 
-            clockDisplayMode.BindValueChanged(displayMode =>
-            {
-                bool showAnalog = displayMode.NewValue == ToolbarClockDisplayMode.Analog || displayMode.NewValue == ToolbarClockDisplayMode.Full;
-                bool showDigital = displayMode.NewValue != ToolbarClockDisplayMode.Analog;
-                bool showRuntime = displayMode.NewValue == ToolbarClockDisplayMode.DigitalWithRuntime || displayMode.NewValue == ToolbarClockDisplayMode.Full;
-
-                digital.FadeTo(showDigital ? 1 : 0);
-                digital.ShowRuntime = showRuntime;
-
-                analog.FadeTo(showAnalog ? 1 : 0);
-            }, true);
+            clockDisplayMode.BindValueChanged(displayMode => update(displayMode.NewValue), true);
 
             prefer24HourTime.BindValueChanged(prefer24H => digital.Use24HourDisplay = prefer24H.NewValue, true);
+
+            updateOrientation();
         }
 
         protected override bool OnClick(ClickEvent e)

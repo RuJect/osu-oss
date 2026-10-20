@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.IO.Stores;
+using osu.Game.Configuration;
 using osu.Game.Rulesets;
 using osuTK;
 using osuTK.Graphics;
@@ -25,6 +26,15 @@ namespace osu.Game.Overlays.Toolbar
     public partial class ToolbarRulesetSelector : RulesetSelector
     {
         protected Drawable ModeButtonLine { get; private set; }
+
+        private Circle modeButtonCircle;
+
+        private ToolbarPosition placement = ToolbarPosition.Top;
+
+        private bool inverted;
+        private bool tabOrderInverted;
+
+        private readonly List<ToolbarRulesetTabButton> tabButtons = new List<ToolbarRulesetTabButton>();
 
         [Resolved]
         private MusicController musicController { get; set; }
@@ -59,7 +69,7 @@ namespace osu.Game.Overlays.Toolbar
                     Y = -1,
                     Children = new Drawable[]
                     {
-                        new Circle
+                        modeButtonCircle = new Circle
                         {
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
@@ -91,6 +101,10 @@ namespace osu.Game.Overlays.Toolbar
             Current.BindDisabledChanged(_ => Scheduler.AddOnce(currentDisabledChanged));
             currentDisabledChanged();
 
+            // The toolbar may have been given a placement before this selector was added to the tree.
+            updateLayout();
+            applyTabOrder();
+
             Current.BindValueChanged(_ => moveLineToCurrent());
             // Scheduled to allow the button flow layout to be computed before the line position is updated
             ScheduleAfterChildren(moveLineToCurrent);
@@ -107,9 +121,106 @@ namespace osu.Game.Overlays.Toolbar
         {
             if (SelectedTab != null)
             {
-                ModeButtonLine.MoveToX(SelectedTab.DrawPosition.X, !hasInitialPosition ? 0 : 500, Easing.OutElasticQuarter);
+                if (isVertical)
+                    ModeButtonLine.MoveToY(SelectedTab.DrawPosition.Y, !hasInitialPosition ? 0 : 500, Easing.OutElasticQuarter);
+                else
+                    ModeButtonLine.MoveToX(SelectedTab.DrawPosition.X, !hasInitialPosition ? 0 : 500, Easing.OutElasticQuarter);
+
                 hasInitialPosition = true;
             }
+        }
+
+        private bool isVertical => placement is ToolbarPosition.Left or ToolbarPosition.Right;
+
+        /// <summary>
+        /// Whether this selector is currently rendered vertically (in a left/right docked toolbar).
+        /// </summary>
+        public bool Vertical => isVertical;
+
+        /// <summary>
+        /// Updates the orientation of this selector to match the containing toolbar's placement.
+        /// </summary>
+        public void SetPlacement(ToolbarPosition placement)
+        {
+            this.placement = placement;
+            updateLayout();
+        }
+
+        /// <summary>
+        /// Mirrors the order of the ruleset tabs when the containing toolbar is inverted.
+        /// </summary>
+        public void SetInverted(bool inverted)
+        {
+            this.inverted = inverted;
+            applyTabOrder();
+        }
+
+        private void applyTabOrder()
+        {
+            if (TabContainer == null)
+                return;
+
+            var tabs = TabContainer.Children.ToArray();
+
+            if (tabs.Length == 0 || tabOrderInverted == inverted)
+                return;
+
+            tabOrderInverted = inverted;
+
+            TabContainer.Clear(false);
+
+            for (int i = tabs.Length - 1; i >= 0; i--)
+                TabContainer.Add(tabs[i]);
+
+            ScheduleAfterChildren(moveLineToCurrent);
+        }
+
+        protected override void AddTabItem(TabItem<RulesetInfo> tab, bool addToDropdown = true)
+        {
+            base.AddTabItem(tab, addToDropdown);
+
+            if (tab is ToolbarRulesetTabButton button)
+            {
+                tabButtons.Add(button);
+                button.SetPlacement(placement);
+            }
+        }
+
+        private void updateLayout()
+        {
+            AutoSizeAxes = Axes.None;
+            RelativeSizeAxes = isVertical ? Axes.X : Axes.Y;
+            if (isVertical)
+                Width = 1;
+            else
+                Height = 1;
+            AutoSizeAxes = isVertical ? Axes.Y : Axes.X;
+
+            TabContainer.AutoSizeAxes = Axes.None;
+            TabContainer.AllowMultiline = isVertical;
+            TabContainer.Direction = isVertical ? FillDirection.Vertical : FillDirection.Horizontal;
+            TabContainer.RelativeSizeAxes = isVertical ? Axes.X : Axes.Y;
+            if (isVertical)
+                TabContainer.Width = 1;
+            else
+                TabContainer.Height = 1;
+            TabContainer.AutoSizeAxes = isVertical ? Axes.Y : Axes.X;
+
+            if (ModeButtonLine != null)
+            {
+                ModeButtonLine.Size = isVertical ? new Vector2(3, Toolbar.HEIGHT) : new Vector2(Toolbar.HEIGHT, 3);
+                ModeButtonLine.Anchor = isVertical ? Anchor.TopRight : Anchor.BottomLeft;
+                ModeButtonLine.Origin = isVertical ? Anchor.TopRight : Anchor.BottomLeft;
+                ModeButtonLine.Position = isVertical ? new Vector2(-1, 0) : new Vector2(0, -1);
+            }
+
+            if (modeButtonCircle != null)
+                modeButtonCircle.Size = isVertical ? new Vector2(3, 18) : new Vector2(18, 3);
+
+            foreach (var button in tabButtons)
+                button.SetPlacement(placement);
+
+            moveLineToCurrent();
         }
 
         private void playRulesetSelectionSample(ValueChangedEvent<RulesetInfo> r)

@@ -194,7 +194,9 @@ namespace osu.Game
 
         public virtual StableStorage GetStorageForStableInstall() => null;
 
-        private float toolbarOffset => (Toolbar?.Position.Y ?? 0) + (Toolbar?.DrawHeight ?? 0);
+        private float toolbarInset => Toolbar?.CurrentInset ?? 0;
+
+        private ToolbarPosition toolbarPosition => Toolbar?.Placement ?? ToolbarPosition.Top;
 
         private IdleTracker idleTracker;
 
@@ -1783,8 +1785,30 @@ namespace osu.Game
         {
             base.UpdateAfterChildren();
 
-            ScreenOffsetContainer.Padding = new MarginPadding { Top = toolbarOffset };
-            overlayOffsetContainer.Padding = new MarginPadding { Top = toolbarOffset };
+            float inset = toolbarInset;
+            var toolbarPadding = new MarginPadding();
+
+            switch (toolbarPosition)
+            {
+                case ToolbarPosition.Bottom:
+                    toolbarPadding.Bottom = inset;
+                    break;
+
+                case ToolbarPosition.Left:
+                    toolbarPadding.Left = inset;
+                    break;
+
+                case ToolbarPosition.Right:
+                    toolbarPadding.Right = inset;
+                    break;
+
+                default:
+                    toolbarPadding.Top = inset;
+                    break;
+            }
+
+            ScreenOffsetContainer.Padding = toolbarPadding;
+            overlayOffsetContainer.Padding = toolbarPadding;
 
             adjustGlobalScreenOffset();
 

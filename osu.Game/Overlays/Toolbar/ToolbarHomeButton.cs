@@ -12,7 +12,7 @@ namespace osu.Game.Overlays.Toolbar
     {
         public ToolbarHomeButton()
         {
-            ButtonContent.Width *= 1.4f;
+            ContentWidth *= 1.4f;
             Hotkey = GlobalAction.Home;
         }
 

@@ -53,6 +53,16 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Automatically skip",
                     Current = config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip),
                 },
+                new SettingsEnumDropdown<ToolbarPosition>
+                {
+                    LabelText = "Toolbar position",
+                    Current = config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Invert toolbar contents",
+                    Current = config.GetBindable<bool>(SpecialSetting.InvertToolbar),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -79,6 +89,8 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton).Value = false;
                 config.GetBindable<bool>(SpecialSetting.AllowBreakSkip).Value = false;
                 config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
+                config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;
+                config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }
