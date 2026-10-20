@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays.Notifications;
@@ -50,8 +51,25 @@ namespace osu.Game.Overlays
         [Resolved]
         private OsuGame? game { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
+
+        /// <summary>
+        /// The screen edge this panel is currently docked to.
+        /// </summary>
+        public NotificationPanelPosition PanelPosition { get; private set; } = NotificationPanelPosition.Right;
+
+        /// <summary>
+        /// The screen corner temporary notifications are currently displayed in.
+        /// </summary>
+        public NotificationDisplayPosition DisplayPosition { get; private set; } = NotificationDisplayPosition.TopRight;
+
+        private Bindable<NotificationPanelPosition>? panelPositionBindable;
+        private Bindable<NotificationDisplayPosition>? displayPositionBindable;
+        private Bindable<bool>? muteToastNotificationsBindable;
 
         public override bool ReceivePositionalInputAt(Vector2 screenSpacePos)
         {
@@ -73,7 +91,6 @@ namespace osu.Game.Overlays
         [BackgroundDependencyLoader]
         private void load()
         {
-            X = WIDTH;
             Width = WIDTH;
             RelativeSizeAxes = Axes.Y;
 
@@ -82,7 +99,6 @@ namespace osu.Game.Overlays
                 toastTray = new NotificationOverlayToastTray
                 {
                     ForwardNotificationToPermanentStore = addPermanently,
-                    Origin = Anchor.TopRight,
                 },
                 mainContent = new Container
                 {
@@ -125,6 +141,79 @@ namespace osu.Game.Overlays
                     }
                 },
             };
+
+            panelPositionBindable = specialConfig?.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition);
+            displayPositionBindable = specialConfig?.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition);
+            muteToastNotificationsBindable = specialConfig?.GetBindable<bool>(SpecialSetting.MuteToastNotifications);
+
+            PanelPosition = panelPositionBindable?.Value ?? NotificationPanelPosition.Right;
+            DisplayPosition = displayPositionBindable?.Value ?? NotificationDisplayPosition.TopRight;
+
+            updatePanelPosition();
+
+            toastTray.PanelPosition = PanelPosition;
+            toastTray.DisplayPosition = DisplayPosition;
+
+            panelPositionBindable?.BindValueChanged(e =>
+            {
+                PanelPosition = e.NewValue;
+                updatePanelPosition();
+                toastTray.PanelPosition = PanelPosition;
+            }, true);
+
+            displayPositionBindable?.BindValueChanged(e =>
+            {
+                DisplayPosition = e.NewValue;
+                toastTray.DisplayPosition = DisplayPosition;
+            }, true);
+
+            muteToastNotificationsBindable?.BindValueChanged(e =>
+            {
+                if (e.NewValue)
+                    toastTray.FlushAllToasts(true);
+            });
+        }
+
+        private bool muteToastNotifications => muteToastNotificationsBindable?.Value ?? false;
+
+        private float hiddenX => PanelPosition == NotificationPanelPosition.Left ? -WIDTH : WIDTH;
+
+        private void updatePanelPosition()
+        {
+            Anchor anchor = PanelPosition == NotificationPanelPosition.Left ? Anchor.TopLeft : Anchor.TopRight;
+
+            Anchor = anchor;
+            Origin = anchor;
+
+            ClearTransforms();
+            X = State.Value == Visibility.Visible ? 0 : hiddenX;
+        }
+
+        protected override void UpdateAfterChildren()
+        {
+            base.UpdateAfterChildren();
+
+            updateToastTrayPosition();
+        }
+
+        private void updateToastTrayPosition()
+        {
+            if (toastTray == null || Parent == null)
+                return;
+
+            float overlayLeft = PanelPosition == NotificationPanelPosition.Left ? X : Parent.DrawWidth - WIDTH + X;
+
+            bool leftAligned = DisplayPosition is NotificationDisplayPosition.TopLeft or NotificationDisplayPosition.BottomLeft;
+            bool topAligned = DisplayPosition is NotificationDisplayPosition.TopLeft or NotificationDisplayPosition.TopRight;
+
+            float trayHeight = toastTray.Padding.Top + toastTray.ContentHeight + toastTray.Padding.Bottom;
+
+            Vector2 target = new Vector2(
+                (leftAligned ? 0 : Parent.DrawWidth - toastTray.DrawWidth) - overlayLeft,
+                topAligned ? 0 : Parent.DrawHeight - trayHeight);
+
+            if (toastTray.Position != target)
+                toastTray.Position = target;
         }
 
         private ScheduledDelegate? notificationsEnabler;
@@ -191,7 +280,7 @@ namespace osu.Game.Overlays
                 notification.Closed += () => game?.Window?.CancelFlash();
             }
 
-            if (State.Value == Visibility.Hidden)
+            if (State.Value == Visibility.Hidden && !muteToastNotifications)
             {
                 notification.IsInToastTray = true;
                 toastTray.Post(notification);
@@ -205,6 +294,9 @@ namespace osu.Game.Overlays
         private void addPermanently(Notification notification)
         {
             notification.IsInToastTray = false;
+            notification.DisplayPosition = PanelPosition == NotificationPanelPosition.Left
+                ? NotificationDisplayPosition.TopLeft
+                : NotificationDisplayPosition.TopRight;
 
             var ourType = notification.GetType();
             int depth = notification.DisplayOnTop ? -runningDepth : runningDepth;
@@ -242,7 +334,7 @@ namespace osu.Game.Overlays
 
             markAllRead();
 
-            this.MoveToX(WIDTH, TRANSITION_LENGTH, Easing.OutQuint);
+            this.MoveToX(hiddenX, TRANSITION_LENGTH, Easing.OutQuint);
             mainContent.FadeTo(0, TRANSITION_LENGTH / 2, Easing.OutQuint);
             mainContent.FadeEdgeEffectTo(0, WaveContainer.DISAPPEAR_DURATION, Easing.In);
         }

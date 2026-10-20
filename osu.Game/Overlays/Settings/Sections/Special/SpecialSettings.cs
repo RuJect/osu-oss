@@ -8,8 +8,8 @@ using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game.IO;
 using osu.Game.Configuration;
+using osu.Game.IO;
 using osu.Game.Overlays.Dialog;
 
 namespace osu.Game.Overlays.Settings.Sections.Special
@@ -63,6 +63,26 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Invert toolbar contents",
                     Current = config.GetBindable<bool>(SpecialSetting.InvertToolbar),
                 },
+                new SettingsEnumDropdown<NotificationPanelPosition>
+                {
+                    LabelText = "Notification panel position",
+                    Current = config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition),
+                },
+                new SettingsEnumDropdown<NotificationDisplayPosition>
+                {
+                    LabelText = "Notification display position",
+                    Current = config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Mute pop-up notifications",
+                    Current = config.GetBindable<bool>(SpecialSetting.MuteToastNotifications),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Notification transparency",
+                    Current = config.GetBindable<bool>(SpecialSetting.NotificationTransparency),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -91,6 +111,10 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
                 config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;
                 config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
+                config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;
+                config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition).Value = NotificationDisplayPosition.TopRight;
+                config.GetBindable<bool>(SpecialSetting.NotificationTransparency).Value = false;
+                config.GetBindable<bool>(SpecialSetting.MuteToastNotifications).Value = false;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }

@@ -32,6 +32,10 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.AutoSkip, AutoSkipMode.None);
             SetDefault(SpecialSetting.ToolbarPosition, ToolbarPosition.Top);
             SetDefault(SpecialSetting.InvertToolbar, false);
+            SetDefault(SpecialSetting.NotificationPanelPosition, NotificationPanelPosition.Right);
+            SetDefault(SpecialSetting.NotificationDisplayPosition, NotificationDisplayPosition.TopRight);
+            SetDefault(SpecialSetting.NotificationTransparency, false);
+            SetDefault(SpecialSetting.MuteToastNotifications, false);
         }
     }
 
@@ -61,5 +65,17 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether the toolbar is mirrored along its main axis (groups swapped, contents and ruleset list reversed).</summary>
         InvertToolbar,
+
+        /// <summary>The screen edge the notification history panel is docked to.</summary>
+        NotificationPanelPosition,
+
+        /// <summary>The screen corner in which temporary notifications are displayed.</summary>
+        NotificationDisplayPosition,
+
+        /// <summary>Whether notifications gradually become transparent while disappearing.</summary>
+        NotificationTransparency,
+
+        /// <summary>Whether pop-up (toast) notifications should be suppressed and only shown in the notification panel.</summary>
+        MuteToastNotifications,
     }
 }

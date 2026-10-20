@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Development;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
@@ -15,6 +16,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osuTK;
@@ -57,6 +59,11 @@ namespace osu.Game.Overlays.Notifications
         public Action? ForwardToOverlay { get; set; }
 
         /// <summary>
+        /// The screen corner this notification is displayed in, used to determine its entrance animation.
+        /// </summary>
+        public NotificationDisplayPosition DisplayPosition { get; set; } = NotificationDisplayPosition.TopRight;
+
+        /// <summary>
         /// Should we show at the top of our section on display?
         /// </summary>
         public virtual bool DisplayOnTop => true;
@@ -90,6 +97,11 @@ namespace osu.Game.Overlays.Notifications
 
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        private bool transparency => specialConfig?.Get<bool>(SpecialSetting.NotificationTransparency) ?? false;
 
         public override bool PropagatePositionalInputSubTree => base.PropagatePositionalInputSubTree && !WasClosed;
 
@@ -260,8 +272,22 @@ namespace osu.Game.Overlays.Notifications
 
             this.FadeInFromZero(200);
 
-            MainContent.MoveToX(DrawSize.X);
-            MainContent.MoveToX(0, 500, Easing.OutQuint);
+            bool leftAligned = DisplayPosition is NotificationDisplayPosition.TopLeft or NotificationDisplayPosition.BottomLeft;
+            bool bottomAligned = DisplayPosition is NotificationDisplayPosition.BottomLeft or NotificationDisplayPosition.BottomRight;
+
+            MainContent.MoveToX(leftAligned ? -DrawSize.X : DrawSize.X);
+
+            if (bottomAligned)
+            {
+                // the notification is auto-sized, so wait for layout before knowing how far below the screen edge to start from.
+                Scheduler.Add(() =>
+                {
+                    MainContent.Y = DrawHeight;
+                    MainContent.MoveTo(Vector2.Zero, 500, Easing.OutQuint);
+                });
+            }
+            else
+                MainContent.MoveToX(0, 500, Easing.OutQuint);
 
             initialFlash.FadeOutFromOne(2000, Easing.OutQuart);
         }
@@ -274,15 +300,32 @@ namespace osu.Game.Overlays.Notifications
 
             Closed?.Invoke();
 
-            Schedule(() =>
-            {
-                if (runFlingAnimation && dragContainer.FlingLeft())
-                    this.FadeOut(600, Easing.In);
-                else
-                    this.FadeOut(100);
+            if (IsLoaded && ThreadSafety.IsUpdateThread)
+                closeWithAnimation(runFlingAnimation);
+            else
+                Schedule(() => closeWithAnimation(runFlingAnimation));
 
-                Expire();
-            });
+            void closeWithAnimation(bool runFling)
+            {
+                if (transparency && Alpha > 0.0001f)
+                {
+                    this.FadeOut(600, Easing.In).OnComplete(_ => closeWithAnimation(runFling));
+                    return;
+                }
+
+                if (runFling && dragContainer.FlingLeft())
+                {
+                    if (transparency)
+                        // the notification is already transparent; keep it alive for the duration of the fling animation before removing.
+                        this.FadeTo(Alpha, 600).OnComplete(_ => Expire());
+                    else
+                        this.FadeOut(600, Easing.In).OnComplete(_ => Expire());
+                }
+                else if (transparency)
+                    Expire();
+                else
+                    this.FadeOut(100).OnComplete(_ => Expire());
+            }
         }
 
         private partial class DragContainer : Container

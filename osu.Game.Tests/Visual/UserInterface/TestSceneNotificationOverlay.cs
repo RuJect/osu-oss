@@ -6,11 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using NUnit.Framework;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.Multiplayer;
@@ -35,6 +39,17 @@ namespace osu.Game.Tests.Visual.UserInterface
 
         private readonly UserLookupCache userLookupCache = new TestUserLookupCache();
 
+        [Cached]
+        private readonly SpecialConfigManager specialConfig = new SpecialConfigManager(new TemporaryNativeStorage("osu-oss-notifications-test"));
+
+        private Bindable<NotificationPanelPosition> panelPosition => specialConfig.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition);
+
+        private Bindable<NotificationDisplayPosition> displayPosition => specialConfig.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition);
+
+        private Bindable<bool> transparency => specialConfig.GetBindable<bool>(SpecialSetting.NotificationTransparency);
+
+        private Bindable<bool> muteToastNotifications => specialConfig.GetBindable<bool>(SpecialSetting.MuteToastNotifications);
+
         [SetUp]
         public void SetUp() => Schedule(() =>
         {
@@ -42,6 +57,11 @@ namespace osu.Game.Tests.Visual.UserInterface
 
             TimeToCompleteProgress = 2000;
             progressingNotifications.Clear();
+
+            panelPosition.Value = NotificationPanelPosition.Right;
+            displayPosition.Value = NotificationDisplayPosition.TopRight;
+            transparency.Value = false;
+            muteToastNotifications.Value = false;
 
             Children = new Drawable[]
             {
@@ -640,6 +660,159 @@ namespace osu.Game.Tests.Visual.UserInterface
             };
             notificationOverlay.Post(n);
             progressingNotifications.Add(n);
+        }
+
+        [Test]
+        public void TestPanelPosition()
+        {
+            setState(Visibility.Visible);
+            AddUntilStep("panel is on the right", () => isPanelAligned(NotificationPanelPosition.Right));
+
+            AddStep("move panel to left", () => panelPosition.Value = NotificationPanelPosition.Left);
+            AddUntilStep("panel is on the left", () => isPanelAligned(NotificationPanelPosition.Left));
+
+            AddStep("move panel to right", () => panelPosition.Value = NotificationPanelPosition.Right);
+            AddUntilStep("panel is on the right", () => isPanelAligned(NotificationPanelPosition.Right));
+
+            bool isPanelAligned(NotificationPanelPosition position)
+            {
+                var parentQuad = notificationOverlay.Parent!.ScreenSpaceDrawQuad;
+                var quad = notificationOverlay.ScreenSpaceDrawQuad;
+
+                return position == NotificationPanelPosition.Left
+                    ? Precision.AlmostEquals(quad.TopLeft.X, parentQuad.TopLeft.X)
+                    : Precision.AlmostEquals(quad.TopRight.X, parentQuad.TopRight.X);
+            }
+        }
+
+        [TestCase(NotificationDisplayPosition.TopLeft)]
+        [TestCase(NotificationDisplayPosition.TopRight)]
+        [TestCase(NotificationDisplayPosition.BottomLeft)]
+        [TestCase(NotificationDisplayPosition.BottomRight)]
+        public void TestToastDisplayPosition(NotificationDisplayPosition position)
+        {
+            SimpleNotification notification = null!;
+
+            AddStep($"set display position to {position}", () => displayPosition.Value = position);
+            AddStep("post transient notification", () => notificationOverlay.Post(notification = new SimpleNotification
+            {
+                Text = @"Test toast",
+                Transient = true,
+                IsImportant = true,
+            }));
+
+            AddUntilStep("toast is in expected corner", () =>
+            {
+                if (notification == null || !notification.IsLoaded || !notification.IsPresent)
+                    return false;
+
+                var parentQuad = notificationOverlay.Parent!.ScreenSpaceDrawQuad;
+                var quad = notification.ScreenSpaceDrawQuad;
+
+                float scale = parentQuad.Width / notificationOverlay.Parent.DrawWidth;
+                float margin = 20 * scale;
+
+                bool left = position is NotificationDisplayPosition.TopLeft or NotificationDisplayPosition.BottomLeft;
+                bool top = position is NotificationDisplayPosition.TopLeft or NotificationDisplayPosition.TopRight;
+
+                return (left
+                           ? Precision.AlmostEquals(quad.TopLeft.X, parentQuad.TopLeft.X + margin, 2 * scale)
+                           : Precision.AlmostEquals(quad.TopRight.X, parentQuad.TopRight.X - margin, 2 * scale))
+                       && (top
+                           ? Precision.AlmostEquals(quad.TopLeft.Y, parentQuad.TopLeft.Y + margin, 2 * scale)
+                           : Precision.AlmostEquals(quad.BottomLeft.Y, parentQuad.BottomLeft.Y - margin, 2 * scale));
+            });
+        }
+
+        [Test]
+        public void TestNotificationTransparencySetting()
+        {
+            SimpleNotification notification = null!;
+
+            AddStep("enable transparency", () => transparency.Value = true);
+            AddStep("show overlay", () => notificationOverlay.Show());
+            AddUntilStep("overlay visible", () => notificationOverlay.State.Value == Visibility.Visible);
+
+            AddStep("post notification", () => notificationOverlay.Post(notification = new SimpleNotification { Text = @"Fade test" }));
+            AddUntilStep("notification visible", () => notification.IsLoaded && notification.IsPresent);
+
+            AddStep("close notification", () => notification.Close(false));
+            AddUntilStep("notification removed", () => notification.Parent == null);
+            AddAssert("notification fully faded out", () => notification.Alpha <= 0.0001f);
+        }
+
+        [Test]
+        public void TestToastForwardingWithTransparency()
+        {
+            SimpleNotification notification = null!;
+
+            AddStep("enable transparency", () => transparency.Value = true);
+            AddStep("post transient notification", () => notificationOverlay.Post(notification = new SimpleNotification
+            {
+                Text = @"Test toast",
+                Transient = true,
+                IsImportant = false,
+            }));
+
+            AddUntilStep("notification in toast tray", () => notification.IsInToastTray);
+            AddUntilStep("notification fading", () => notification.IsInToastTray && notification.Alpha < 1);
+            AddUntilStep("notification forwarded", () => !notification.IsInToastTray);
+            AddUntilStep("notification removed", () => notification.Parent == null);
+            AddAssert("stock fade completed", () => notification.Alpha <= 0.0001f);
+        }
+
+        [Test]
+        public void TestToastForwardingWithoutTransparency()
+        {
+            SimpleNotification notification = null!;
+
+            AddStep("disable transparency", () => transparency.Value = false);
+            AddStep("post transient notification", () => notificationOverlay.Post(notification = new SimpleNotification
+            {
+                Text = @"Test toast",
+                Transient = true,
+                IsImportant = false,
+            }));
+
+            AddUntilStep("notification in toast tray", () => notification.IsInToastTray);
+            AddUntilStep("notification forwarded", () => !notification.IsInToastTray);
+            AddUntilStep("notification removed", () => notification.Parent == null);
+            AddAssert("stock fade completed", () => notification.Alpha <= 0.0001f);
+        }
+
+        [Test]
+        public void TestMuteToastNotifications()
+        {
+            SimpleNotification notification = null!;
+
+            AddStep("mute toast notifications", () => muteToastNotifications.Value = true);
+            AddStep("post transient notification", () => notificationOverlay.Post(notification = new SimpleNotification
+            {
+                Text = @"Test toast",
+                Transient = true,
+                IsImportant = false,
+            }));
+
+            AddUntilStep("notification added to panel", () => notificationOverlay.AllNotifications.Contains(notification));
+            AddAssert("notification not a toast", () => !notification.IsInToastTray);
+            AddAssert("no toasts displayed", () => notificationOverlay.ToastCount == 0);
+        }
+
+        [Test]
+        public void TestMutingFlushesExistingToasts()
+        {
+            SimpleNotification notification = null!;
+
+            AddStep("post transient notification", () => notificationOverlay.Post(notification = new SimpleNotification
+            {
+                Text = @"Test toast",
+                IsImportant = false,
+            }));
+
+            AddUntilStep("notification in toast tray", () => notification.IsInToastTray);
+            AddStep("mute toast notifications", () => muteToastNotifications.Value = true);
+            AddUntilStep("notification forwarded", () => !notification.IsInToastTray);
+            AddUntilStep("notification added to panel", () => notificationOverlay.AllNotifications.Contains(notification));
         }
 
         private void setState(Visibility state) => AddStep(state.ToString(), () => notificationOverlay.State.Value = state);

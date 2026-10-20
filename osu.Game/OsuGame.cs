@@ -1239,11 +1239,7 @@ namespace osu.Game
 
             loadComponentSingleFile(onScreenDisplay, Add, true);
 
-            loadComponentSingleFile<INotificationOverlay>(Notifications.With(d =>
-            {
-                d.Anchor = Anchor.TopRight;
-                d.Origin = Anchor.TopRight;
-            }), rightFloatingOverlayContent.Add, true);
+            loadComponentSingleFile<INotificationOverlay>(Notifications, rightFloatingOverlayContent.Add, true);
 
             loadComponentSingleFile(legacyImportManager, Add);
 
@@ -1827,7 +1823,7 @@ namespace osu.Game
             if (Settings.IsLoaded && Settings.State.Value == Visibility.Visible)
                 adjust += SettingsPanel.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
             if (Notifications.IsLoaded && Notifications.State.Value == Visibility.Visible)
-                adjust -= NotificationOverlay.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
+                adjust += (Notifications.PanelPosition == NotificationPanelPosition.Left ? 1 : -1) * NotificationOverlay.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
 
             horizontalOffsetAdjust = (float)Interpolation.DampContinuously(horizontalOffsetAdjust, adjust, 100, Time.Elapsed);
             // Avoid having everything on the screen moving by miniscule amounts (can create overhead on busy screens).
