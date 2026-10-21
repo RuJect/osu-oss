@@ -2,146 +2,131 @@
   <img width="500" alt="osu! logo" src="assets/lazer.png">
 </p>
 
-# osu!
+# osu!oss
 
-[![Build status](https://github.com/ppy/osu/actions/workflows/ci.yml/badge.svg?branch=master&event=push)](https://github.com/ppy/osu/actions/workflows/ci.yml)
-[![GitHub release](https://img.shields.io/github/release/ppy/osu.svg)](https://github.com/ppy/osu/releases/latest)
-[![CodeFactor](https://www.codefactor.io/repository/github/ppy/osu/badge)](https://www.codefactor.io/repository/github/ppy/osu)
-[![dev chat](https://discordapp.com/api/guilds/188630481301012481/widget.png?style=shield)](https://discord.gg/ppy)
-[![Crowdin](https://d322cqt584bo4o.cloudfront.net/osu-web/localized.svg)](https://crowdin.com/project/osu-web)
+A source-built osu! client that connects to the official servers without hooks or runtime patching.
 
-A free-to-win rhythm game. Rhythm is just a *click* away!
+## Before you start
 
-This is the future – and final – iteration of the [osu!](https://osu.ppy.sh) game client which marks the beginning of an open era! Currently known by and released under the release codename "*lazer*". As in sharper than cutting-edge.
+osu!oss is an unofficial fork of osu!lazer and is not affiliated with ppy Pty Ltd.
+
+Using a modified client violates the osu! Terms of Service. Account restrictions are possible. The risk is lower than with binary patching or runtime modification, because osu!oss does not inject into an installed official client or patch it after launch, but the risk is not zero. You use osu!oss at your own risk.
+
+osu!oss contains no cheats and will not add them. Contributions that add gameplay advantages, gameplay automation, or other cheating functionality are not accepted.
+
+## What it is
+
+osu!oss is built from source. The client itself is changed, not an installed official binary. Authentication is implemented in `osu.Game.Auth` and uses the official client's managed auth module with pristine assemblies fetched from the matching osu! release.
+
+As far as we know, this is the first public project to run a source-modified osu! client against the official servers this way.
 
 ## Status
 
-This project is under constant development, but we do our best to keep things in a stable state. Players are encouraged to install from a release alongside their stable *osu!* client. This project will continue to evolve until we eventually reach the point where most users prefer it over the previous "osu!stable" release.
+Early development. There are no installers or prebuilt packages yet; the client is built and run from source. The `transplant` authentication path works. The `native` path does not (see below).
 
-A few resources are available as starting points to getting involved and understanding the project:
+## Current features
 
-- Detailed release changelogs are available on the [official osu! site](https://osu.ppy.sh/home/changelog/lazer).
-- You can learn more about our approach to [project management](https://github.com/ppy/osu/wiki/Project-management).
-- Track our current efforts [towards improving the game](https://github.com/orgs/ppy/projects/7/views/6).
+- **Official-server authentication** via `transplant` mode, including the first-run download of the required official files.
+- **osu!oss settings section**: incompatible mods, system mods, "Download all favourites", break skipping, and auto-skip for breaks, intro/outro, or both.
+- **Layout controls**: toolbar position and inversion, notification panel and toast positions, settings panel on either side, muted and transparent notifications.
+- **Themes**: 11 built-in themes, custom JSON themes, glass blur, and aggressive tinting. The default is Midnight (Violet).
+- **Skin cursor** for the menu.
+- **JavaScript scripting**: editor, console (`Ctrl+F4`), persistent script storage, event and notification APIs.
+- **Command palette** (`Ctrl+Space`) with fuzzy search, argument hints, and built-in commands such as `search`, `mods`, `skin`, `ruleset`, `randommap`, and `exit`.
 
-## Running osu!
+## Authentication (`osu.Game.Auth`)
 
-If you are just looking to give the game a whirl, you can grab the latest release for your platform:
+The module installs `APIRequest.Sign` and `HubClientConnector.Sign`, so requests and SignalR connections are signed in the same places as in the official client. The signing method is selected with `OSU_AUTH_METHOD`.
 
-### Latest release:
+### `transplant` (default, working)
 
-| [Windows 10+ (x64)](https://github.com/ppy/osu/releases/latest/download/install.exe) | macOS 12+ ([Intel](https://github.com/ppy/osu/releases/latest/download/osu.app.Intel.zip), [Apple Silicon](https://github.com/ppy/osu/releases/latest/download/osu.app.Apple.Silicon.zip)) | [Linux (x64)](https://github.com/ppy/osu/releases/latest/download/osu.AppImage) | [iOS 13.4+](https://osu.ppy.sh/home/testflight) | [Android 7+](https://github.com/ppy/osu/releases/latest/download/sh.ppy.osulazer.apk) |
-|--------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------- | ------------- | ------------- |
+- Fetches pristine, version-matched official assemblies from the matching GitHub release: the AppImage on Linux, the app ZIP on macOS, and the Squirrel package on Windows. The measured game assemblies are not shipped in this repository.
+- Caches them under `<osu! storage>/osu-oss/auth-blobs` and disables signing until the set is complete. The first launch downloads them in the background; restart after it finishes.
+- Loads the managed auth module shipped next to the executable as `osu.Game.Auth.transplant.dll` and delegates signing to it.
+- Redirects the module's measurements to the pristine files with the `authredirect` shim. On Linux and macOS the game re-executes itself with `LD_PRELOAD`/`DYLD_INSERT_LIBRARIES`; on Windows the shim is loaded into the process.
+- On Linux, the module runs under a seccomp user-notification filter with a separate supervisor process. Process creation, tracing, namespaces, mounts, kernel-module operations, and network access are denied by default. Windows and macOS only have the redirect shim; there is no seccomp equivalent there.
 
-You can also generally download a version for your current device from the [osu! site](https://osu.ppy.sh/home/download).
+Relevant environment variables:
 
-If your platform is unsupported or not listed above, there is still a chance you can run the release or manually build it by following the instructions below.
+- `AUTHISOLATE` — `enforce` (default), `audit`, or `0` to disable isolation.
+- `AUTHISOLATE_NET` — `deny` (default) or `allow`.
+- `AUTHISOLATE_LOG` — path to the supervisor log.
+- `OSU_AUTH_NO_REEXEC=1` — do not re-execute with the shim on Linux/macOS (useful when debugging).
+- `OSU_AUTHREDIRECT` — override the shim path.
+- `OSU_AUTH_TRANSPLANT` — override the transplant assembly path.
 
-**For iOS/iPadOS users**: The iOS testflight link fills up very fast (Apple has a hard limit of 10,000 users). We reset it occasionally. Please do not ask about this. Check back regularly for link resets or follow [peppy](https://twitter.com/ppy) on twitter for announcements. Our goal is to get the game on mobile app stores very soon so we don't have to live with this limitation.
+### `native` (not usable here)
 
-## Developing a custom ruleset
+`OSU_AUTH_METHOD=native` (also `reimpl` or `cleanroom`) selects a simplified clean-room implementation. It is a scaffold, not a working signer, and cannot authenticate a client in this repository. Active work on the clean-room implementation happens in a private repository and will not be merged here while `transplant` is the supported mode.
 
-osu! is designed to allow user-created gameplay variations, called "rulesets". Building one of these allows a developer to harness the power of the osu! beatmap library, game engine, and general UX for a new style of gameplay. To get started working on a ruleset, we have some templates available [here](https://github.com/ppy/osu/tree/master/Templates).
+If transplant setup fails, the current code falls back to the native path, which does not currently authenticate. Check the log to see which path was used.
 
-You can see some examples of custom rulesets by visiting the [custom ruleset directory](https://github.com/ppy/osu/discussions/13096).
+## Running from source
 
-## Developing osu!
+### Requirements
 
-### Prerequisites
+- .NET SDK 10.0 (see `global.json`).
+- Git.
+- A C compiler for the auth redirect shim:
+  - Linux: `cc` (`build-essential` or `base-devel`) and libseccomp (`libseccomp2` on Debian/Ubuntu, `libseccomp` on Arch).
+  - macOS: Xcode Command Line Tools (`clang`).
+  - Windows: Visual Studio Build Tools with the C++ workload, or mingw-w64. Without a compiler the shim is not built and transplant authentication will not work.
+- The usual osu!lazer desktop runtime dependencies (SDL3, OpenGL/Vulkan, audio).
 
-Please make sure you have the following prerequisites:
-
-- A desktop platform with the correct [.NET SDK](https://dotnet.microsoft.com/download) installed.
-
-When working with the codebase, we recommend using an IDE with intelligent code completion and syntax highlighting, such as the latest version of [Visual Studio](https://visualstudio.microsoft.com/vs/), [JetBrains Rider](https://www.jetbrains.com/rider/), or [Visual Studio Code](https://code.visualstudio.com/) with the [EditorConfig](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig) and [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit) plugin installed.
-
-### Downloading the source code
-
-Clone the repository:
-
-```shell
-git clone https://github.com/ppy/osu
-cd osu
-```
-
-To update the source code to the latest commit, run the following command inside the `osu` directory:
-
-```shell
-git pull
-```
-
-### Building
-
-#### From an IDE
-
-You should load the solution via one of the platform-specific `.slnf` files, rather than the main `.sln`. This will reduce dependencies and hide platforms that you don't care about. Valid `.slnf` files are:
-
-- `osu.Desktop.slnf` (most common)
-- `osu.Android.slnf`
-- `osu.iOS.slnf`
-
-Run configurations for the recommended IDEs (listed above) are included. You should use the provided Build/Run functionality of your IDE to get things going. When testing or building new components, it's highly encouraged you use the `osu! (Tests)` project/configuration. More information on this is provided [below](#contributing).
-
-To build for mobile platforms, you will likely need to run `sudo dotnet workload restore` if you haven't done so previously. This will install Android/iOS tooling required to complete the build.
-
-#### From CLI
-
-You can also build and run *osu!* from the command-line with a single command:
+Clone and restore:
 
 ```shell
-dotnet run --project osu.Desktop
+git clone ssh://forgejo@git.ruject.fun/RuJect/osu-oss.git
+cd osu-oss
+dotnet restore
 ```
 
-When running locally to do any kind of performance testing, make sure to add `-c Release` to the build command, as the overhead of running with the default `Debug` configuration can be large (especially when testing with local framework modifications as below).
+Build and run:
 
-If the build fails, try to restore NuGet packages with `dotnet restore`.
-
-### Testing with resource/framework modifications
-
-Sometimes it may be necessary to cross-test changes in [osu-resources](https://github.com/ppy/osu-resources) or [osu-framework](https://github.com/ppy/osu-framework). This can be quickly achieved using included commands:
-
-Windows:
-
-```ps
-UseLocalFramework.ps1
-UseLocalResources.ps1
+```shell
+dotnet run --project osu.Desktop -c Release
 ```
 
-macOS / Linux:
+Use `-c Debug` while working on the code.
 
-```ps
-UseLocalFramework.sh
-UseLocalResources.sh
-```
+### Platform notes
 
-Note that these commands assume you have the relevant project(s) checked out in adjacent directories:
+**Linux.** The shim is built automatically as `authredirect.so`. If you use Nix, `nix develop` provides the SDK, compiler, and runtime libraries; `run-osu` starts the client.
 
-```
-|- osu            // this repository
-|- osu-framework
-|- osu-resources
-```
+**Windows.** Run from a Developer PowerShell where `cl` is available, or install mingw-w64 and pass `-p:AuthRedirectShimWindowsToolchain=mingw` to `dotnet run`. MSVC builds the shim automatically when the Visual Studio environment is present.
 
-### Code analysis
+**macOS.** Xcode Command Line Tools provide `clang`, which builds `authredirect.dylib` automatically.
 
-Before committing your code, please run a code formatter. This can be achieved by running `dotnet format` in the command line, or using the `Format code` command in your IDE.
+### First launch
 
-We have adopted some cross-platform, compiler integrated analyzers. They can provide warnings when you are editing, building inside IDE or from command line, as-if they are provided by the compiler itself.
+On first launch, osu!oss downloads the official authentication files. Wait for the notification, then restart. The log should contain `Using transplanted (proprietary) auth signing.` If it says that signing is disabled or that the native path was used, check the shim and the `auth-blobs` cache.
 
-JetBrains ReSharper InspectCode is also used for wider rule sets. You can run it from PowerShell with `.\InspectCode.ps1`. Alternatively, you can install ReSharper or use Rider to get inline support in your IDE of choice.
+Files specific to osu!oss live next to the normal osu! data:
 
-## Contributing
+- `osu-oss/config.ini`
+- `osu-oss/themes/`
+- `osu-oss/scripts/`
+- `osu-oss/auth-blobs/`
 
-When it comes to contributing to the project, the two main things you can do to help out are reporting issues and submitting pull requests. Please refer to the [contributing guidelines](CONTRIBUTING.md) to understand how to help in the most effective way possible.
+## Roadmap
 
-If you wish to help with localisation efforts, head over to [crowdin](https://crowdin.com/project/osu-web).
+- Prebuilt executables and installers.
+- Plugin subsystem.
+- Colored usernames.
+- Android support; iOS is being considered.
+- Sharing skins and settings.
+- Custom toolbar widgets.
+- Keyboard shortcuts for commands.
 
-Our team believes in **human contributions**. Any contribution – be it an issue report or a pull request – which is created by, documented by, or aided by AI/LLM usage will typically be **closed and locked without further discussion**.
+No dates. The order may change.
 
-## Licence
+## Contact
 
-*osu!*'s code and framework are licensed under the [MIT licence](https://opensource.org/licenses/MIT). Please see [the licence file](LICENCE) for more information. [tl;dr](https://tldrlegal.com/license/mit-license) you can do whatever you want as long as you include the original copyright and license notice in any copy of the software/source.
+- Email: `rus07tam+contact@ruject.fun` (also for legal questions)
+- Telegram: <https://t.me/rus07tam_vf>
 
-Please note that this *does not cover* the usage of the "osu!" or "ppy" branding in any software, resources, advertising or promotion, as this is protected by trademark law.
+For security issues, use email rather than a public issue.
 
-Please also note that game resources are covered by a separate licence. Please see the [ppy/osu-resources](https://github.com/ppy/osu-resources) repository for clarifications.
+## Licence and credits
+
+osu!oss is based on [ppy/osu](https://github.com/ppy/osu) and keeps its MIT licence; see [LICENCE](LICENCE). The osu! and ppy names and branding are not covered by the MIT licence and belong to ppy Pty Ltd. Game resources and the downloaded official authentication files keep their original terms.
