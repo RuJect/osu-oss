@@ -120,8 +120,8 @@ namespace osu.Game.Theming
             }
 
             Current = requested;
-            Logger.Log($"Using theme '{Current.Name}' ({Current.Id}).", LoggingTarget.Runtime, LogLevel.Important);
-            Logger.Log($"Glass effects {(GlassActive ? "enabled" : "disabled")} (user setting: {GlassEffectsAllowed}, theme: {Current.GlassEnabled}). Aggressive tinting: {AggressiveTinting}.", LoggingTarget.Runtime, LogLevel.Important);
+            Logger.Log($"Using theme '{Current.Name}' ({Current.Id}).", LoggingTarget.Runtime, LogLevel.Verbose);
+            Logger.Log($"Glass effects {(GlassActive ? "enabled" : "disabled")} (user setting: {GlassEffectsAllowed}, theme: {Current.GlassEnabled}). Aggressive tinting: {AggressiveTinting}.", LoggingTarget.Runtime, LogLevel.Verbose);
         }
 
         private static IEnumerable<(string, JObject)> loadBuiltInDefinitions()

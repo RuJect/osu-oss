@@ -22,7 +22,6 @@ namespace osu.Game.API.Events
         private readonly OsuGame game;
 
         private GameEventBridge? bridge;
-        private NotificationEventSubscriber? subscriber;
 
         private bool initialised;
         private bool disposed;
@@ -57,9 +56,6 @@ namespace osu.Game.API.Events
 
             if (hub != null)
                 bridge = new GameEventBridge(hub, Bus);
-
-            subscriber = new NotificationEventSubscriber(Bus);
-            game.Add(subscriber);
         }
 
         public void Dispose()
@@ -71,9 +67,6 @@ namespace osu.Game.API.Events
 
             bridge?.Dispose();
             bridge = null;
-
-            subscriber?.Expire();
-            subscriber = null;
         }
     }
 }
