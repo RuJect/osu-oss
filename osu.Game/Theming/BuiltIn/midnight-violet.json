@@ -1,0 +1,63 @@
+{
+  "name": "Midnight (Violet)",
+  "author": "osu-oss",
+  "description": "A near-black midnight with an unmistakably violet accent palette.",
+  "inherits": "midnight-mauve",
+  "preview": [
+    "#a35cff",
+    "#c46fff",
+    "#120e1a",
+    "#e9dbff",
+    "#8f86ff",
+    "#7a35d6",
+    "#d9a6ff",
+    "#3a1173"
+  ],
+  "colors": {
+    "PurpleLighter": "#e9dbff",
+    "PurpleLight": "#c7a6ff",
+    "PurpleLightAlternative": "#cba4da",
+    "Purple": "#a35cff",
+    "PurpleDark": "#7a35d6",
+    "PurpleDarkAlternative": "#352044",
+    "PurpleDarker": "#3a1173",
+    "PinkLighter": "#f6e2ff",
+    "PinkLight": "#d9a6ff",
+    "Pink": "#c46fff",
+    "PinkDark": "#9c4ad6",
+    "PinkDarker": "#5e247d",
+    "BlueLighter": "#e2e0ff",
+    "BlueLight": "#b3adff",
+    "Blue": "#8f86ff",
+    "BlueDark": "#6a61d6",
+    "BlueDarker": "#38328c",
+    "Purple0": "#cfa8ff",
+    "Purple1": "#a35cff",
+    "Purple2": "#8a3ee6",
+    "Purple3": "#6e2cc2",
+    "Purple4": "#3f235c",
+    "B5": "#120e1a",
+    "GreySkyDarker": "#161022",
+    "GreySeaFoamDarker": "#18131f",
+    "GreySeaFoamDark": "#231c2d",
+    "GreySeaFoam": "#2b2436"
+  },
+  "overlay": {
+    "hue": 280,
+    "saturationMultiplier": 0.95,
+    "lightnessMultiplier": 0.95,
+    "slots": {
+      "Foreground1": "hsl(280, 0.1, 0.3)",
+      "Background1": "hsl(280, 0.1, 0.1)",
+      "Background2": "hsl(280, 0.1, 0.1)",
+      "Background3": "hsl(280, 0.1, 0)",
+      "Background4": "hsl(280, 0.1, 0.02)",
+      "Background5": "hsl(280, 0.1, 0)",
+      "Background6": "hsl(280, 0.1, 0)"
+    }
+  },
+  "glass": {
+    "enabled": true,
+    "blur": 8
+  }
+}

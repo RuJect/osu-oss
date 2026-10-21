@@ -23,16 +23,39 @@ namespace osu.Game.Screens
             set => base.Padding = value;
         }
 
+        private MarginPadding backgroundExtension;
+
+        /// <summary>
+        /// Extends the background beyond the edges of the screen stack without moving the
+        /// content. Used to keep material behind a glass toolbar when the toolbar reserves
+        /// layout space at an edge of the game.
+        /// </summary>
+        public MarginPadding BackgroundExtension
+        {
+            get => backgroundExtension;
+            set => backgroundExtension = value;
+        }
+
         public OsuScreenStack()
         {
             InternalChild = parallaxContainer = new ParallaxContainer
             {
-                RelativeSizeAxes = Axes.Both,
+                RelativeSizeAxes = Axes.None,
                 Child = backgroundScreenStack = new BackgroundScreenStack { RelativeSizeAxes = Axes.Both },
             };
 
             ScreenPushed += screenPushed;
             ScreenExited += ScreenChanged;
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            parallaxContainer.X = -backgroundExtension.Left;
+            parallaxContainer.Y = -backgroundExtension.Top;
+            parallaxContainer.Width = DrawWidth + backgroundExtension.Left + backgroundExtension.Right;
+            parallaxContainer.Height = DrawHeight + backgroundExtension.Top + backgroundExtension.Bottom;
         }
 
         public void PushSynchronously(OsuScreen screen)

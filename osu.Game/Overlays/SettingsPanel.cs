@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using osuTK;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
@@ -18,9 +17,12 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays.Settings;
+using osu.Game.Theming;
+using osuTK;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -91,14 +93,12 @@ namespace osu.Game.Overlays
                 RelativeSizeAxes = Axes.Y,
                 Children = new Drawable[]
                 {
-                    new Box
+                    new GlassBackdrop
                     {
                         Anchor = Anchor.TopRight,
                         Origin = Anchor.TopRight,
                         Scale = new Vector2(2, 1), // over-extend to the left for transitions
-                        RelativeSizeAxes = Axes.Both,
-                        Colour = colourProvider.Background4,
-                        Alpha = 1,
+                        TintColour = colourProvider.Background4.Opacity(ThemeManager.Current.GetSurfaceAlpha("panel", 0.92f)),
                     },
                     loading = new LoadingLayer
                     {
@@ -113,6 +113,7 @@ namespace osu.Game.Overlays
                 Child = SectionsContainer = new SettingsSectionsContainer
                 {
                     Masking = true,
+                    CornerRadius = ThemeManager.Current.CornerRadius,
                     EdgeEffect = new EdgeEffectParameters
                     {
                         Colour = Color4.Black.Opacity(0),

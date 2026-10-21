@@ -40,6 +40,7 @@ using osu.Game.Collections;
 using osu.Game.Configuration;
 using osu.Game.Database;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Input;
@@ -80,6 +81,7 @@ using osu.Game.Screens.Ranking;
 using osu.Game.Screens.Select;
 using osu.Game.Seasonal;
 using osu.Game.Skinning;
+using osu.Game.Theming;
 using osu.Game.Updater;
 using osu.Game.Users;
 using osu.Game.Utils;
@@ -108,7 +110,7 @@ namespace osu.Game
         /// <summary>
         /// A common shear factor applied to most components of the game.
         /// </summary>
-        public static readonly Vector2 SHEAR = new Vector2(0.2f, 0);
+        public static Vector2 SHEAR => ThemeManager.Current.FlatLayout ? Vector2.Zero : new Vector2(0.2f, 0);
 
         /// <summary>
         /// For elements placed close to the screen edge, this is the margin to leave to the edge.
@@ -381,6 +383,31 @@ namespace osu.Game
         }
 
         protected new DependencyContainer Dependencies { get; private set; }
+
+        private Container? screenInsetContainer;
+
+        // Non-null only while the active theme requests glass surfaces.
+        private BufferedContainer? sceneCaptureBuffer;
+
+        /// <summary>
+        /// Wraps the screen scene in a buffer so glass panels can sample and blur what is behind them.
+        /// When glass is inactive the scene is returned untouched, adding no overhead.
+        /// </summary>
+        private Drawable wrapSceneCaptureIfGlass(Drawable sceneContent)
+        {
+            if (!ThemeManager.GlassActive)
+                return sceneContent;
+
+            sceneCaptureBuffer = new BufferedContainer(cachedFrameBuffer: false)
+            {
+                RelativeSizeAxes = Axes.Both,
+                RedrawOnScale = false,
+                Child = sceneContent,
+            };
+
+            Dependencies.CacheAs<IBackdropProvider>(new SceneBufferBackdropProvider(sceneCaptureBuffer));
+            return sceneCaptureBuffer;
+        }
 
         protected override IReadOnlyDependencyContainer CreateChildDependencies(IReadOnlyDependencyContainer parent) =>
             Dependencies = new DependencyContainer(base.CreateChildDependencies(parent));
@@ -1140,9 +1167,10 @@ namespace osu.Game
                 ScreenOffsetContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Children = new Drawable[]
+                    Child = wrapSceneCaptureIfGlass(screenInsetContainer = new Container
                     {
-                        ScreenContainer = new ScalingContainer(ScalingMode.ExcludeOverlays)
+                        RelativeSizeAxes = Axes.Both,
+                        Child = ScreenContainer = new ScalingContainer(ScalingMode.ExcludeOverlays)
                         {
                             RelativeSizeAxes = Axes.Both,
                             Anchor = Anchor.Centre,
@@ -1173,7 +1201,7 @@ namespace osu.Game
                                 },
                             }
                         },
-                    }
+                    })
                 },
                 overlayOffsetContainer = new Container
                 {
@@ -1803,8 +1831,12 @@ namespace osu.Game
                     break;
             }
 
-            ScreenOffsetContainer.Padding = toolbarPadding;
+            if (screenInsetContainer != null)
+                screenInsetContainer.Padding = toolbarPadding;
+
             overlayOffsetContainer.Padding = toolbarPadding;
+
+            ScreenStack.BackgroundExtension = toolbarPadding;
 
             adjustGlobalScreenOffset();
 

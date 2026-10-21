@@ -65,6 +65,7 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Skinning;
+using osu.Game.Theming;
 using osu.Game.Utils;
 using RuntimeInfo = osu.Framework.RuntimeInfo;
 
@@ -547,6 +548,10 @@ namespace osu.Game
 
             dependencies.Cache(SessionStatics = new SessionStatics());
             dependencies.Cache(hitErrorTracker = new SessionAverageHitErrorTracker());
+
+            ThemeManager.Initialise(Storage, SpecialConfig.GetBindable<string>(SpecialSetting.Theme).Value,
+                SpecialConfig.GetBindable<bool>(SpecialSetting.ThemeGlassEffects).Value,
+                SpecialConfig.GetBindable<bool>(SpecialSetting.AggressiveTinting).Value);
             dependencies.Cache(Colours = new OsuColour());
 
             RegisterImportHandler(BeatmapManager);

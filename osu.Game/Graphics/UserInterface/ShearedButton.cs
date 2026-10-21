@@ -11,13 +11,14 @@ using osu.Framework.Localisation;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
+using osu.Game.Theming;
 
 namespace osu.Game.Graphics.UserInterface
 {
     public partial class ShearedButton : OsuClickableContainer
     {
         public const float DEFAULT_HEIGHT = 50;
-        public const float CORNER_RADIUS = 7;
+        public static float CORNER_RADIUS => ThemeManager.Current.CornerRadius;
         public const float BORDER_THICKNESS = 2;
 
         public LocalisableString Text

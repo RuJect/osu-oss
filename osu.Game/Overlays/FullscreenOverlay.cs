@@ -7,11 +7,12 @@ using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
-using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Online.API;
+using osu.Game.Theming;
 using osuTK.Graphics;
 
 namespace osu.Game.Overlays
@@ -35,7 +36,7 @@ namespace osu.Game.Overlays
 
         protected override Container<Drawable> Content => content;
 
-        private readonly Box background;
+        private readonly GlassBackdrop background;
         private readonly Container content;
 
         protected FullscreenOverlay(OverlayColourScheme colourScheme)
@@ -62,10 +63,7 @@ namespace osu.Game.Overlays
 
             base.Content.AddRange(new Drawable[]
             {
-                background = new Box
-                {
-                    RelativeSizeAxes = Axes.Both,
-                },
+                background = new GlassBackdrop(),
                 content = new Container
                 {
                     RelativeSizeAxes = Axes.Both
@@ -109,7 +107,7 @@ namespace osu.Game.Overlays
             Waves.SecondWaveColour = ColourProvider.Light3;
             Waves.ThirdWaveColour = ColourProvider.Dark4;
             Waves.FourthWaveColour = ColourProvider.Dark3;
-            background.Colour = BackgroundColour;
+            background.TintColour = BackgroundColour.Opacity(ThemeManager.Current.GetSurfaceAlpha("overlay", 0.9f));
         }
 
         protected override void PopIn()

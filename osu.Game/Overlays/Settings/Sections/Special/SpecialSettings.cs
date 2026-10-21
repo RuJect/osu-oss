@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -11,6 +11,7 @@ using osu.Framework.Platform;
 using osu.Game.Configuration;
 using osu.Game.IO;
 using osu.Game.Overlays.Dialog;
+using osu.Game.Theming;
 
 namespace osu.Game.Overlays.Settings.Sections.Special
 {
@@ -83,6 +84,19 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Notification transparency",
                     Current = config.GetBindable<bool>(SpecialSetting.NotificationTransparency),
                 },
+                new ThemeSettings(),
+                new SettingsCheckbox
+                {
+                    LabelText = "Aggressive theme tinting",
+                    TooltipText = "Forces every colour in the selected theme to the theme's main hue. The theme preview updates immediately; the rest of the game updates after a restart.",
+                    Current = config.GetBindable<bool>(SpecialSetting.AggressiveTinting),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Enable glass effects",
+                    TooltipText = "Allows themes to blur and tint the game content behind panels. Requires a restart.",
+                    Current = config.GetBindable<bool>(SpecialSetting.ThemeGlassEffects),
+                },
                 new DangerousSettingsButtonV2
                 {
                     Text = "Reset osu!oss data",
@@ -115,6 +129,9 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition).Value = NotificationDisplayPosition.TopRight;
                 config.GetBindable<bool>(SpecialSetting.NotificationTransparency).Value = false;
                 config.GetBindable<bool>(SpecialSetting.MuteToastNotifications).Value = false;
+                config.GetBindable<string>(SpecialSetting.Theme).Value = ThemeManager.DEFAULT_THEME;
+                config.GetBindable<bool>(SpecialSetting.ThemeGlassEffects).Value = true;
+                config.GetBindable<bool>(SpecialSetting.AggressiveTinting).Value = true;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }

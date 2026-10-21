@@ -2,7 +2,9 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Reflection;
 using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Game.Beatmaps;
 using osu.Game.Online.Rooms;
@@ -10,6 +12,7 @@ using osu.Game.Overlays;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
+using osu.Game.Theming;
 using osu.Game.Utils;
 using osuTK.Graphics;
 
@@ -55,6 +58,29 @@ namespace osu.Game.Graphics
             (11.5f, Color4Extensions.FromHex("c645b8")),
             (12.4f, Color4Extensions.FromHex("6563de")),
         };
+
+        public OsuColour()
+        {
+            ThemeSnapshot theme = ThemeManager.Current;
+
+            if (theme.Id == "vanilla")
+                return;
+
+            foreach (FieldInfo field in typeof(OsuColour).GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (field.FieldType == typeof(Color4) && theme.TryGetColour(field.Name, out Colour4 themed))
+                    field.SetValue(this, (Color4)themed);
+            }
+
+            if (ThemeManager.AggressiveTinting)
+            {
+                foreach (FieldInfo field in typeof(OsuColour).GetFields(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    if (field.FieldType == typeof(Color4))
+                        field.SetValue(this, (Color4)theme.ApplyAggressiveTint((Color4)field.GetValue(this)!));
+                }
+            }
+        }
 
         /// <summary>
         /// Retrieves the colour for a given point in the star range.
@@ -302,100 +328,100 @@ namespace osu.Game.Graphics
             return Gray(brightness > 0.5f ? 0.2f : 0.9f);
         }
 
-        public readonly Color4 TeamColourRed = Color4Extensions.FromHex("#AA1414");
-        public readonly Color4 TeamColourBlue = Color4Extensions.FromHex("#1462AA");
+        public Color4 TeamColourRed = Color4Extensions.FromHex("#AA1414");
+        public Color4 TeamColourBlue = Color4Extensions.FromHex("#1462AA");
 
         // See https://github.com/ppy/osu-web/blob/master/resources/assets/less/colors.less
-        public readonly Color4 PurpleLighter = Color4Extensions.FromHex(@"eeeeff");
-        public readonly Color4 PurpleLight = Color4Extensions.FromHex(@"aa88ff");
-        public readonly Color4 PurpleLightAlternative = Color4Extensions.FromHex(@"cba4da");
-        public readonly Color4 Purple = Color4Extensions.FromHex(@"8866ee");
-        public readonly Color4 PurpleDark = Color4Extensions.FromHex(@"6644cc");
-        public readonly Color4 PurpleDarkAlternative = Color4Extensions.FromHex(@"312436");
-        public readonly Color4 PurpleDarker = Color4Extensions.FromHex(@"441188");
+        public Color4 PurpleLighter = Color4Extensions.FromHex(@"eeeeff");
+        public Color4 PurpleLight = Color4Extensions.FromHex(@"aa88ff");
+        public Color4 PurpleLightAlternative = Color4Extensions.FromHex(@"cba4da");
+        public Color4 Purple = Color4Extensions.FromHex(@"8866ee");
+        public Color4 PurpleDark = Color4Extensions.FromHex(@"6644cc");
+        public Color4 PurpleDarkAlternative = Color4Extensions.FromHex(@"312436");
+        public Color4 PurpleDarker = Color4Extensions.FromHex(@"441188");
 
-        public readonly Color4 PinkLighter = Color4Extensions.FromHex(@"ffddee");
-        public readonly Color4 PinkLight = Color4Extensions.FromHex(@"ff99cc");
-        public readonly Color4 Pink = Color4Extensions.FromHex(@"ff66aa");
-        public readonly Color4 PinkDark = Color4Extensions.FromHex(@"cc5288");
-        public readonly Color4 PinkDarker = Color4Extensions.FromHex(@"bb1177");
+        public Color4 PinkLighter = Color4Extensions.FromHex(@"ffddee");
+        public Color4 PinkLight = Color4Extensions.FromHex(@"ff99cc");
+        public Color4 Pink = Color4Extensions.FromHex(@"ff66aa");
+        public Color4 PinkDark = Color4Extensions.FromHex(@"cc5288");
+        public Color4 PinkDarker = Color4Extensions.FromHex(@"bb1177");
 
-        public readonly Color4 BlueLighter = Color4Extensions.FromHex(@"ddffff");
-        public readonly Color4 BlueLight = Color4Extensions.FromHex(@"99eeff");
-        public readonly Color4 Blue = Color4Extensions.FromHex(@"66ccff");
-        public readonly Color4 BlueDark = Color4Extensions.FromHex(@"44aadd");
-        public readonly Color4 BlueDarker = Color4Extensions.FromHex(@"2299bb");
+        public Color4 BlueLighter = Color4Extensions.FromHex(@"ddffff");
+        public Color4 BlueLight = Color4Extensions.FromHex(@"99eeff");
+        public Color4 Blue = Color4Extensions.FromHex(@"66ccff");
+        public Color4 BlueDark = Color4Extensions.FromHex(@"44aadd");
+        public Color4 BlueDarker = Color4Extensions.FromHex(@"2299bb");
 
-        public readonly Color4 YellowLighter = Color4Extensions.FromHex(@"ffffdd");
-        public readonly Color4 YellowLight = Color4Extensions.FromHex(@"ffdd55");
-        public readonly Color4 Yellow = Color4Extensions.FromHex(@"ffcc22");
-        public readonly Color4 YellowDark = Color4Extensions.FromHex(@"eeaa00");
-        public readonly Color4 YellowDarker = Color4Extensions.FromHex(@"cc6600");
+        public Color4 YellowLighter = Color4Extensions.FromHex(@"ffffdd");
+        public Color4 YellowLight = Color4Extensions.FromHex(@"ffdd55");
+        public Color4 Yellow = Color4Extensions.FromHex(@"ffcc22");
+        public Color4 YellowDark = Color4Extensions.FromHex(@"eeaa00");
+        public Color4 YellowDarker = Color4Extensions.FromHex(@"cc6600");
 
-        public readonly Color4 GreenLighter = Color4Extensions.FromHex(@"eeffcc");
-        public readonly Color4 GreenLight = Color4Extensions.FromHex(@"b3d944");
-        public readonly Color4 Green = Color4Extensions.FromHex(@"88b300");
-        public readonly Color4 GreenDark = Color4Extensions.FromHex(@"668800");
-        public readonly Color4 GreenDarker = Color4Extensions.FromHex(@"445500");
+        public Color4 GreenLighter = Color4Extensions.FromHex(@"eeffcc");
+        public Color4 GreenLight = Color4Extensions.FromHex(@"b3d944");
+        public Color4 Green = Color4Extensions.FromHex(@"88b300");
+        public Color4 GreenDark = Color4Extensions.FromHex(@"668800");
+        public Color4 GreenDarker = Color4Extensions.FromHex(@"445500");
 
-        public readonly Color4 Sky = Color4Extensions.FromHex(@"6bb5ff");
-        public readonly Color4 GreySkyLighter = Color4Extensions.FromHex(@"c6e3f4");
-        public readonly Color4 GreySkyLight = Color4Extensions.FromHex(@"8ab3cc");
-        public readonly Color4 GreySky = Color4Extensions.FromHex(@"405461");
-        public readonly Color4 GreySkyDark = Color4Extensions.FromHex(@"303d47");
-        public readonly Color4 GreySkyDarker = Color4Extensions.FromHex(@"21272c");
+        public Color4 Sky = Color4Extensions.FromHex(@"6bb5ff");
+        public Color4 GreySkyLighter = Color4Extensions.FromHex(@"c6e3f4");
+        public Color4 GreySkyLight = Color4Extensions.FromHex(@"8ab3cc");
+        public Color4 GreySky = Color4Extensions.FromHex(@"405461");
+        public Color4 GreySkyDark = Color4Extensions.FromHex(@"303d47");
+        public Color4 GreySkyDarker = Color4Extensions.FromHex(@"21272c");
 
-        public readonly Color4 SeaFoam = Color4Extensions.FromHex(@"05ffa2");
-        public readonly Color4 GreySeaFoamLighter = Color4Extensions.FromHex(@"9ebab1");
-        public readonly Color4 GreySeaFoamLight = Color4Extensions.FromHex(@"4d7365");
-        public readonly Color4 GreySeaFoam = Color4Extensions.FromHex(@"33413c");
-        public readonly Color4 GreySeaFoamDark = Color4Extensions.FromHex(@"2c3532");
-        public readonly Color4 GreySeaFoamDarker = Color4Extensions.FromHex(@"1e2422");
+        public Color4 SeaFoam = Color4Extensions.FromHex(@"05ffa2");
+        public Color4 GreySeaFoamLighter = Color4Extensions.FromHex(@"9ebab1");
+        public Color4 GreySeaFoamLight = Color4Extensions.FromHex(@"4d7365");
+        public Color4 GreySeaFoam = Color4Extensions.FromHex(@"33413c");
+        public Color4 GreySeaFoamDark = Color4Extensions.FromHex(@"2c3532");
+        public Color4 GreySeaFoamDarker = Color4Extensions.FromHex(@"1e2422");
 
-        public readonly Color4 Cyan = Color4Extensions.FromHex(@"05f4fd");
-        public readonly Color4 GreyCyanLighter = Color4Extensions.FromHex(@"77b1b3");
-        public readonly Color4 GreyCyanLight = Color4Extensions.FromHex(@"436d6f");
-        public readonly Color4 GreyCyan = Color4Extensions.FromHex(@"293d3e");
-        public readonly Color4 GreyCyanDark = Color4Extensions.FromHex(@"243536");
-        public readonly Color4 GreyCyanDarker = Color4Extensions.FromHex(@"1e2929");
+        public Color4 Cyan = Color4Extensions.FromHex(@"05f4fd");
+        public Color4 GreyCyanLighter = Color4Extensions.FromHex(@"77b1b3");
+        public Color4 GreyCyanLight = Color4Extensions.FromHex(@"436d6f");
+        public Color4 GreyCyan = Color4Extensions.FromHex(@"293d3e");
+        public Color4 GreyCyanDark = Color4Extensions.FromHex(@"243536");
+        public Color4 GreyCyanDarker = Color4Extensions.FromHex(@"1e2929");
 
-        public readonly Color4 Lime = Color4Extensions.FromHex(@"82ff05");
-        public readonly Color4 GreyLimeLighter = Color4Extensions.FromHex(@"deff87");
-        public readonly Color4 GreyLimeLight = Color4Extensions.FromHex(@"657259");
-        public readonly Color4 GreyLime = Color4Extensions.FromHex(@"3f443a");
-        public readonly Color4 GreyLimeDark = Color4Extensions.FromHex(@"32352e");
-        public readonly Color4 GreyLimeDarker = Color4Extensions.FromHex(@"2e302b");
+        public Color4 Lime = Color4Extensions.FromHex(@"82ff05");
+        public Color4 GreyLimeLighter = Color4Extensions.FromHex(@"deff87");
+        public Color4 GreyLimeLight = Color4Extensions.FromHex(@"657259");
+        public Color4 GreyLime = Color4Extensions.FromHex(@"3f443a");
+        public Color4 GreyLimeDark = Color4Extensions.FromHex(@"32352e");
+        public Color4 GreyLimeDarker = Color4Extensions.FromHex(@"2e302b");
 
-        public readonly Color4 Violet = Color4Extensions.FromHex(@"bf04ff");
-        public readonly Color4 GreyVioletLighter = Color4Extensions.FromHex(@"ebb8fe");
-        public readonly Color4 GreyVioletLight = Color4Extensions.FromHex(@"685370");
-        public readonly Color4 GreyViolet = Color4Extensions.FromHex(@"46334d");
-        public readonly Color4 GreyVioletDark = Color4Extensions.FromHex(@"2c2230");
-        public readonly Color4 GreyVioletDarker = Color4Extensions.FromHex(@"201823");
+        public Color4 Violet = Color4Extensions.FromHex(@"bf04ff");
+        public Color4 GreyVioletLighter = Color4Extensions.FromHex(@"ebb8fe");
+        public Color4 GreyVioletLight = Color4Extensions.FromHex(@"685370");
+        public Color4 GreyViolet = Color4Extensions.FromHex(@"46334d");
+        public Color4 GreyVioletDark = Color4Extensions.FromHex(@"2c2230");
+        public Color4 GreyVioletDarker = Color4Extensions.FromHex(@"201823");
 
-        public readonly Color4 Carmine = Color4Extensions.FromHex(@"ff0542");
-        public readonly Color4 GreyCarmineLighter = Color4Extensions.FromHex(@"deaab4");
-        public readonly Color4 GreyCarmineLight = Color4Extensions.FromHex(@"644f53");
-        public readonly Color4 GreyCarmine = Color4Extensions.FromHex(@"342b2d");
-        public readonly Color4 GreyCarmineDark = Color4Extensions.FromHex(@"302a2b");
-        public readonly Color4 GreyCarmineDarker = Color4Extensions.FromHex(@"241d1e");
+        public Color4 Carmine = Color4Extensions.FromHex(@"ff0542");
+        public Color4 GreyCarmineLighter = Color4Extensions.FromHex(@"deaab4");
+        public Color4 GreyCarmineLight = Color4Extensions.FromHex(@"644f53");
+        public Color4 GreyCarmine = Color4Extensions.FromHex(@"342b2d");
+        public Color4 GreyCarmineDark = Color4Extensions.FromHex(@"302a2b");
+        public Color4 GreyCarmineDarker = Color4Extensions.FromHex(@"241d1e");
 
-        public readonly Color4 Gray0 = Color4Extensions.FromHex(@"000");
-        public readonly Color4 Gray1 = Color4Extensions.FromHex(@"111");
-        public readonly Color4 Gray2 = Color4Extensions.FromHex(@"222");
-        public readonly Color4 Gray3 = Color4Extensions.FromHex(@"333");
-        public readonly Color4 Gray4 = Color4Extensions.FromHex(@"444");
-        public readonly Color4 Gray5 = Color4Extensions.FromHex(@"555");
-        public readonly Color4 Gray6 = Color4Extensions.FromHex(@"666");
-        public readonly Color4 Gray7 = Color4Extensions.FromHex(@"777");
-        public readonly Color4 Gray8 = Color4Extensions.FromHex(@"888");
-        public readonly Color4 Gray9 = Color4Extensions.FromHex(@"999");
-        public readonly Color4 GrayA = Color4Extensions.FromHex(@"aaa");
-        public readonly Color4 GrayB = Color4Extensions.FromHex(@"bbb");
-        public readonly Color4 GrayC = Color4Extensions.FromHex(@"ccc");
-        public readonly Color4 GrayD = Color4Extensions.FromHex(@"ddd");
-        public readonly Color4 GrayE = Color4Extensions.FromHex(@"eee");
-        public readonly Color4 GrayF = Color4Extensions.FromHex(@"fff");
+        public Color4 Gray0 = Color4Extensions.FromHex(@"000");
+        public Color4 Gray1 = Color4Extensions.FromHex(@"111");
+        public Color4 Gray2 = Color4Extensions.FromHex(@"222");
+        public Color4 Gray3 = Color4Extensions.FromHex(@"333");
+        public Color4 Gray4 = Color4Extensions.FromHex(@"444");
+        public Color4 Gray5 = Color4Extensions.FromHex(@"555");
+        public Color4 Gray6 = Color4Extensions.FromHex(@"666");
+        public Color4 Gray7 = Color4Extensions.FromHex(@"777");
+        public Color4 Gray8 = Color4Extensions.FromHex(@"888");
+        public Color4 Gray9 = Color4Extensions.FromHex(@"999");
+        public Color4 GrayA = Color4Extensions.FromHex(@"aaa");
+        public Color4 GrayB = Color4Extensions.FromHex(@"bbb");
+        public Color4 GrayC = Color4Extensions.FromHex(@"ccc");
+        public Color4 GrayD = Color4Extensions.FromHex(@"ddd");
+        public Color4 GrayE = Color4Extensions.FromHex(@"eee");
+        public Color4 GrayF = Color4Extensions.FromHex(@"fff");
 
         #region "Basic" colour theme
 
@@ -406,68 +432,68 @@ namespace osu.Game.Graphics
         // If the colour in question is supposed to always match the view in which it is displayed theme-wise, use `OverlayColourProvider`.
         // If the colour usage is special and in general differs from the surrounding view in choice of hue, use the `OsuColour` constants.
 
-        public readonly Color4 Pink0 = Color4Extensions.FromHex(@"ff99c7");
-        public readonly Color4 Pink1 = Color4Extensions.FromHex(@"ff66ab");
-        public readonly Color4 Pink2 = Color4Extensions.FromHex(@"eb4791");
-        public readonly Color4 Pink3 = Color4Extensions.FromHex(@"cc3378");
-        public readonly Color4 Pink4 = Color4Extensions.FromHex(@"6b2e49");
+        public Color4 Pink0 = Color4Extensions.FromHex(@"ff99c7");
+        public Color4 Pink1 = Color4Extensions.FromHex(@"ff66ab");
+        public Color4 Pink2 = Color4Extensions.FromHex(@"eb4791");
+        public Color4 Pink3 = Color4Extensions.FromHex(@"cc3378");
+        public Color4 Pink4 = Color4Extensions.FromHex(@"6b2e49");
 
-        public readonly Color4 Purple0 = Color4Extensions.FromHex(@"b299ff");
-        public readonly Color4 Purple1 = Color4Extensions.FromHex(@"8c66ff");
-        public readonly Color4 Purple2 = Color4Extensions.FromHex(@"7047eb");
-        public readonly Color4 Purple3 = Color4Extensions.FromHex(@"5933cc");
-        public readonly Color4 Purple4 = Color4Extensions.FromHex(@"3d2e6b");
+        public Color4 Purple0 = Color4Extensions.FromHex(@"b299ff");
+        public Color4 Purple1 = Color4Extensions.FromHex(@"8c66ff");
+        public Color4 Purple2 = Color4Extensions.FromHex(@"7047eb");
+        public Color4 Purple3 = Color4Extensions.FromHex(@"5933cc");
+        public Color4 Purple4 = Color4Extensions.FromHex(@"3d2e6b");
 
-        public readonly Color4 Blue0 = Color4Extensions.FromHex(@"99ddff");
-        public readonly Color4 Blue1 = Color4Extensions.FromHex(@"66ccff");
-        public readonly Color4 Blue2 = Color4Extensions.FromHex(@"47b4eb");
-        public readonly Color4 Blue3 = Color4Extensions.FromHex(@"3399cc");
-        public readonly Color4 Blue4 = Color4Extensions.FromHex(@"2e576b");
+        public Color4 Blue0 = Color4Extensions.FromHex(@"99ddff");
+        public Color4 Blue1 = Color4Extensions.FromHex(@"66ccff");
+        public Color4 Blue2 = Color4Extensions.FromHex(@"47b4eb");
+        public Color4 Blue3 = Color4Extensions.FromHex(@"3399cc");
+        public Color4 Blue4 = Color4Extensions.FromHex(@"2e576b");
 
-        public readonly Color4 Green0 = Color4Extensions.FromHex(@"99ffa2");
-        public readonly Color4 Green1 = Color4Extensions.FromHex(@"66ff73");
-        public readonly Color4 Green2 = Color4Extensions.FromHex(@"47eb55");
-        public readonly Color4 Green3 = Color4Extensions.FromHex(@"33cc40");
-        public readonly Color4 Green4 = Color4Extensions.FromHex(@"2e6b33");
+        public Color4 Green0 = Color4Extensions.FromHex(@"99ffa2");
+        public Color4 Green1 = Color4Extensions.FromHex(@"66ff73");
+        public Color4 Green2 = Color4Extensions.FromHex(@"47eb55");
+        public Color4 Green3 = Color4Extensions.FromHex(@"33cc40");
+        public Color4 Green4 = Color4Extensions.FromHex(@"2e6b33");
 
-        public readonly Color4 Lime0 = Color4Extensions.FromHex(@"ccff99");
-        public readonly Color4 Lime1 = Color4Extensions.FromHex(@"b2ff66");
-        public readonly Color4 Lime2 = Color4Extensions.FromHex(@"99eb47");
-        public readonly Color4 Lime3 = Color4Extensions.FromHex(@"7fcc33");
-        public readonly Color4 Lime4 = Color4Extensions.FromHex(@"4c6b2e");
+        public Color4 Lime0 = Color4Extensions.FromHex(@"ccff99");
+        public Color4 Lime1 = Color4Extensions.FromHex(@"b2ff66");
+        public Color4 Lime2 = Color4Extensions.FromHex(@"99eb47");
+        public Color4 Lime3 = Color4Extensions.FromHex(@"7fcc33");
+        public Color4 Lime4 = Color4Extensions.FromHex(@"4c6b2e");
 
-        public readonly Color4 Orange0 = Color4Extensions.FromHex(@"ffe699");
-        public readonly Color4 Orange1 = Color4Extensions.FromHex(@"ffd966");
-        public readonly Color4 Orange2 = Color4Extensions.FromHex(@"ebc247");
-        public readonly Color4 Orange3 = Color4Extensions.FromHex(@"cca633");
-        public readonly Color4 Orange4 = Color4Extensions.FromHex(@"6b5c2e");
+        public Color4 Orange0 = Color4Extensions.FromHex(@"ffe699");
+        public Color4 Orange1 = Color4Extensions.FromHex(@"ffd966");
+        public Color4 Orange2 = Color4Extensions.FromHex(@"ebc247");
+        public Color4 Orange3 = Color4Extensions.FromHex(@"cca633");
+        public Color4 Orange4 = Color4Extensions.FromHex(@"6b5c2e");
 
-        public readonly Color4 DarkOrange0 = Color4Extensions.FromHex(@"ffbb99");
-        public readonly Color4 DarkOrange1 = Color4Extensions.FromHex(@"ff9966");
-        public readonly Color4 DarkOrange2 = Color4Extensions.FromHex(@"eb7e47");
-        public readonly Color4 DarkOrange3 = Color4Extensions.FromHex(@"cc6633");
-        public readonly Color4 DarkOrange4 = Color4Extensions.FromHex(@"6b422e");
+        public Color4 DarkOrange0 = Color4Extensions.FromHex(@"ffbb99");
+        public Color4 DarkOrange1 = Color4Extensions.FromHex(@"ff9966");
+        public Color4 DarkOrange2 = Color4Extensions.FromHex(@"eb7e47");
+        public Color4 DarkOrange3 = Color4Extensions.FromHex(@"cc6633");
+        public Color4 DarkOrange4 = Color4Extensions.FromHex(@"6b422e");
 
-        public readonly Color4 Red0 = Color4Extensions.FromHex(@"ff9b9b");
-        public readonly Color4 Red1 = Color4Extensions.FromHex(@"ff6666");
-        public readonly Color4 Red2 = Color4Extensions.FromHex(@"eb4747");
-        public readonly Color4 Red3 = Color4Extensions.FromHex(@"cc3333");
-        public readonly Color4 Red4 = Color4Extensions.FromHex(@"6b2e2e");
+        public Color4 Red0 = Color4Extensions.FromHex(@"ff9b9b");
+        public Color4 Red1 = Color4Extensions.FromHex(@"ff6666");
+        public Color4 Red2 = Color4Extensions.FromHex(@"eb4747");
+        public Color4 Red3 = Color4Extensions.FromHex(@"cc3333");
+        public Color4 Red4 = Color4Extensions.FromHex(@"6b2e2e");
 
         #endregion
 
         // Content Background
-        public readonly Color4 B5 = Color4Extensions.FromHex(@"222a28");
+        public Color4 B5 = Color4Extensions.FromHex(@"222a28");
 
-        public readonly Color4 RedLighter = Color4Extensions.FromHex(@"ffeded");
-        public readonly Color4 RedLight = Color4Extensions.FromHex(@"ed7787");
-        public readonly Color4 Red = Color4Extensions.FromHex(@"ed1121");
-        public readonly Color4 RedDark = Color4Extensions.FromHex(@"ba0011");
-        public readonly Color4 RedDarker = Color4Extensions.FromHex(@"870000");
+        public Color4 RedLighter = Color4Extensions.FromHex(@"ffeded");
+        public Color4 RedLight = Color4Extensions.FromHex(@"ed7787");
+        public Color4 Red = Color4Extensions.FromHex(@"ed1121");
+        public Color4 RedDark = Color4Extensions.FromHex(@"ba0011");
+        public Color4 RedDarker = Color4Extensions.FromHex(@"870000");
 
-        public readonly Color4 ChatBlue = Color4Extensions.FromHex(@"17292e");
+        public Color4 ChatBlue = Color4Extensions.FromHex(@"17292e");
 
-        public readonly Color4 ContextMenuGray = Color4Extensions.FromHex(@"223034");
+        public Color4 ContextMenuGray = Color4Extensions.FromHex(@"223034");
 
         public Color4 SpotlightColour => Green2;
         public Color4 FeaturedArtistColour => Blue2;

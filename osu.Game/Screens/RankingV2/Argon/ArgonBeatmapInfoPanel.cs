@@ -35,7 +35,7 @@ namespace osu.Game.Screens.RankingV2.Argon
         public const float HEIGHT = 150;
         public const float SUB_WEDGE_HEIGHT = 40;
 
-        private const float text_padding = 8 + ShearedButton.CORNER_RADIUS;
+        private static readonly float text_padding = 8 + ShearedButton.CORNER_RADIUS;
         private const float icon_size = 24;
 
         public static EdgeEffectParameters CreateShadowEdgeEffect() => new EdgeEffectParameters

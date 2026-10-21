@@ -4,6 +4,7 @@
 using osu.Framework.Configuration;
 using osu.Framework.Platform;
 using osu.Game.IO;
+using osu.Game.Theming;
 
 namespace osu.Game.Configuration
 {
@@ -36,6 +37,9 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.NotificationDisplayPosition, NotificationDisplayPosition.TopRight);
             SetDefault(SpecialSetting.NotificationTransparency, false);
             SetDefault(SpecialSetting.MuteToastNotifications, false);
+            SetDefault(SpecialSetting.Theme, ThemeManager.DEFAULT_THEME);
+            SetDefault(SpecialSetting.ThemeGlassEffects, true);
+            SetDefault(SpecialSetting.AggressiveTinting, true);
         }
     }
 
@@ -77,5 +81,14 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether pop-up (toast) notifications should be suppressed and only shown in the notification panel.</summary>
         MuteToastNotifications,
+
+        /// <summary>The identifier of the active UI theme. Changing this requires a restart.</summary>
+        Theme,
+
+        /// <summary>Whether themes which request glass surfaces are allowed to use backdrop blur effects.</summary>
+        ThemeGlassEffects,
+
+        /// <summary>Whether all theme colours should have their hue replaced by the theme's main hue.</summary>
+        AggressiveTinting,
     }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "Torii Legacy",
+  "author": "osu-oss",
+  "description": "The classic full-saturation lazer accent palette on the familiar dark chrome.",
+  "inherits": "torii-glass",
+  "preview": [
+    "#ff66aa",
+    "#66ccff",
+    "#ffcc22",
+    "#21272c",
+    "@PurpleLight",
+    "@Pink",
+    "@Blue",
+    "@PurpleDarker"
+  ],
+  "structure": {
+    "cornerRadius": 10,
+    "flatLayout": false
+  },
+  "glass": {
+    "enabled": false,
+    "blur": 12
+  }
+}

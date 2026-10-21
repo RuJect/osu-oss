@@ -5,21 +5,24 @@
 
 using System;
 using System.Linq;
+using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Input.Bindings;
+using osu.Framework.Input.Events;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
-using osuTK;
-using osu.Framework.Graphics.Shapes;
-using osu.Framework.Allocation;
-using osu.Framework.Bindables;
-using osu.Framework.Input.Events;
-using osu.Game.Rulesets;
-using osu.Framework.Input.Bindings;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Input.Bindings;
+using osu.Game.Rulesets;
+using osu.Game.Theming;
+using osuTK;
+using osuTK.Graphics;
 
 namespace osu.Game.Overlays.Toolbar
 {
@@ -151,7 +154,7 @@ namespace osu.Game.Overlays.Toolbar
                 {
                     new Box
                     {
-                        Colour = OsuColour.Gray(0.1f),
+                        Colour = background.UsesGlass ? Color4.Transparent : background.BackgroundColour,
                         RelativeSizeAxes = Axes.Both,
                     },
                     leftFlow = new FillFlowContainer
@@ -180,7 +183,7 @@ namespace osu.Game.Overlays.Toolbar
                 {
                     new Box
                     {
-                        Colour = OsuColour.Gray(0.1f),
+                        Colour = background.UsesGlass ? Color4.Transparent : background.BackgroundColour,
                         RelativeSizeAxes = Axes.Both,
                     },
                     rightFlow = new FillFlowContainer
@@ -435,13 +438,15 @@ namespace osu.Game.Overlays.Toolbar
             if (rulesetGradient == null)
                 return;
 
+            Color4 fadeColour = background.BackgroundColour.Opacity(background.UsesGlass ? 0.6f : 1f);
+
             rulesetGradient.Colour = vertical
                 ? (inverted
-                    ? ColourInfo.GradientVertical(OsuColour.Gray(0.1f), OsuColour.Gray(0.1f).Opacity(0))
-                    : ColourInfo.GradientVertical(OsuColour.Gray(0.1f).Opacity(0), OsuColour.Gray(0.1f)))
+                    ? ColourInfo.GradientVertical(fadeColour, fadeColour.Opacity(0))
+                    : ColourInfo.GradientVertical(fadeColour.Opacity(0), fadeColour))
                 : (inverted
-                    ? ColourInfo.GradientHorizontal(OsuColour.Gray(0.1f), OsuColour.Gray(0.1f).Opacity(0))
-                    : ColourInfo.GradientHorizontal(OsuColour.Gray(0.1f).Opacity(0), OsuColour.Gray(0.1f)));
+                    ? ColourInfo.GradientHorizontal(fadeColour, fadeColour.Opacity(0))
+                    : ColourInfo.GradientHorizontal(fadeColour.Opacity(0), fadeColour));
 
             rulesetGradient.Anchor = vertical ? (inverted ? Anchor.TopLeft : Anchor.BottomLeft) : (inverted ? Anchor.TopLeft : Anchor.TopRight);
             rulesetGradient.Origin = rulesetGradient.Anchor;
@@ -453,6 +458,10 @@ namespace osu.Game.Overlays.Toolbar
         {
             public Bindable<bool> ShowGradient { get; } = new BindableBool();
 
+            public Color4 BackgroundColour { get; } = new OverlayColourProvider(OverlayColourScheme.Blue).Background6;
+
+            public bool UsesGlass => ThemeManager.GlassActive;
+
             private readonly Box gradientBackground;
 
             public ToolbarBackground()
@@ -460,10 +469,11 @@ namespace osu.Game.Overlays.Toolbar
                 RelativeSizeAxes = Axes.Both;
                 Children = new Drawable[]
                 {
-                    new Box
+                    new GlassBackdrop
                     {
-                        RelativeSizeAxes = Axes.Both,
-                        Colour = OsuColour.Gray(0.1f),
+                        TintColour = BackgroundColour.Opacity(ThemeManager.Current.GetSurfaceAlpha("toolbar", 0.72f)),
+                        BlurSigma = Math.Max(2.5f, ThemeManager.Current.GlassBlur / 4f),
+                        FrameBufferScale = 0.5f,
                     },
                     gradientBackground = new Box
                     {

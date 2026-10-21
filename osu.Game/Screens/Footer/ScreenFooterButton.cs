@@ -19,6 +19,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Input.Bindings;
 using osu.Game.Overlays;
+using osu.Game.Theming;
 using osuTK;
 using osuTK.Graphics;
 
@@ -26,7 +27,7 @@ namespace osu.Game.Screens.Footer
 {
     public partial class ScreenFooterButton : OsuClickableContainer, IKeyBindingHandler<GlobalAction>
     {
-        public const int CORNER_RADIUS = 10;
+        public static float CORNER_RADIUS => ThemeManager.Current.CornerRadius;
 
         public const int HEIGHT = 75;
         protected const int BUTTON_WIDTH = 116;

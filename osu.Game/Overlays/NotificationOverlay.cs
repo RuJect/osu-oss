@@ -12,16 +12,17 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Effects;
-using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Threading;
 using osu.Game.Configuration;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Resources.Localisation.Web;
+using osu.Game.Theming;
 using osuTK;
 using osuTK.Graphics;
 using NotificationsStrings = osu.Game.Localisation.NotificationsStrings;
@@ -113,10 +114,9 @@ namespace osu.Game.Overlays
                     },
                     Children = new Drawable[]
                     {
-                        new Box
+                        new GlassBackdrop
                         {
-                            RelativeSizeAxes = Axes.Both,
-                            Colour = colourProvider.Background4,
+                            TintColour = colourProvider.Background4.Opacity(ThemeManager.Current.GetSurfaceAlpha("notification", 0.9f)),
                         },
                         new OsuScrollContainer
                         {
