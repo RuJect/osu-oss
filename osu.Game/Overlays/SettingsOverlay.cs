@@ -11,6 +11,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Framework.Testing;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Localisation;
@@ -46,6 +47,8 @@ namespace osu.Game.Overlays
         {
         }
 
+        protected override bool ApplyScreenDocking => true;
+
         public override bool AcceptsFocus => lastOpenedSubPanel == null || lastOpenedSubPanel.State.Value == Visibility.Hidden;
 
         public void ShowAtControl<T>() where T : Drawable
@@ -65,7 +68,9 @@ namespace osu.Game.Overlays
             SectionsContainer.ScrollTo(SectionsContainer.ChildrenOfType<T>().Single());
         }
 
-        protected override float ExpandedPosition => lastOpenedSubPanel?.State.Value == Visibility.Visible ? -PANEL_WIDTH : base.ExpandedPosition;
+        protected override float ExpandedPosition => PanelPosition == SettingsPanelPosition.Left && lastOpenedSubPanel?.State.Value == Visibility.Visible
+            ? -PANEL_WIDTH
+            : base.ExpandedPosition;
 
         [BackgroundDependencyLoader]
         private void load(RulesetStore rulesets)
@@ -137,9 +142,10 @@ namespace osu.Game.Overlays
                     Sidebar.FadeColour(Color4.DarkGray, 300, Easing.OutQuint);
 
                     SectionsContainer.FadeOut(300, Easing.OutQuint);
-                    ContentContainer.MoveToX(-PANEL_WIDTH, 500, Easing.OutQuint);
-
                     lastOpenedSubPanel = panel;
+
+                    if (PanelPosition == SettingsPanelPosition.Left)
+                        ContentContainer.MoveToX(ExpandedPosition, 500, Easing.OutQuint);
 
                     break;
 
@@ -148,7 +154,10 @@ namespace osu.Game.Overlays
                     Sidebar.FadeColour(Color4.White, 300, Easing.OutQuint);
 
                     SectionsContainer.FadeIn(500, Easing.OutQuint);
-                    ContentContainer.MoveToX(0, 500, Easing.OutQuint);
+
+                    if (PanelPosition == SettingsPanelPosition.Left)
+                        ContentContainer.MoveToX(0, 500, Easing.OutQuint);
+
                     break;
             }
         }

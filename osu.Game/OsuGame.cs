@@ -1853,7 +1853,7 @@ namespace osu.Game
             float adjust = 0f;
 
             if (Settings.IsLoaded && Settings.State.Value == Visibility.Visible)
-                adjust += SettingsPanel.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
+                adjust += (Settings.PanelPosition == SettingsPanelPosition.Left ? 1 : -1) * SettingsPanel.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
             if (Notifications.IsLoaded && Notifications.State.Value == Visibility.Visible)
                 adjust += (Notifications.PanelPosition == NotificationPanelPosition.Left ? 1 : -1) * NotificationOverlay.WIDTH * SIDE_OVERLAY_OFFSET_RATIO;
 

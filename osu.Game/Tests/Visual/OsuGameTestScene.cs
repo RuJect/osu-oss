@@ -146,6 +146,8 @@ namespace osu.Game.Tests.Visual
 
             public new OsuConfigManager LocalConfig => base.LocalConfig;
 
+            public new SpecialConfigManager SpecialConfig => base.SpecialConfig;
+
             public new Bindable<WorkingBeatmap> Beatmap => base.Beatmap;
 
             public new Bindable<RulesetInfo> Ruleset => base.Ruleset;

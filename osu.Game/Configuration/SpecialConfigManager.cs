@@ -36,6 +36,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.InvertToolbar, false);
             SetDefault(SpecialSetting.NotificationPanelPosition, NotificationPanelPosition.Right);
             SetDefault(SpecialSetting.NotificationDisplayPosition, NotificationDisplayPosition.TopRight);
+            SetDefault(SpecialSetting.SettingsPanelPosition, SettingsPanelPosition.Left);
             SetDefault(SpecialSetting.NotificationTransparency, false);
             SetDefault(SpecialSetting.MuteToastNotifications, false);
             SetDefault(SpecialSetting.Theme, ThemeManager.DEFAULT_THEME);
@@ -79,6 +80,9 @@ namespace osu.Game.Configuration
 
         /// <summary>The screen corner in which temporary notifications are displayed.</summary>
         NotificationDisplayPosition,
+
+        /// <summary>The screen edge the settings panel is docked to.</summary>
+        SettingsPanelPosition,
 
         /// <summary>Whether notifications gradually become transparent while disappearing.</summary>
         NotificationTransparency,

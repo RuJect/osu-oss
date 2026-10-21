@@ -17,6 +17,7 @@ using osu.Framework.Graphics.Effects;
 using osu.Framework.Graphics.Primitives;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
@@ -65,6 +66,8 @@ namespace osu.Game.Overlays
 
         private readonly bool showBackButton;
 
+        private GlassBackdrop background;
+
         private LoadingLayer loading;
 
         private readonly List<SettingsSection> loadableSections = new List<SettingsSection>();
@@ -72,6 +75,18 @@ namespace osu.Game.Overlays
         private Task sectionsLoadingTask;
 
         public IBindable<SettingsSection> CurrentSection = new Bindable<SettingsSection>();
+
+        /// <summary>
+        /// The screen edge this panel is currently docked to.
+        /// </summary>
+        public SettingsPanelPosition PanelPosition { get; private set; } = SettingsPanelPosition.Left;
+
+        protected virtual bool ApplyScreenDocking => false;
+
+        private Bindable<SettingsPanelPosition> panelPositionBindable;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager specialConfig { get; set; }
 
         [Cached]
         private OverlayColourProvider colourProvider = new OverlayColourProvider(OverlayColourScheme.Purple);
@@ -93,7 +108,7 @@ namespace osu.Game.Overlays
                 RelativeSizeAxes = Axes.Y,
                 Children = new Drawable[]
                 {
-                    new GlassBackdrop
+                    background = new GlassBackdrop
                     {
                         Anchor = Anchor.TopRight,
                         Origin = Anchor.TopRight,
@@ -153,6 +168,67 @@ namespace osu.Game.Overlays
                 BackButtonAction = Hide,
                 Width = sidebar_width
             });
+
+            panelPositionBindable = specialConfig?.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition);
+            PanelPosition = panelPositionBindable?.Value ?? SettingsPanelPosition.Left;
+
+            panelPositionBindable?.BindValueChanged(e =>
+            {
+                PanelPosition = e.NewValue;
+                updatePanelPositioning();
+            }, true);
+        }
+
+        private bool isRightDocked => PanelPosition == SettingsPanelPosition.Right;
+
+        private void updatePanelPositioning()
+        {
+            if (ContentContainer == null || Sidebar == null || background == null)
+                return;
+
+            ClearTransforms();
+
+            if (isRightDocked)
+            {
+                Anchor = Origin = Anchor.TopRight;
+                AutoSizeAxes = Axes.None;
+                Width = WIDTH;
+
+                ContentContainer.Anchor = ContentContainer.Origin = Anchor.TopRight;
+                Sidebar.Anchor = Sidebar.Origin = Anchor.TopRight;
+
+                this.X = State.Value == Visibility.Visible ? 0 : WIDTH;
+                ContentContainer.X = -Sidebar.DrawWidth;
+                Sidebar.X = 0;
+
+                background.Anchor = background.Origin = Anchor.TopLeft;
+            }
+            else
+            {
+                AutoSizeAxes = Axes.X;
+                this.X = 0;
+
+                if (ApplyScreenDocking)
+                    Anchor = Origin = Anchor.TopLeft;
+
+                ContentContainer.Anchor = ContentContainer.Origin = Anchor.TopLeft;
+                Sidebar.Anchor = Sidebar.Origin = Anchor.TopLeft;
+
+                if (State.Value == Visibility.Visible)
+                {
+                    ContentContainer.X = ExpandedPosition;
+                    Sidebar.X = 0;
+                }
+                else
+                {
+                    ContentContainer.X = -WIDTH + ExpandedPosition;
+                    Sidebar.X = -sidebar_width;
+                }
+
+                background.Anchor = background.Origin = Anchor.TopRight;
+            }
+
+            background.Scale = new Vector2(2, 1); // over-extend away from the docked edge for transitions
         }
 
         protected void AddSection(SettingsSection section)
@@ -170,7 +246,10 @@ namespace osu.Game.Overlays
 
         protected override void PopIn()
         {
-            ContentContainer.MoveToX(ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
+            if (isRightDocked)
+                this.MoveToX(0, TRANSITION_LENGTH, Easing.OutQuint);
+            else
+                ContentContainer.MoveToX(ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
 
             SectionsContainer.FadeEdgeEffectTo(WaveContainer.SHADOW_OPACITY, WaveContainer.APPEAR_DURATION, Easing.Out);
 
@@ -180,7 +259,9 @@ namespace osu.Game.Overlays
             // load complete overheads.
             Scheduler.AddDelayed(loadSections, TRANSITION_LENGTH / 3);
 
-            Sidebar?.MoveToX(0, TRANSITION_LENGTH, Easing.OutQuint);
+            if (!isRightDocked)
+                Sidebar?.MoveToX(0, TRANSITION_LENGTH, Easing.OutQuint);
+
             this.FadeTo(1, TRANSITION_LENGTH / 2, Easing.OutQuint);
 
             SearchTextBox.TakeFocus();
@@ -194,9 +275,15 @@ namespace osu.Game.Overlays
             base.PopOut();
 
             SectionsContainer.FadeEdgeEffectTo(0, WaveContainer.DISAPPEAR_DURATION, Easing.In);
-            ContentContainer.MoveToX(-WIDTH + ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
 
-            Sidebar?.MoveToX(-sidebar_width, TRANSITION_LENGTH, Easing.OutQuint);
+            if (isRightDocked)
+                this.MoveToX(WIDTH, TRANSITION_LENGTH, Easing.OutQuint);
+            else
+            {
+                ContentContainer.MoveToX(-WIDTH + ExpandedPosition, TRANSITION_LENGTH, Easing.OutQuint);
+                Sidebar?.MoveToX(-sidebar_width, TRANSITION_LENGTH, Easing.OutQuint);
+            }
+
             this.FadeTo(0, TRANSITION_LENGTH / 2, Easing.OutQuint);
 
             SearchTextBox.HoldFocus = false;
@@ -216,7 +303,13 @@ namespace osu.Game.Overlays
         {
             base.UpdateAfterChildren();
 
-            ContentContainer.Margin = new MarginPadding { Left = Sidebar?.DrawWidth ?? 0 };
+            if (isRightDocked)
+            {
+                ContentContainer.X = -(Sidebar?.DrawWidth ?? 0);
+                ContentContainer.Margin = new MarginPadding();
+            }
+            else
+                ContentContainer.Margin = new MarginPadding { Left = Sidebar?.DrawWidth ?? 0 };
         }
 
         private const double fade_in_duration = 500;

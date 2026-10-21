@@ -6,8 +6,12 @@
 using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Platform;
 using osu.Framework.Testing;
+using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
@@ -23,9 +27,16 @@ namespace osu.Game.Tests.Visual.Settings
         private SettingsPanel settings;
         private DialogOverlay dialogOverlay;
 
+        [Cached]
+        private readonly SpecialConfigManager specialConfig = new SpecialConfigManager(new TemporaryNativeStorage("osu-oss-settings-panel-test"));
+
+        private Bindable<SettingsPanelPosition> panelPosition => specialConfig.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition);
+
         [SetUpSteps]
         public void SetUpSteps()
         {
+            AddStep("reset panel position", () => panelPosition.Value = SettingsPanelPosition.Left);
+
             AddStep("create settings", () =>
             {
                 settings?.Expire();
@@ -42,6 +53,28 @@ namespace osu.Game.Tests.Visual.Settings
         {
             AddStep("do nothing", () => { });
             AddToggleStep("toggle visibility", visible => settings.State.Value = visible ? Visibility.Visible : Visibility.Hidden);
+        }
+
+        [Test]
+        public void TestPanelPosition()
+        {
+            AddUntilStep("settings loaded", () => settings.IsLoaded);
+
+            AddUntilStep("docked left", () => Precision.AlmostEquals(settings.ScreenSpaceDrawQuad.TopLeft.X, settings.Parent.ScreenSpaceDrawQuad.TopLeft.X));
+            AddUntilStep("sidebar on left", () => Precision.AlmostEquals(settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings).ScreenSpaceDrawQuad.TopLeft.X, settings.ScreenSpaceDrawQuad.TopLeft.X));
+
+            AddStep("dock right", () => panelPosition.Value = SettingsPanelPosition.Right);
+
+            AddUntilStep("docked right", () => Precision.AlmostEquals(settings.ScreenSpaceDrawQuad.TopRight.X, settings.Parent.ScreenSpaceDrawQuad.TopRight.X));
+            AddUntilStep("sidebar on right", () => Precision.AlmostEquals(settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings).ScreenSpaceDrawQuad.TopRight.X, settings.ScreenSpaceDrawQuad.TopRight.X));
+            AddAssert("panel reports right position", () => settings.PanelPosition == SettingsPanelPosition.Right);
+            AddAssert("panel has expected width", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.WIDTH));
+
+            AddStep("dock left", () => panelPosition.Value = SettingsPanelPosition.Left);
+
+            AddUntilStep("docked left again", () => Precision.AlmostEquals(settings.ScreenSpaceDrawQuad.TopLeft.X, settings.Parent.ScreenSpaceDrawQuad.TopLeft.X));
+            AddUntilStep("sidebar on left again", () => Precision.AlmostEquals(settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings).ScreenSpaceDrawQuad.TopLeft.X, settings.ScreenSpaceDrawQuad.TopLeft.X));
+            AddAssert("panel reports left position", () => settings.PanelPosition == SettingsPanelPosition.Left);
         }
 
         [Test]

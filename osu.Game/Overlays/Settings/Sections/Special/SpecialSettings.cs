@@ -80,6 +80,11 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Notification display position",
                     Current = config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition),
                 },
+                new SettingsEnumDropdown<SettingsPanelPosition>
+                {
+                    LabelText = "Settings panel position",
+                    Current = config.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition),
+                },
                 new SettingsCheckbox
                 {
                     LabelText = "Mute pop-up notifications",
@@ -134,6 +139,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
                 config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;
                 config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition).Value = NotificationDisplayPosition.TopRight;
+                config.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition).Value = SettingsPanelPosition.Left;
                 config.GetBindable<bool>(SpecialSetting.NotificationTransparency).Value = false;
                 config.GetBindable<bool>(SpecialSetting.MuteToastNotifications).Value = false;
                 config.GetBindable<string>(SpecialSetting.Theme).Value = ThemeManager.DEFAULT_THEME;

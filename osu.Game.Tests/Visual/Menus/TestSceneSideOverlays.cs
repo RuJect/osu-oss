@@ -29,24 +29,30 @@ namespace osu.Game.Tests.Visual.Menus
         [Test]
         public void TestScreenOffsettingOnSettingsOverlay()
         {
-            foreach (var scalingMode in Enum.GetValues(typeof(ScalingMode)).Cast<ScalingMode>())
+            foreach (var panelPosition in Enum.GetValues(typeof(SettingsPanelPosition)).Cast<SettingsPanelPosition>())
             {
-                AddStep($"set scaling mode to {scalingMode}", () =>
+                foreach (var scalingMode in Enum.GetValues(typeof(ScalingMode)).Cast<ScalingMode>())
                 {
-                    Game.LocalConfig.SetValue(OsuSetting.Scaling, scalingMode);
-
-                    if (scalingMode != ScalingMode.Off)
+                    AddStep($"set panel position to {panelPosition} and scaling mode to {scalingMode}", () =>
                     {
-                        Game.LocalConfig.SetValue(OsuSetting.ScalingSizeX, 0.5f);
-                        Game.LocalConfig.SetValue(OsuSetting.ScalingSizeY, 0.5f);
-                    }
-                });
+                        Game.SpecialConfig.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition).Value = panelPosition;
+                        Game.LocalConfig.SetValue(OsuSetting.Scaling, scalingMode);
 
-                AddStep("open settings", () => Game.Settings.Show());
-                AddUntilStep("right screen offset applied", () => Precision.AlmostEquals(Game.ScreenOffsetContainer.X, SettingsPanel.WIDTH * TestOsuGame.SIDE_OVERLAY_OFFSET_RATIO));
+                        if (scalingMode != ScalingMode.Off)
+                        {
+                            Game.LocalConfig.SetValue(OsuSetting.ScalingSizeX, 0.5f);
+                            Game.LocalConfig.SetValue(OsuSetting.ScalingSizeY, 0.5f);
+                        }
+                    });
 
-                AddStep("hide settings", () => Game.Settings.Hide());
-                AddUntilStep("screen offset removed", () => Game.ScreenOffsetContainer.X, () => Is.EqualTo(0).Within(float.Epsilon));
+                    AddStep("open settings", () => Game.Settings.Show());
+
+                    float expectedOffset = (panelPosition == SettingsPanelPosition.Left ? 1 : -1) * SettingsPanel.WIDTH * TestOsuGame.SIDE_OVERLAY_OFFSET_RATIO;
+                    AddUntilStep($"{panelPosition} screen offset applied", () => Precision.AlmostEquals(Game.ScreenOffsetContainer.X, expectedOffset));
+
+                    AddStep("hide settings", () => Game.Settings.Hide());
+                    AddUntilStep("screen offset removed", () => Game.ScreenOffsetContainer.X, () => Is.EqualTo(0).Within(float.Epsilon));
+                }
             }
         }
 
