@@ -22,7 +22,7 @@ namespace osu.Game.Auth.Isolation
     /// <c>TSYNC</c> so existing threads are covered, and finally the listener fd is handed over as
     /// an <c>SCM_RIGHTS</c> ancillary message. The proprietary module's mappings cannot be known at
     /// install time, so they are published by polling <c>/proc/self/maps</c> (a small fail-open
-    /// window, documented in <c>ISOLATION.md</c>).
+    /// window while the mappings are being published).
     /// </remarks>
     internal sealed class LinuxSeccompBackend : IIsolationBackend
     {
