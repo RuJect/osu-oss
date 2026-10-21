@@ -1,14 +1,18 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Linq;
 using NUnit.Framework;
+using osu.Framework.Allocation;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Input.Events;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.Sprites;
 using osuTK;
@@ -22,6 +26,9 @@ namespace osu.Game.Tests.Visual.UserInterface
     {
         private readonly GlobalCursorDisplay globalCursorDisplay;
         private readonly CustomCursorBox[] cursorBoxes = new CustomCursorBox[6];
+
+        [Cached]
+        private readonly SpecialConfigManager specialConfig = new SpecialConfigManager(new TemporaryNativeStorage("osu-oss-cursors-test"));
 
         public TestSceneCursors()
         {
@@ -83,7 +90,11 @@ namespace osu.Game.Tests.Visual.UserInterface
         }
 
         [SetUp]
-        public void SetUp() => Schedule(moveOut);
+        public void SetUp()
+        {
+            specialConfig.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = false;
+            Schedule(moveOut);
+        }
 
         /// <summary>
         /// -- Green Box --
@@ -216,6 +227,16 @@ namespace osu.Game.Tests.Visual.UserInterface
 
             AddAssert("Check green cursor still visible", () => checkVisible(cursorBoxes[0].Cursor));
             AddAssert("Check global cursor alpha is still 0", () => !checkVisible(globalCursorDisplay.MenuCursor) && globalCursorDisplay.MenuCursor.ActiveCursor.Alpha == 0);
+        }
+
+        [Test]
+        public void TestSkinCursor()
+        {
+            AddStep("enable skin cursor", () => specialConfig.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = true);
+            AddUntilStep("skin cursor displayed", () => globalCursorDisplay.MenuCursor.ActiveCursor.ChildrenOfType<SkinnableGameplayCursor>().Any());
+
+            AddStep("disable skin cursor", () => specialConfig.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = false);
+            AddUntilStep("menu cursor displayed", () => !globalCursorDisplay.MenuCursor.ActiveCursor.ChildrenOfType<SkinnableGameplayCursor>().Any());
         }
 
         /// <summary>

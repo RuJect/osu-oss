@@ -177,11 +177,18 @@ namespace osu.Game.Graphics.Cursor
             if (State.Value == Visibility.Visible)
             {
                 // only trigger animation for main mouse buttons
-                activeCursor.Scale = new Vector2(1);
-                activeCursor.ScaleTo(0.90f, 800, Easing.OutQuint);
+                if (activeCursor.UsesSkinCursor)
+                {
+                    activeCursor.Expand();
+                }
+                else
+                {
+                    activeCursor.Scale = new Vector2(1);
+                    activeCursor.ScaleTo(0.90f, 800, Easing.OutQuint);
 
-                activeCursor.AdditiveLayer.Alpha = 0;
-                activeCursor.AdditiveLayer.FadeInFromZero(800, Easing.OutQuint);
+                    activeCursor.AdditiveLayer.Alpha = 0;
+                    activeCursor.AdditiveLayer.FadeInFromZero(800, Easing.OutQuint);
+                }
 
                 if (cursorRotate.Value && dragRotationState != DragRotationState.Rotating)
                 {
@@ -200,8 +207,15 @@ namespace osu.Game.Graphics.Cursor
         {
             if (!e.HasAnyButtonPressed)
             {
-                activeCursor.AdditiveLayer.FadeOutFromOne(500, Easing.OutQuint);
-                activeCursor.ScaleTo(1, 500, Easing.OutElastic);
+                if (activeCursor.UsesSkinCursor)
+                {
+                    activeCursor.Contract();
+                }
+                else
+                {
+                    activeCursor.AdditiveLayer.FadeOutFromOne(500, Easing.OutQuint);
+                    activeCursor.ScaleTo(1, 500, Easing.OutElastic);
+                }
 
                 if (dragRotationState != DragRotationState.NotDragging)
                 {
@@ -250,10 +264,19 @@ namespace osu.Game.Graphics.Cursor
         public partial class Cursor : Container
         {
             private Container cursorContainer = null!;
-            private Bindable<float> cursorScale = null!;
+            private SkinnableGameplayCursor? skinCursor;
+
+            private Bindable<float> menuCursorScale = null!;
+            private Bindable<bool> useSkinCursor = null!;
+
+            private TextureStore textures = null!;
+            private OsuColour colour = null!;
+
             private const float base_scale = 0.15f;
 
             public Sprite AdditiveLayer = null!;
+
+            public bool UsesSkinCursor => skinCursor != null;
 
             public Cursor()
             {
@@ -261,32 +284,90 @@ namespace osu.Game.Graphics.Cursor
             }
 
             [BackgroundDependencyLoader]
-            private void load(OsuConfigManager config, TextureStore textures, OsuColour colour)
+            private void load(OsuConfigManager config, SpecialConfigManager? specialConfig, TextureStore textures, OsuColour colour)
             {
-                Children = new Drawable[]
-                {
-                    cursorContainer = new Container
-                    {
-                        AutoSizeAxes = Axes.Both,
-                        Children = new Drawable[]
-                        {
-                            new Sprite
-                            {
-                                Texture = textures.Get(@"Cursor/menu-cursor"),
-                            },
-                            AdditiveLayer = new Sprite
-                            {
-                                Blending = BlendingParameters.Additive,
-                                Colour = colour.Pink,
-                                Alpha = 0,
-                                Texture = textures.Get(@"Cursor/menu-cursor-additive"),
-                            },
-                        }
-                    }
-                };
+                this.textures = textures;
+                this.colour = colour;
 
-                cursorScale = config.GetBindable<float>(OsuSetting.MenuCursorSize);
-                cursorScale.BindValueChanged(scale => cursorContainer.Scale = new Vector2(scale.NewValue * base_scale), true);
+                menuCursorScale = config.GetBindable<float>(OsuSetting.MenuCursorSize);
+                useSkinCursor = specialConfig?.GetBindable<bool>(SpecialSetting.UseSkinCursor) ?? new Bindable<bool>();
+
+                menuCursorScale.BindValueChanged(_ => updateDefaultCursorScale());
+                useSkinCursor.BindValueChanged(_ => buildCursor(), true);
+            }
+
+            public void Expand() => skinCursor?.Expand();
+
+            public void Contract() => skinCursor?.Contract();
+
+            private void buildCursor()
+            {
+                Clear();
+                skinCursor = null;
+
+                if (useSkinCursor.Value)
+                {
+                    AutoSizeAxes = Axes.None;
+                    Size = new Vector2(SkinnableGameplayCursor.BASE_SIZE);
+                    Origin = Anchor.Centre;
+
+                    skinCursor = new SkinnableGameplayCursor();
+
+                    Children = new Drawable[]
+                    {
+                        new Container
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Children = new Drawable[]
+                            {
+                                skinCursor,
+                                AdditiveLayer = new Sprite
+                                {
+                                    Blending = BlendingParameters.Additive,
+                                    Colour = colour.Pink,
+                                    Alpha = 0,
+                                },
+                            },
+                        },
+                    };
+                }
+                else
+                {
+                    AutoSizeAxes = Axes.Both;
+                    Origin = Anchor.TopLeft;
+
+                    Children = new Drawable[]
+                    {
+                        cursorContainer = new Container
+                        {
+                            AutoSizeAxes = Axes.Both,
+                            Children = new Drawable[]
+                            {
+                                new Sprite
+                                {
+                                    Texture = textures.Get(@"Cursor/menu-cursor"),
+                                },
+                                AdditiveLayer = new Sprite
+                                {
+                                    Blending = BlendingParameters.Additive,
+                                    Colour = colour.Pink,
+                                    Alpha = 0,
+                                    Texture = textures.Get(@"Cursor/menu-cursor-additive"),
+                                },
+                            }
+                        }
+                    };
+
+                    updateDefaultCursorScale();
+                }
+            }
+
+            private void updateDefaultCursorScale()
+            {
+                if (skinCursor == null && cursorContainer != null)
+                    cursorContainer.Scale = new Vector2(menuCursorScale.Value * base_scale);
             }
         }
 

@@ -54,6 +54,12 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Automatically skip",
                     Current = config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Use skin cursor",
+                    TooltipText = "Replaces the menu cursor with the cursor from your skin.",
+                    Current = config.GetBindable<bool>(SpecialSetting.UseSkinCursor),
+                },
                 new SettingsEnumDropdown<ToolbarPosition>
                 {
                     LabelText = "Toolbar position",
@@ -123,6 +129,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.ShowFavouriteBeatmapsDownloadButton).Value = false;
                 config.GetBindable<bool>(SpecialSetting.AllowBreakSkip).Value = false;
                 config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
+                config.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = true;
                 config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;
                 config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
                 config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;

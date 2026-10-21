@@ -31,6 +31,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.ShowFavouriteBeatmapsDownloadButton, false);
             SetDefault(SpecialSetting.AllowBreakSkip, false);
             SetDefault(SpecialSetting.AutoSkip, AutoSkipMode.None);
+            SetDefault(SpecialSetting.UseSkinCursor, true);
             SetDefault(SpecialSetting.ToolbarPosition, ToolbarPosition.Top);
             SetDefault(SpecialSetting.InvertToolbar, false);
             SetDefault(SpecialSetting.NotificationPanelPosition, NotificationPanelPosition.Right);
@@ -63,6 +64,9 @@ namespace osu.Game.Configuration
 
         /// <summary>Which parts of a beatmap's dead time are automatically skipped during gameplay.</summary>
         AutoSkip,
+
+        /// <summary>Whether the menu cursor should use the active skin's cursor instead of the default menu cursor.</summary>
+        UseSkinCursor,
 
         /// <summary>The screen edge the toolbar is docked to.</summary>
         ToolbarPosition,
