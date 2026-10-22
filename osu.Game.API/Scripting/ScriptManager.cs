@@ -56,6 +56,7 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(new InternalApiProvider());
             RegisterApiProvider(new UtilityApiProvider());
             RegisterApiProvider(new ConfigApiProvider());
+            RegisterApiProvider(new MusicApiProvider());
         }
 
         /// <summary>
