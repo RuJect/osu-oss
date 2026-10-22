@@ -7,7 +7,8 @@ using Jint.Native;
 namespace osu.Game.API.Scripting.Api.Providers
 {
     /// <summary>
-    /// Provides frame/interval scheduling callbacks: <c>osu.onUpdate</c>, <c>osu.every</c>, <c>osu.after</c> and <c>osu.cancel</c>.
+    /// Provides frame/interval scheduling: <c>osu.onUpdate</c>, <c>osu.every</c>, <c>osu.after</c>, <c>osu.cancel</c>
+    /// plus the JS-style <c>setInterval</c>/<c>setTimeout</c>/<c>clearInterval</c>/<c>clearTimeout</c> aliases.
     /// </summary>
     public class SchedulerApiProvider : ScriptApiProvider
     {
@@ -26,6 +27,21 @@ namespace osu.Game.API.Scripting.Api.Providers
 
         [ScriptApi]
         public void Cancel(double id) => Context.Instance.Scheduler.CancelTimer((int)id);
+
+        [ScriptApi]
+        public double SetInterval(JsValue handler, JsValue interval) => registerTimer(handler, interval, true);
+
+        [ScriptApi]
+        public double SetTimeout(JsValue handler, JsValue interval) => registerTimer(handler, interval, false);
+
+        [ScriptApi]
+        public void ClearInterval(double id) => Context.Instance.Scheduler.CancelTimer((int)id);
+
+        [ScriptApi]
+        public void ClearTimeout(double id) => Context.Instance.Scheduler.CancelTimer((int)id);
+
+        [ScriptApi]
+        public double Interval(JsValue first, JsValue second) => registerTimer(first, second, true);
 
         private double registerTimer(JsValue first, JsValue second, bool repeat)
         {

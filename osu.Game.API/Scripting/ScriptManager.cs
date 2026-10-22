@@ -54,6 +54,7 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(new TypeApiProvider());
             RegisterApiProvider(new NotificationApiProvider());
             RegisterApiProvider(new InternalApiProvider());
+            RegisterApiProvider(new UtilityApiProvider());
         }
 
         /// <summary>

@@ -88,6 +88,7 @@ namespace osu.Game.API.Scripting
                     continue;
 
                 instance.Scheduler.Tick(instance.Engine, currentTime, e => fail(instance, e));
+                instance.Engine.Advanced.ProcessTasks();
             }
         }
 
@@ -101,6 +102,7 @@ namespace osu.Game.API.Scripting
                 try
                 {
                     subscription.Instance.Engine.Invoke(subscription.Handler, args);
+                    subscription.Instance.Engine.Advanced.ProcessTasks();
                 }
                 catch (Exception e)
                 {

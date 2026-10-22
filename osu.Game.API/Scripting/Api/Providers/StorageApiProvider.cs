@@ -84,7 +84,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             if (data == null || path == null || !data.Exists(path))
                 return JsValue.Undefined;
 
-            return parseJson(data.Read(path));
+            return ScriptJson.Parse(Context.Engine, data.Read(path));
         }
 
         [ScriptApi(Target = "storage")]
@@ -95,22 +95,10 @@ namespace osu.Game.API.Scripting.Api.Providers
             if (data == null || path == null || value.IsUndefined())
                 return;
 
-            data.Write(path, stringifyJson(value));
+            data.Write(path, ScriptJson.Stringify(Context.Engine, value));
         }
 
         [ScriptApi(Target = "storage")]
         public string Directory => Context.Services.DataStorage?.Directory ?? string.Empty;
-
-        private JsValue parseJson(string text)
-        {
-            JsValue json = Context.Engine.GetValue("JSON");
-            return Context.Engine.Invoke(json.Get("parse"), new object[] { text });
-        }
-
-        private string stringifyJson(JsValue value)
-        {
-            JsValue json = Context.Engine.GetValue("JSON");
-            return Context.Engine.Invoke(json.Get("stringify"), new object[] { value, JsValue.Null, 2 }).AsString();
-        }
     }
 }

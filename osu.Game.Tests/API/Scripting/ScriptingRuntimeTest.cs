@@ -108,6 +108,77 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(logged("stopped:worker"));
         }
 
+        [Test]
+        public void TestSetTimeoutFires()
+        {
+            ScriptInstance instance = run("osu.setTimeout(() => osu.log('fired'), 100);", "timer");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Running, instance.State);
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.IsTrue(logged("fired"));
+        }
+
+        [Test]
+        public void TestClearTimeout()
+        {
+            ScriptInstance instance = run("let id = osu.setTimeout(() => osu.log('never'), 100); osu.clearTimeout(id);", "timer");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.IsFalse(logged("never"));
+        }
+
+        [Test]
+        public void TestSetIntervalRepeats()
+        {
+            run("let n = 0; osu.setInterval(() => { n++; osu.log('n=' + n); }, 100);", "timer");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(150);
+            manager.Runner.Tick(250);
+
+            ClassicAssert.IsTrue(logged("n=1"));
+            ClassicAssert.IsTrue(logged("n=2"));
+            ClassicAssert.IsFalse(logged("n=3"));
+        }
+
+        [Test]
+        public void TestSleep()
+        {
+            run("(async () => { osu.log('before'); await osu.sleep(100); osu.log('after'); })();", "sleeper");
+
+            ClassicAssert.IsTrue(logged("before"));
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.IsTrue(logged("after"));
+        }
+
+        [Test]
+        public void TestKvStore()
+        {
+            run("osu.kv.set('name', 'osu'); osu.kv.set('count', 42); osu.log('name=' + osu.kv.get('name')); osu.log('count=' + osu.kv.get('count')); osu.kv.delete('count'); osu.log('deleted=' + (osu.kv.get('count') === undefined));");
+
+            ClassicAssert.IsTrue(logged("name=osu"));
+            ClassicAssert.IsTrue(logged("count=42"));
+            ClassicAssert.IsTrue(logged("deleted=true"));
+        }
+
+        [Test]
+        public void TestEach()
+        {
+            run("let sum = 0; osu.each([1, 2, 3], n => sum += n); osu.log('sum=' + sum);");
+
+            ClassicAssert.IsTrue(logged("sum=6"));
+        }
+
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);

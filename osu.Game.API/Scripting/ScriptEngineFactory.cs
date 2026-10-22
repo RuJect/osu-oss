@@ -32,6 +32,9 @@ namespace osu.Game.API.Scripting
                               .CatchClrExceptions()
                               .CancellationToken(instance.Cancellation.Token);
 
+            // Enable Task -> Promise interop so provider methods can return awaitable Tasks (e.g. osu.sleep).
+            options.ExperimentalFeatures = ExperimentalFeature.TaskInterop;
+
             var engine = new Engine(options);
             instance.Engine = engine;
 
