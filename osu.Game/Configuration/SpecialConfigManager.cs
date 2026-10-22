@@ -37,6 +37,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.NotificationPanelPosition, NotificationPanelPosition.Right);
             SetDefault(SpecialSetting.NotificationDisplayPosition, NotificationDisplayPosition.TopRight);
             SetDefault(SpecialSetting.SettingsPanelPosition, SettingsPanelPosition.Left);
+            SetDefault(SpecialSetting.IconOnlySettingsSidebar, false);
             SetDefault(SpecialSetting.NotificationTransparency, false);
             SetDefault(SpecialSetting.MuteToastNotifications, false);
             SetDefault(SpecialSetting.Theme, ThemeManager.DEFAULT_THEME);
@@ -83,6 +84,9 @@ namespace osu.Game.Configuration
 
         /// <summary>The screen edge the settings panel is docked to.</summary>
         SettingsPanelPosition,
+
+        /// <summary>Whether the settings sidebar should display only section icons, without labels.</summary>
+        IconOnlySettingsSidebar,
 
         /// <summary>Whether notifications gradually become transparent while disappearing.</summary>
         NotificationTransparency,

@@ -50,6 +50,11 @@ namespace osu.Game.Overlays
         /// </summary>
         public const float WIDTH = sidebar_width + PANEL_WIDTH;
 
+        /// <summary>
+        /// The full width of the settings panel when the sidebar is displaying icons only.
+        /// </summary>
+        public const float COMPACT_WIDTH = SettingsSidebar.CONTRACTED_WIDTH + PANEL_WIDTH;
+
         protected Container<Drawable> ContentContainer;
 
         protected override Container<Drawable> Content => ContentContainer;
@@ -414,6 +419,7 @@ namespace osu.Game.Overlays
                 yield return new SidebarIconButton
                 {
                     Section = section,
+                    SidebarExpanded = Sidebar.Expanded,
                     Action = () =>
                     {
                         if (!SectionsContainer.IsLoaded)

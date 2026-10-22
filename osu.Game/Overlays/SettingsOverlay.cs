@@ -33,6 +33,11 @@ namespace osu.Game.Overlays
 
         private SettingsSubPanel? lastOpenedSubPanel;
 
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        private IBindable<bool>? iconOnlySidebar;
+
         protected override Drawable CreateHeader() => new SettingsHeader(Title, Description);
 
         protected override Drawable CreateFooter() => new OsuContextMenuContainer
@@ -138,6 +143,10 @@ namespace osu.Game.Overlays
 
             foreach (var s in subPanels)
                 ContentContainer.Add(s);
+
+            iconOnlySidebar = specialConfig?.GetBindable<bool>(SpecialSetting.IconOnlySettingsSidebar);
+            iconOnlySidebar?.BindValueChanged(_ => updateSidebarExpansion());
+            updateSidebarExpansion();
         }
 
         private T createSubPanel<T>(T subPanel)
@@ -157,11 +166,11 @@ namespace osu.Game.Overlays
             switch (state.NewValue)
             {
                 case Visibility.Visible:
-                    Sidebar.Expanded.Value = false;
+                    lastOpenedSubPanel = panel;
+                    updateSidebarExpansion();
                     Sidebar.FadeColour(Color4.DarkGray, 300, Easing.OutQuint);
 
                     SectionsContainer.FadeOut(300, Easing.OutQuint);
-                    lastOpenedSubPanel = panel;
 
                     if (PanelPosition == SettingsPanelPosition.Left)
                         ContentContainer.MoveToX(ExpandedPosition, 500, Easing.OutQuint);
@@ -169,7 +178,7 @@ namespace osu.Game.Overlays
                     break;
 
                 case Visibility.Hidden:
-                    Sidebar.Expanded.Value = true;
+                    updateSidebarExpansion();
                     Sidebar.FadeColour(Color4.White, 300, Easing.OutQuint);
 
                     SectionsContainer.FadeIn(500, Easing.OutQuint);
@@ -179,6 +188,18 @@ namespace osu.Game.Overlays
 
                     break;
             }
+        }
+
+        private bool isSubPanelVisible => lastOpenedSubPanel?.State.Value == Visibility.Visible;
+
+        private void updateSidebarExpansion() => Sidebar.Expanded.Value = !isSubPanelVisible && iconOnlySidebar?.Value != true;
+
+        protected override void UpdateAfterChildren()
+        {
+            base.UpdateAfterChildren();
+
+            if (PanelPosition == SettingsPanelPosition.Right)
+                Width = isSubPanelVisible ? WIDTH : PANEL_WIDTH + Sidebar.DrawWidth;
         }
     }
 }

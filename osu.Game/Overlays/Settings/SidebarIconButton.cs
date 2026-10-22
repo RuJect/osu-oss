@@ -5,6 +5,7 @@
 
 using osuTK;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
@@ -16,8 +17,13 @@ namespace osu.Game.Overlays.Settings
 {
     public partial class SidebarIconButton : SidebarButton
     {
+        private const float icon_size = 20;
+        private const float compact_horizontal_padding = 5;
+
         private const float selection_indicator_height_active = 18;
         private const float selection_indicator_height_inactive = 4;
+
+        private float iconScale => Section.UseSmallerSidebarButton ? 0.8f : 1;
 
         private CircularContainer selectionIndicator;
         private Container textIconContent;
@@ -26,6 +32,8 @@ namespace osu.Game.Overlays.Settings
         public override bool IsPresent => true;
 
         public required SettingsSection Section { get; init; }
+
+        public required BindableBool SidebarExpanded { get; init; }
 
         private bool selected;
 
@@ -49,12 +57,9 @@ namespace osu.Game.Overlays.Settings
         [BackgroundDependencyLoader]
         private void load()
         {
-            const float icon_size = 20;
+            Height = 46 * iconScale;
 
-            float scale = Section.UseSmallerSidebarButton ? 0.8f : 1;
-
-            Height = 46 * scale;
-            Padding = new MarginPadding { Horizontal = 5 + (Section.UseSmallerSidebarButton ? icon_size : 0), Vertical = 2.5f * scale };
+            SidebarExpanded.BindValueChanged(_ => updatePadding(), true);
 
             AddRange(new Drawable[]
             {
@@ -69,14 +74,14 @@ namespace osu.Game.Overlays.Settings
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.Centre,
                             X = icon_size,
-                            Size = new Vector2(icon_size * scale),
+                            Size = new Vector2(icon_size * iconScale),
                             Icon = Section.CreateIcon(),
                             Margin = new MarginPadding { Left = 25 }
                         },
                         new OsuSpriteText
                         {
                             Text = Section.Header,
-                            Font = OsuFont.Default.With(size: OsuFont.DEFAULT_FONT_SIZE * scale),
+                            Font = OsuFont.Default.With(size: OsuFont.DEFAULT_FONT_SIZE * iconScale),
                             Position = new Vector2(50, 0),
                             Anchor = Anchor.CentreLeft,
                             Origin = Anchor.CentreLeft,
@@ -105,6 +110,20 @@ namespace osu.Game.Overlays.Settings
                     }
                 },
             });
+        }
+
+        private void updatePadding()
+        {
+            var padding = new MarginPadding
+            {
+                Horizontal = compact_horizontal_padding + (SidebarExpanded.Value && Section.UseSmallerSidebarButton ? icon_size : 0),
+                Vertical = 2.5f * iconScale,
+            };
+
+            if (IsLoaded)
+                this.TransformTo(nameof(Padding), padding, ExpandingContainer.TRANSITION_DURATION, Easing.OutQuint);
+            else
+                Padding = padding;
         }
 
         protected override void UpdateState()

@@ -87,6 +87,12 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 },
                 new SettingsCheckbox
                 {
+                    LabelText = "Icon-only settings sidebar",
+                    TooltipText = "Show only section icons in the settings sidebar.",
+                    Current = config.GetBindable<bool>(SpecialSetting.IconOnlySettingsSidebar),
+                },
+                new SettingsCheckbox
+                {
                     LabelText = "Mute pop-up notifications",
                     Current = config.GetBindable<bool>(SpecialSetting.MuteToastNotifications),
                 },
@@ -140,6 +146,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;
                 config.GetBindable<NotificationDisplayPosition>(SpecialSetting.NotificationDisplayPosition).Value = NotificationDisplayPosition.TopRight;
                 config.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition).Value = SettingsPanelPosition.Left;
+                config.GetBindable<bool>(SpecialSetting.IconOnlySettingsSidebar).Value = false;
                 config.GetBindable<bool>(SpecialSetting.NotificationTransparency).Value = false;
                 config.GetBindable<bool>(SpecialSetting.MuteToastNotifications).Value = false;
                 config.GetBindable<string>(SpecialSetting.Theme).Value = ThemeManager.DEFAULT_THEME;

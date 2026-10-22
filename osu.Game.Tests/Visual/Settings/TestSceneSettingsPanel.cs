@@ -13,6 +13,7 @@ using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
 using osu.Game.Graphics.Backdrops;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
@@ -33,10 +34,13 @@ namespace osu.Game.Tests.Visual.Settings
 
         private Bindable<SettingsPanelPosition> panelPosition => specialConfig.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition);
 
+        private Bindable<bool> iconOnlySidebar => specialConfig.GetBindable<bool>(SpecialSetting.IconOnlySettingsSidebar);
+
         [SetUpSteps]
         public void SetUpSteps()
         {
             AddStep("reset panel position", () => panelPosition.Value = SettingsPanelPosition.Left);
+            AddStep("reset sidebar mode", () => iconOnlySidebar.Value = false);
 
             AddStep("create settings", () =>
             {
@@ -184,6 +188,71 @@ namespace osu.Game.Tests.Visual.Settings
             AddUntilStep("docked left again", () => Precision.AlmostEquals(settings.ScreenSpaceDrawQuad.TopLeft.X, settings.Parent.ScreenSpaceDrawQuad.TopLeft.X));
             AddUntilStep("sidebar on left again", () => Precision.AlmostEquals(settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings).ScreenSpaceDrawQuad.TopLeft.X, settings.ScreenSpaceDrawQuad.TopLeft.X));
             AddAssert("panel reports left position", () => settings.PanelPosition == SettingsPanelPosition.Left);
+        }
+
+        [Test]
+        public void TestIconOnlySidebar()
+        {
+            AddUntilStep("wait for load", () => settings.ChildrenOfType<KeyBindingPanel>().Any());
+
+            SettingsSidebar settingsSidebar = null!;
+            KeyBindingPanel panel = null!;
+
+            AddStep("get panels", () =>
+            {
+                settingsSidebar = settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings);
+                panel = settings.ChildrenOfType<KeyBindingPanel>().Single();
+            });
+
+            AddUntilStep("sidebar expanded by default", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.EXPANDED_WIDTH));
+            AddUntilStep("panel width expanded", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.WIDTH));
+
+            AddUntilStep("ruleset sidebar buttons loaded", () => getSmallerSidebarButtons().Any());
+            AddUntilStep("smaller buttons indented", () => getSmallerSidebarButtons().All(b => Precision.AlmostEquals(b.Padding.Left, 25)));
+
+            AddStep("enable icon-only sidebar", () => iconOnlySidebar.Value = true);
+
+            AddUntilStep("sidebar contracted", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.CONTRACTED_WIDTH));
+            AddUntilStep("panel width contracted", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.COMPACT_WIDTH));
+            AddUntilStep("smaller buttons use compact padding", () => getSmallerSidebarButtons().All(b => Precision.AlmostEquals(b.Padding.Left, 5)));
+            AddAssert("all sidebar icons are visible", () => settingsSidebar.ChildrenOfType<SidebarIconButton>().All(button =>
+            {
+                float contentLeft = button.ScreenSpaceDrawQuad.TopLeft.X + button.Padding.Left;
+                float contentRight = button.ScreenSpaceDrawQuad.TopRight.X - button.Padding.Right;
+
+                return button.ChildrenOfType<ConstrainedIconContainer>().All(icon =>
+                    icon.ScreenSpaceDrawQuad.TopLeft.X >= contentLeft
+                    && icon.ScreenSpaceDrawQuad.BottomRight.X <= contentRight);
+            }));
+            AddAssert("content adjacent to sidebar", () => Precision.AlmostEquals(settings.SectionsContainer.ScreenSpaceDrawQuad.TopLeft.X, settingsSidebar.ScreenSpaceDrawQuad.TopRight.X));
+
+            AddStep("dock right", () => panelPosition.Value = SettingsPanelPosition.Right);
+
+            AddUntilStep("docked right", () => Precision.AlmostEquals(settings.ScreenSpaceDrawQuad.TopRight.X, settings.Parent.ScreenSpaceDrawQuad.TopRight.X));
+            AddUntilStep("sidebar on right", () => Precision.AlmostEquals(settingsSidebar.ScreenSpaceDrawQuad.TopRight.X, settings.ScreenSpaceDrawQuad.TopRight.X));
+            AddAssert("content adjacent to sidebar on right", () => Precision.AlmostEquals(settings.SectionsContainer.ScreenSpaceDrawQuad.TopRight.X, settingsSidebar.ScreenSpaceDrawQuad.TopLeft.X));
+            AddAssert("panel width still contracted", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.COMPACT_WIDTH));
+
+            AddStep("open sub panel", () => panel.Show());
+            AddUntilStep("sub panel visible", () => panel.State.Value == Visibility.Visible);
+            AddWaitStep("wait for transition", 60);
+
+            AddAssert("root sidebar stays contracted", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.CONTRACTED_WIDTH));
+            AddAssert("panel covers sub panel", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.WIDTH));
+
+            AddStep("close sub panel", () => panel.Hide());
+            AddWaitStep("wait for transition", 60);
+
+            AddUntilStep("panel width contracted again", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.COMPACT_WIDTH));
+
+            AddStep("disable icon-only sidebar", () => iconOnlySidebar.Value = false);
+            AddUntilStep("sidebar expanded again", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.EXPANDED_WIDTH));
+            AddUntilStep("panel width expanded again", () => Precision.AlmostEquals(settings.DrawWidth, SettingsPanel.WIDTH));
+            AddUntilStep("smaller buttons indented again", () => getSmallerSidebarButtons().All(b => Precision.AlmostEquals(b.Padding.Left, 25)));
+
+            SidebarIconButton[] getSmallerSidebarButtons() => settingsSidebar.ChildrenOfType<SidebarIconButton>()
+                                                                           .Where(b => b.Section.UseSmallerSidebarButton)
+                                                                           .ToArray();
         }
 
         [Test]
