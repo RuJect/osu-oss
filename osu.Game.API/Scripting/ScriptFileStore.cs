@@ -39,6 +39,15 @@ namespace osu.Game.API.Scripting
             writer.Write(content);
         }
 
+        public void Append(string path, string content)
+        {
+            storage.GetFullPath(path, true);
+
+            using Stream stream = storage.GetStream(path, FileAccess.Write, FileMode.Append);
+            using var writer = new StreamWriter(stream);
+            writer.Write(content);
+        }
+
         public void Delete(string path)
         {
             if (storage.Exists(path))

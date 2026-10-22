@@ -39,6 +39,17 @@ namespace osu.Game.API.Scripting.Api.Providers
                 return JsValue.Undefined;
             });
 
+            context.AddFunction(storage, "append", (_, args) =>
+            {
+                ScriptDataStorage? data = context.Services.DataStorage;
+                string? path = pathFrom(args, 0);
+
+                if (data != null && path != null && args.Length >= 2)
+                    data.Append(path, args[1].ToString());
+
+                return JsValue.Undefined;
+            });
+
             context.AddFunction(storage, "exists", (_, args) =>
             {
                 ScriptDataStorage? data = context.Services.DataStorage;
