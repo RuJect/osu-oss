@@ -18,6 +18,9 @@ namespace osu.Game.API.Scripting
         private readonly List<JsTimer> timers = new List<JsTimer>();
 
         private int nextTimerId;
+        private double timeBase;
+        private bool timeBaseSet;
+        private double elapsed;
 
         public void AddUpdateHandler(JsValue handler) => updateHandlers.Add(handler);
 
@@ -28,7 +31,7 @@ namespace osu.Game.API.Scripting
                 interval = 0;
 
             int id = ++nextTimerId;
-            timers.Add(new JsTimer(id, handler, interval, repeat));
+            timers.Add(new JsTimer(id, handler, interval, repeat, elapsed + interval));
             return id;
         }
 
@@ -49,6 +52,16 @@ namespace osu.Game.API.Scripting
 
         public void Tick(Engine engine, double currentTime, Action<Exception> onError)
         {
+            // Anchor the scheduler's clock to its first tick so timer countdowns are relative to the script's
+            // lifetime rather than the game's absolute clock (which would fire them immediately).
+            if (!timeBaseSet)
+            {
+                timeBase = currentTime;
+                timeBaseSet = true;
+            }
+
+            elapsed = currentTime - timeBase;
+
             foreach (JsValue handler in updateHandlers.ToArray())
                 invoke(engine, handler, onError);
 
@@ -56,11 +69,11 @@ namespace osu.Game.API.Scripting
             {
                 JsTimer timer = timers[i];
 
-                if (currentTime < timer.NextRun)
+                if (elapsed < timer.NextRun)
                     continue;
 
                 if (timer.Repeat)
-                    timer.NextRun = currentTime + timer.Interval;
+                    timer.NextRun = elapsed + timer.Interval;
                 else
                     timers.RemoveAt(i);
 
@@ -95,12 +108,13 @@ namespace osu.Game.API.Scripting
 
             public double NextRun;
 
-            public JsTimer(int id, JsValue handler, double interval, bool repeat)
+            public JsTimer(int id, JsValue handler, double interval, bool repeat, double nextRun)
             {
                 Id = id;
                 Handler = handler;
                 Interval = interval;
                 Repeat = repeat;
+                NextRun = nextRun;
             }
         }
     }
