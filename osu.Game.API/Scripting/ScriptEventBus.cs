@@ -38,8 +38,14 @@ namespace osu.Game.API.Scripting
         /// <summary>Removes every subscription belonging to <paramref name="instance"/>.</summary>
         public void RemoveFor(ScriptInstance instance)
         {
-            foreach (List<EventSubscription> list in subscriptions.Values)
+            foreach (string eventName in subscriptions.Keys.ToArray())
+            {
+                List<EventSubscription> list = subscriptions[eventName];
                 list.RemoveAll(s => s.Instance == instance);
+
+                if (list.Count == 0)
+                    subscriptions.Remove(eventName);
+            }
         }
 
         /// <summary>Whether <paramref name="instance"/> currently has any event subscriptions.</summary>

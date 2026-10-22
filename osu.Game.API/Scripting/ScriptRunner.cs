@@ -42,7 +42,7 @@ namespace osu.Game.API.Scripting
             {
                 instance.State = ScriptExecutionState.Error;
                 services.Output.Log(ScriptOutputLevel.Error, definition.Name, e.Message);
-                instance.TearDown();
+                teardown(instance);
                 running.Add(instance);
                 RunningScriptsChanged?.Invoke();
                 return instance;
