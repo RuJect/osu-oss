@@ -2,12 +2,16 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using osu.Framework.Bindables;
 using osu.Framework.Testing;
 using osu.Game.API.Scripting;
 using osu.Game.Configuration;
+using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 
 namespace osu.Game.Tests.API.Scripting
 {
@@ -191,8 +195,43 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(logged("conv=false"));
         }
 
+        [Test]
+        public void TestNotifyProgress()
+        {
+            var overlay = new TestNotificationOverlay();
+            manager.Services.Notifications = overlay;
+
+            run("let p = osu.notify.progress('Loading'); osu.log('type=' + typeof p.setProgress); p.setProgress(0.5); p.complete();");
+
+            ClassicAssert.IsTrue(logged("type=function"));
+            ClassicAssert.AreEqual(1, overlay.Posted.Count);
+        }
+
+        [Test]
+        public void TestMusicNoOpWhenUnavailable()
+        {
+            run("osu.log('playing=' + osu.music.isPlaying()); osu.music.play();");
+
+            ClassicAssert.IsTrue(logged("playing=false"));
+        }
+
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);
+
+        private class TestNotificationOverlay : INotificationOverlay
+        {
+            public readonly List<Notification> Posted = new();
+
+            public void Post(Notification notification) => Posted.Add(notification);
+
+            public void Hide()
+            {
+            }
+
+            public IBindable<int> UnreadCount { get; } = new Bindable<int>();
+
+            public IEnumerable<Notification> AllNotifications => Posted;
+        }
     }
 }

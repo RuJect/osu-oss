@@ -94,7 +94,7 @@ osu.every(1000, () => osu.log(""alive for "" + frames + "" frames""));
 osu.storage.write(""runs.txt"", ""ran at "" + Date.now());
 
 // The raw game/host instances live under `internal` for advanced scripts.
-// osu.notify(""Hello from a script!"");
+// osu.notify.post(""Hello from a script!"");
 // Full access to the CLR is available too.
 // let colour = System.Console.ForegroundColor;
 ";
