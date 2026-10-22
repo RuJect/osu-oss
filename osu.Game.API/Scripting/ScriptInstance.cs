@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Jint;
 
@@ -24,12 +25,20 @@ namespace osu.Game.API.Scripting
         internal CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
         internal ScriptScheduler Scheduler { get; } = new ScriptScheduler();
 
+        private readonly List<Action> teardownActions = new List<Action>();
+
         private bool tornDown;
 
         internal ScriptInstance(ScriptDefinition definition)
         {
             Definition = definition;
         }
+
+        /// <summary>
+        /// Registers an action invoked when the script is torn down (stopped, completed or failed).
+        /// Used by API providers to release resources that live outside the script engine, such as overlays.
+        /// </summary>
+        internal void OnTearDown(Action action) => teardownActions.Add(action);
 
         /// <summary>
         /// Cancels any pending execution and disposes the underlying JavaScript engine.
@@ -41,6 +50,20 @@ namespace osu.Game.API.Scripting
                 return;
 
             tornDown = true;
+
+            foreach (Action action in teardownActions)
+            {
+                try
+                {
+                    action();
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+
+            teardownActions.Clear();
 
             try
             {

@@ -215,6 +215,14 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(logged("playing=false"));
         }
 
+        [Test]
+        public void TestUiNoOpWhenUnavailable()
+        {
+            run("let o = osu.ui.overlay('Test'); osu.log('overlay=' + (o === undefined));");
+
+            ClassicAssert.IsTrue(logged("overlay=true"));
+        }
+
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);
