@@ -17,14 +17,31 @@ namespace osu.Game.API.Scripting
         private readonly List<JsValue> updateHandlers = new List<JsValue>();
         private readonly List<JsTimer> timers = new List<JsTimer>();
 
+        private int nextTimerId;
+
         public void AddUpdateHandler(JsValue handler) => updateHandlers.Add(handler);
 
-        public void AddTimer(JsValue handler, double interval, bool repeat)
+        /// <summary>Registers a timer and returns its id, used to cancel it via <see cref="CancelTimer"/>.</summary>
+        public int AddTimer(JsValue handler, double interval, bool repeat)
         {
             if (interval < 0)
                 interval = 0;
 
-            timers.Add(new JsTimer(handler, interval, repeat));
+            int id = ++nextTimerId;
+            timers.Add(new JsTimer(id, handler, interval, repeat));
+            return id;
+        }
+
+        /// <summary>Cancels the timer with the given id. Returns <see langword="false"/> if no such timer exists.</summary>
+        public bool CancelTimer(int id)
+        {
+            int index = timers.FindIndex(t => t.Id == id);
+
+            if (index < 0)
+                return false;
+
+            timers.RemoveAt(index);
+            return true;
         }
 
         /// <summary>Whether any frame callbacks or timers are still registered.</summary>
@@ -71,14 +88,16 @@ namespace osu.Game.API.Scripting
 
         private class JsTimer
         {
+            public readonly int Id;
             public readonly JsValue Handler;
             public readonly double Interval;
             public readonly bool Repeat;
 
             public double NextRun;
 
-            public JsTimer(JsValue handler, double interval, bool repeat)
+            public JsTimer(int id, JsValue handler, double interval, bool repeat)
             {
+                Id = id;
                 Handler = handler;
                 Interval = interval;
                 Repeat = repeat;

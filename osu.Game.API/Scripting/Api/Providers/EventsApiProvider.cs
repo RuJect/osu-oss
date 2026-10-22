@@ -28,6 +28,13 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         [ScriptApi]
+        public void Once(string? eventName, JsValue handler)
+        {
+            if (eventName != null && handler.IsCallable())
+                Context.Services.Events.SubscribeOnce(Context.Instance, eventName, handler);
+        }
+
+        [ScriptApi]
         public void Emit(JsValue[] args)
         {
             if (args.Length >= 1 && args[0].IsString())

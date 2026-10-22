@@ -52,7 +52,12 @@ namespace osu.Game.API.Scripting
         {
             if (storage.Exists(path))
                 storage.Delete(path);
+            else if (storage.ExistsDirectory(path))
+                storage.DeleteDirectory(path);
         }
+
+        /// <summary>Creates the directory at <paramref name="path"/>, including any missing parents.</summary>
+        public void CreateDirectory(string path) => storage.GetFullPath(path, true);
 
         /// <summary>Lists the files immediately under <paramref name="path"/>, optionally filtered by a wildcard pattern.</summary>
         public IEnumerable<string> ListFiles(string path = "", string pattern = "*") => storage.GetFiles(path, pattern);

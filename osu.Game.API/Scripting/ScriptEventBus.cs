@@ -17,11 +17,18 @@ namespace osu.Game.API.Scripting
         private readonly Dictionary<string, List<EventSubscription>> subscriptions = new Dictionary<string, List<EventSubscription>>();
 
         public void Subscribe(ScriptInstance instance, string eventName, JsValue handler)
+            => subscribe(instance, eventName, handler, false);
+
+        /// <summary>Subscribes <paramref name="handler"/> for a single invocation, after which it is removed.</summary>
+        public void SubscribeOnce(ScriptInstance instance, string eventName, JsValue handler)
+            => subscribe(instance, eventName, handler, true);
+
+        private void subscribe(ScriptInstance instance, string eventName, JsValue handler, bool once)
         {
             if (!subscriptions.TryGetValue(eventName, out List<EventSubscription>? list))
                 subscriptions[eventName] = list = new List<EventSubscription>();
 
-            list.Add(new EventSubscription(instance, handler));
+            list.Add(new EventSubscription(instance, handler, once));
         }
 
         public void Unsubscribe(ScriptInstance instance, string eventName, JsValue handler)
@@ -71,11 +78,13 @@ namespace osu.Game.API.Scripting
         {
             public readonly ScriptInstance Instance;
             public readonly JsValue Handler;
+            public readonly bool Once;
 
-            public EventSubscription(ScriptInstance instance, JsValue handler)
+            public EventSubscription(ScriptInstance instance, JsValue handler, bool once = false)
             {
                 Instance = instance;
                 Handler = handler;
+                Once = once;
             }
         }
     }

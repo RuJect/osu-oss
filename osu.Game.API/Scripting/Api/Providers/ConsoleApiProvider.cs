@@ -27,6 +27,9 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "console", Global = true)]
         public void Debug(JsValue[] args) => write(ScriptOutputLevel.Log, args);
 
+        [ScriptApi(Target = "console", Global = true)]
+        public void Table(JsValue value) => write(ScriptOutputLevel.Log, new[] { stringify(value) });
+
         protected override void OnRegistered(ScriptApiContext context)
         {
             // osu.log is an alias for console.log.
@@ -35,6 +38,12 @@ namespace osu.Game.API.Scripting.Api.Providers
 
         private void write(ScriptOutputLevel level, JsValue[] args)
             => Context.Services.Output.Log(level, Context.Instance.Name, string.Join(" ", args.Select(format)));
+
+        private JsValue stringify(JsValue value)
+        {
+            JsValue json = Context.Engine.GetValue("JSON");
+            return Context.Engine.Invoke(json.Get("stringify"), new object[] { value, JsValue.Null, 2 });
+        }
 
         private static string format(JsValue value)
         {

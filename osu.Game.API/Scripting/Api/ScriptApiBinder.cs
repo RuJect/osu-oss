@@ -17,7 +17,7 @@ namespace osu.Game.API.Scripting.Api
         public static object?[] ConvertArguments(MethodInfo method, JsValue[] args)
         {
             ParameterInfo[] parameters = method.GetParameters();
-            var converted = new object?[parameters.Length];
+            object?[] converted = new object?[parameters.Length];
 
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -26,7 +26,13 @@ namespace osu.Game.API.Scripting.Api
                 // A JsValue[] parameter captures the raw argument array (callables, rest arguments, ...).
                 if (parameter.ParameterType == typeof(JsValue[]))
                 {
-                    converted[i] = args;
+                    // The runtime may hand us the arguments as an object[] (array covariance), so reify
+                    // a concrete JsValue[] to keep MethodInfo.Invoke's parameter binding happy.
+                    JsValue[] values = new JsValue[args.Length];
+                    for (int j = 0; j < args.Length; j++)
+                        values[j] = args[j];
+
+                    converted[i] = values;
                     continue;
                 }
 

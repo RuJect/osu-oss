@@ -3,6 +3,8 @@
 
 using System;
 using System.Linq;
+using Jint;
+using Jint.Native;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -66,6 +68,49 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         [ScriptApi(Target = "storage")]
+        public void Mkdir(string? path)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data != null && path != null)
+                data.CreateDirectory(path);
+        }
+
+        [ScriptApi(Target = "storage")]
+        public JsValue ReadJson(string? path)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data == null || path == null || !data.Exists(path))
+                return JsValue.Undefined;
+
+            return parseJson(data.Read(path));
+        }
+
+        [ScriptApi(Target = "storage")]
+        public void WriteJson(string? path, JsValue value)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data == null || path == null || value.IsUndefined())
+                return;
+
+            data.Write(path, stringifyJson(value));
+        }
+
+        [ScriptApi(Target = "storage")]
         public string Directory => Context.Services.DataStorage?.Directory ?? string.Empty;
+
+        private JsValue parseJson(string text)
+        {
+            JsValue json = Context.Engine.GetValue("JSON");
+            return Context.Engine.Invoke(json.Get("parse"), new object[] { text });
+        }
+
+        private string stringifyJson(JsValue value)
+        {
+            JsValue json = Context.Engine.GetValue("JSON");
+            return Context.Engine.Invoke(json.Get("stringify"), new object[] { value, JsValue.Null, 2 }).AsString();
+        }
     }
 }

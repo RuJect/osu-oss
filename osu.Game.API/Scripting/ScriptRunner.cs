@@ -103,7 +103,11 @@ namespace osu.Game.API.Scripting
                 catch (Exception e)
                 {
                     fail(subscription.Instance, e);
+                    continue;
                 }
+
+                if (subscription.Once)
+                    services.Events.Unsubscribe(subscription.Instance, eventName, subscription.Handler);
             }
         }
 
