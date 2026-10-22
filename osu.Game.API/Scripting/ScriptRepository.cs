@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace osu.Game.API.Scripting
@@ -43,7 +44,7 @@ namespace osu.Game.API.Scripting
 
             foreach (string file in Storage.EnumerateScripts())
             {
-                string name = System.IO.Path.GetFileNameWithoutExtension(file);
+                string name = Path.GetFileNameWithoutExtension(file);
                 string source = Storage.Read(file);
                 definitions.Add(new ScriptDefinition(name, file, source));
             }
@@ -84,7 +85,7 @@ namespace osu.Game.API.Scripting
             if (Storage == null || definition.FileName != null)
                 return null;
 
-            string fileName = make_unique_file_name(definition.Name);
+            string fileName = makeUniqueFileName(definition.Name);
 
             if (!fileName.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
                 fileName += ".js";
@@ -106,7 +107,7 @@ namespace osu.Game.API.Scripting
 
         public string[] GetNames() => definitions.Select(d => d.Name).ToArray();
 
-        private string make_unique_file_name(string baseName)
+        private string makeUniqueFileName(string baseName)
         {
             var used = new HashSet<string>(Storage!.EnumerateScripts(), StringComparer.OrdinalIgnoreCase);
             string name = baseName;

@@ -18,7 +18,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             context.AddFunction(context.Api, "on", (_, args) =>
             {
                 if (args.Length >= 2 && args[0].IsString() && args[1].IsCallable())
-                    context.Environment.Events.Subscribe(context.Instance, args[0].AsString(), args[1]);
+                    context.Services.Events.Subscribe(context.Instance, args[0].AsString(), args[1]);
 
                 return JsValue.Undefined;
             });
@@ -26,7 +26,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             context.AddFunction(context.Api, "off", (_, args) =>
             {
                 if (args.Length >= 2 && args[0].IsString() && args[1].IsCallable())
-                    context.Environment.Events.Unsubscribe(context.Instance, args[0].AsString(), args[1]);
+                    context.Services.Events.Unsubscribe(context.Instance, args[0].AsString(), args[1]);
 
                 return JsValue.Undefined;
             });

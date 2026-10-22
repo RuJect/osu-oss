@@ -14,7 +14,7 @@ namespace osu.Game.API.Scripting.Api.Providers
     {
         public void Register(ScriptApiContext context)
         {
-            context.AddProperty(context.Api, "version", context.Environment.Version);
+            context.AddProperty(context.Api, "version", context.Services.Version);
 
             context.AddFunction(context.Api, "run", (_, args) =>
             {
@@ -26,7 +26,7 @@ namespace osu.Game.API.Scripting.Api.Providers
 
             context.AddFunction(context.Api, "scripts", (_, _) =>
             {
-                string[] names = context.Environment.Repository.GetNames();
+                string[] names = context.Services.Repository.GetNames();
                 return new JsArray(context.Engine, names.Select(n => (JsValue)n).ToArray());
             });
         }

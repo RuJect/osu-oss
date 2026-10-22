@@ -23,12 +23,14 @@ namespace osu.Game.API.Scripting.Api.Providers
             context.AddFunction(console, "debug", (_, args) => write(context, ScriptOutputLevel.Log, args));
 
             context.Engine.SetValue("console", console);
-            context.AddFunction(context.Api, "log", (_, args) => write(context, ScriptOutputLevel.Log, args));
+
+            // osu.log is an alias for console.log.
+            context.Api.Set("log", console.Get("log"));
         }
 
         private static JsValue write(ScriptApiContext context, ScriptOutputLevel level, JsValue[] args)
         {
-            context.Environment.Output.Log(level, context.Instance.Name, string.Join(" ", args.Select(format)));
+            context.Services.Output.Log(level, context.Instance.Name, string.Join(" ", args.Select(format)));
             return JsValue.Undefined;
         }
 

@@ -30,14 +30,14 @@ namespace osu.Game.API.Scripting.Api.Providers
         {
             try
             {
-                INotificationOverlay? overlay = context.Environment.Game.Dependencies.Get<INotificationOverlay>();
+                INotificationOverlay? overlay = context.Services.Game.Dependencies.Get<INotificationOverlay>();
 
                 if (overlay != null)
                     overlay.Post(new SimpleNotification { Text = message });
             }
             catch (Exception e)
             {
-                context.Environment.Output.Log(ScriptOutputLevel.Warn, "osu", $"notify failed: {e.Message}");
+                context.Services.Output.Log(ScriptOutputLevel.Warn, "osu", $"notify failed: {e.Message}");
             }
         }
     }

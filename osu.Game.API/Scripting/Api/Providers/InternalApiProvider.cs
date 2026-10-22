@@ -15,8 +15,8 @@ namespace osu.Game.API.Scripting.Api.Providers
         {
             JsObject internalApi = context.CreateObject();
 
-            context.AddProperty(internalApi, "game", context.Environment.Game);
-            context.AddProperty(internalApi, "host", context.Environment.Host);
+            context.AddProperty(internalApi, "game", context.Services.Game);
+            context.AddProperty(internalApi, "host", context.Services.Host);
 
             context.Engine.SetValue("internal", internalApi);
         }

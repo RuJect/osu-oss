@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using osu.Framework.Platform;
 
@@ -12,7 +11,7 @@ namespace osu.Game.API.Scripting
     /// <summary>
     /// Storage abstraction over the user's <c>osu-oss/scripts</c> directory.
     /// </summary>
-    public class ScriptStorage
+    public class ScriptStorage : ScriptFileStore
     {
         /// <summary>Script executed once the game has finished loading.</summary>
         public const string LAUNCH_SCRIPT = "on_launch.js";
@@ -25,41 +24,14 @@ namespace osu.Game.API.Scripting
 
         private const string script_search_pattern = "*.js";
 
-        private readonly Storage storage;
-
         public ScriptStorage(Storage storage)
+            : base(storage)
         {
-            this.storage = storage;
         }
-
-        /// <summary>The absolute path of the scripts directory.</summary>
-        public string Directory => storage.GetFullPath(string.Empty);
-
-        public bool Exists(string fileName) => storage.Exists(fileName);
 
         public IEnumerable<string> EnumerateScripts()
-            => storage.GetFiles(string.Empty, script_search_pattern)
-                      .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
-
-        public string Read(string fileName)
-        {
-            using (Stream stream = storage.GetStream(fileName, FileAccess.Read, FileMode.Open))
-            using (var reader = new StreamReader(stream))
-                return reader.ReadToEnd();
-        }
-
-        public void Write(string fileName, string content)
-        {
-            using (Stream stream = storage.CreateFileSafely(fileName))
-            using (var writer = new StreamWriter(stream))
-                writer.Write(content);
-        }
-
-        public void Delete(string fileName)
-        {
-            if (storage.Exists(fileName))
-                storage.Delete(fileName);
-        }
+            => ListFiles(string.Empty, script_search_pattern)
+               .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Ensures the scripts directory is populated with the magic scripts and an example.
@@ -74,7 +46,7 @@ namespace osu.Game.API.Scripting
 
         private void writeDefault(string fileName, string content)
         {
-            if (!storage.Exists(fileName))
+            if (!Exists(fileName))
                 Write(fileName, content);
         }
 

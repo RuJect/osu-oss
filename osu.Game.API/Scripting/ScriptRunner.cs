@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using osu.Game.API.Scripting.Api;
 
 namespace osu.Game.API.Scripting
@@ -14,18 +13,20 @@ namespace osu.Game.API.Scripting
     /// </summary>
     public class ScriptRunner
     {
-        private readonly ScriptApiEnvironment environment;
+        private readonly ScriptServices services;
         private readonly ScriptEngineFactory engineFactory;
+        private readonly ScriptLocator locator;
         private readonly List<ScriptInstance> running = new List<ScriptInstance>();
 
         public event Action? RunningScriptsChanged;
 
         public IReadOnlyList<ScriptInstance> Running => running;
 
-        public ScriptRunner(ScriptApiEnvironment environment, ScriptEngineFactory engineFactory)
+        public ScriptRunner(ScriptServices services, ScriptEngineFactory engineFactory, ScriptLocator locator)
         {
-            this.environment = environment;
+            this.services = services;
             this.engineFactory = engineFactory;
+            this.locator = locator;
         }
 
         public ScriptInstance Run(ScriptDefinition definition)
@@ -40,45 +41,31 @@ namespace osu.Game.API.Scripting
             catch (Exception e)
             {
                 instance.State = ScriptExecutionState.Error;
-                environment.Output.Log(ScriptOutputLevel.Error, definition.Name, e.Message);
+                services.Output.Log(ScriptOutputLevel.Error, definition.Name, e.Message);
                 instance.TearDown();
                 running.Add(instance);
                 RunningScriptsChanged?.Invoke();
                 return instance;
             }
 
-            if (!instance.Scheduler.HasPendingCallbacks && !environment.Events.HasSubscriptions(instance))
+            if (!instance.Scheduler.HasPendingCallbacks && !services.Events.HasSubscriptions(instance))
             {
                 instance.State = ScriptExecutionState.Completed;
-                environment.Output.Log(ScriptOutputLevel.Info, definition.Name, "completed");
-                instance.TearDown();
+                services.Output.Log(ScriptOutputLevel.Info, definition.Name, "completed");
+                teardown(instance);
                 RunningScriptsChanged?.Invoke();
                 return instance;
             }
 
             running.Add(instance);
-            environment.Output.Log(ScriptOutputLevel.Info, definition.Name, "started");
+            services.Output.Log(ScriptOutputLevel.Info, definition.Name, "started");
             RunningScriptsChanged?.Invoke();
             return instance;
         }
 
-        public ScriptInstance? RunByName(string name)
-        {
-            ScriptDefinition? definition = environment.Repository.Definitions.FirstOrDefault(d => d.Name == name);
+        public ScriptInstance? RunByName(string name) => locator.FindByName(name) is { } definition ? Run(definition) : null;
 
-            return definition == null ? null : Run(definition);
-        }
-
-        public ScriptInstance? RunFile(string fileName)
-        {
-            ScriptStorage? storage = environment.Repository.Storage;
-
-            if (storage == null || !storage.Exists(fileName))
-                return null;
-
-            var definition = new ScriptDefinition(System.IO.Path.GetFileNameWithoutExtension(fileName), fileName, storage.Read(fileName));
-            return Run(definition);
-        }
+        public ScriptInstance? RunFile(string fileName) => locator.LoadFromFile(fileName) is { } definition ? Run(definition) : null;
 
         public void Stop(ScriptInstance instance) => stop(instance, ScriptExecutionState.Stopped);
 
@@ -86,18 +73,6 @@ namespace osu.Game.API.Scripting
         {
             foreach (ScriptInstance instance in running.ToArray())
                 Stop(instance);
-        }
-
-        private void stop(ScriptInstance instance, ScriptExecutionState state)
-        {
-            if (!running.Remove(instance))
-                return;
-
-            instance.State = state;
-            instance.TearDown();
-            environment.Events.RemoveFor(instance);
-            environment.Output.Log(ScriptOutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
-            RunningScriptsChanged?.Invoke();
         }
 
         /// <summary>
@@ -116,7 +91,7 @@ namespace osu.Game.API.Scripting
 
         public void Emit(string eventName, object?[] args)
         {
-            foreach (ScriptEventBus.EventSubscription subscription in environment.Events.HandlersFor(eventName))
+            foreach (ScriptEventBus.EventSubscription subscription in services.Events.HandlersFor(eventName))
             {
                 if (!running.Contains(subscription.Instance) || subscription.Instance.State != ScriptExecutionState.Running)
                     continue;
@@ -132,10 +107,30 @@ namespace osu.Game.API.Scripting
             }
         }
 
+        private void stop(ScriptInstance instance, ScriptExecutionState state)
+        {
+            if (!running.Remove(instance))
+                return;
+
+            instance.State = state;
+            teardown(instance);
+            services.Output.Log(ScriptOutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
+            RunningScriptsChanged?.Invoke();
+        }
+
         private void fail(ScriptInstance instance, Exception e)
         {
-            environment.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
+            services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
             stop(instance, ScriptExecutionState.Error);
+        }
+
+        /// <summary>
+        /// Releases the instance's engine and removes any lingering event subscriptions in one place.
+        /// </summary>
+        private void teardown(ScriptInstance instance)
+        {
+            instance.TearDown();
+            services.Events.RemoveFor(instance);
         }
     }
 }

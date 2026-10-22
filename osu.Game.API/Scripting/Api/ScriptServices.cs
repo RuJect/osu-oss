@@ -9,7 +9,7 @@ namespace osu.Game.API.Scripting.Api
     /// Bundle of cross-cutting services exposed to <see cref="IScriptApiProvider"/>s while building the
     /// global API objects for a script instance.
     /// </summary>
-    public class ScriptApiEnvironment
+    public class ScriptServices
     {
         public OsuGame Game { get; }
 
@@ -27,9 +27,9 @@ namespace osu.Game.API.Scripting.Api
         /// Storage scoped to the scripts data directory (<c>osu-oss/scripts/data</c>), resolved once the
         /// game has loaded. Scripts may freely read and write files here.
         /// </summary>
-        public Storage? DataStorage { get; set; }
+        public ScriptDataStorage? DataStorage { get; set; }
 
-        public ScriptApiEnvironment(OsuGame game, GameHost host, ScriptRepository repository, ScriptOutputLog output, ScriptEventBus events)
+        public ScriptServices(OsuGame game, GameHost host, ScriptRepository repository, ScriptOutputLog output, ScriptEventBus events)
         {
             Game = game;
             Host = host;

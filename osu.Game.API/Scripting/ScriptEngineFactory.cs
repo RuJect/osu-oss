@@ -15,12 +15,12 @@ namespace osu.Game.API.Scripting
     /// </summary>
     public class ScriptEngineFactory
     {
-        private readonly ScriptApiEnvironment environment;
+        private readonly ScriptServices services;
         private readonly Func<IReadOnlyList<IScriptApiProvider>> providerFactory;
 
-        public ScriptEngineFactory(ScriptApiEnvironment environment, Func<IReadOnlyList<IScriptApiProvider>> providerFactory)
+        public ScriptEngineFactory(ScriptServices services, Func<IReadOnlyList<IScriptApiProvider>> providerFactory)
         {
-            this.environment = environment;
+            this.services = services;
             this.providerFactory = providerFactory;
         }
 
@@ -35,7 +35,7 @@ namespace osu.Game.API.Scripting
             var engine = new Engine(options);
             instance.Engine = engine;
 
-            JsObject api = new ScriptApiBuilder(engine, environment, runner, instance, providerFactory()).Build();
+            JsObject api = new ScriptApiBuilder(engine, services, runner, instance, providerFactory()).Build();
 
             engine.SetValue("osu", api);
 

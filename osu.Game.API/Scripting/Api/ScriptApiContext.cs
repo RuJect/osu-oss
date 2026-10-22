@@ -16,7 +16,7 @@ namespace osu.Game.API.Scripting.Api
     {
         public Engine Engine { get; }
         public ScriptInstance Instance { get; }
-        public ScriptApiEnvironment Environment { get; }
+        public ScriptServices Services { get; }
 
         /// <summary>The runner owning <see cref="Instance"/>, used to trigger cross-script behaviour.</summary>
         public ScriptRunner Runner { get; }
@@ -24,11 +24,11 @@ namespace osu.Game.API.Scripting.Api
         /// <summary>The root <c>osu</c> object exposed to the script.</summary>
         public JsObject Api { get; }
 
-        public ScriptApiContext(Engine engine, ScriptInstance instance, ScriptApiEnvironment environment, ScriptRunner runner, JsObject api)
+        public ScriptApiContext(Engine engine, ScriptInstance instance, ScriptServices services, ScriptRunner runner, JsObject api)
         {
             Engine = engine;
             Instance = instance;
-            Environment = environment;
+            Services = services;
             Runner = runner;
             Api = api;
         }
@@ -44,7 +44,7 @@ namespace osu.Game.API.Scripting.Api
                 }
                 catch (Exception e)
                 {
-                    Environment.Output.Log(ScriptOutputLevel.Error, Instance.Name, e.Message);
+                    Services.Output.Log(ScriptOutputLevel.Error, Instance.Name, e.Message);
                     return JsValue.Undefined;
                 }
             }));

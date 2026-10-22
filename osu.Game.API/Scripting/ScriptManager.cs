@@ -15,6 +15,7 @@ namespace osu.Game.API.Scripting
     /// <item><see cref="Repository"/> - known definitions and on-disk persistence.</item>
     /// <item><see cref="Output"/> - output history and log.</item>
     /// <item><see cref="Events"/> - script event subscriptions.</item>
+    /// <item><see cref="Locator"/> - resolution of definitions by name or file.</item>
     /// <item><see cref="Runner"/> - running instances and execution.</item>
     /// </list>
     /// </summary>
@@ -28,19 +29,22 @@ namespace osu.Game.API.Scripting
 
         public ScriptEventBus Events { get; }
 
-        internal ScriptApiEnvironment Environment { get; }
+        public ScriptLocator Locator { get; }
 
         public ScriptRunner Runner { get; }
+
+        internal ScriptServices Services { get; }
 
         public ScriptManager(GameHost host, OsuGame game)
         {
             Output = new ScriptOutputLog();
             Repository = new ScriptRepository(Output);
             Events = new ScriptEventBus();
-            Environment = new ScriptApiEnvironment(game, host, Repository, Output, Events);
+            Services = new ScriptServices(game, host, Repository, Output, Events);
+            Locator = new ScriptLocator(Repository);
 
-            var engineFactory = new ScriptEngineFactory(Environment, buildProviderList);
-            Runner = new ScriptRunner(Environment, engineFactory);
+            var engineFactory = new ScriptEngineFactory(Services, buildProviderList);
+            Runner = new ScriptRunner(Services, engineFactory, Locator);
 
             RegisterApiProvider(new ConsoleApiProvider());
             RegisterApiProvider(new CoreApiProvider());
@@ -51,6 +55,20 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(new NotificationApiProvider());
             RegisterApiProvider(new InternalApiProvider());
         }
+
+        /// <summary>
+        /// Binds the on-disk script and data stores once the game has finished loading.
+        /// </summary>
+        public void AttachStorage(ScriptStorage scriptStorage, Storage dataStorage)
+        {
+            Repository.Storage = scriptStorage;
+            Services.DataStorage = new ScriptDataStorage(dataStorage);
+            Repository.Refresh();
+        }
+
+        public ScriptInstance? RunByName(string name) => Runner.RunByName(name);
+
+        public ScriptInstance? RunFile(string fileName) => Runner.RunFile(fileName);
 
         public void RegisterApiProvider(IScriptApiProvider provider)
         {

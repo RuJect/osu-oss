@@ -68,9 +68,7 @@ namespace osu.Game.API.Scripting
                 var scriptStorage = new ScriptStorage(SpecialStorage.GetScripts(storage));
                 scriptStorage.EnsureInitialised();
 
-                Manager.Repository.Storage = scriptStorage;
-                Manager.Repository.Refresh();
-                Manager.Environment.DataStorage = SpecialStorage.GetScriptData(storage);
+                Manager.AttachStorage(scriptStorage, SpecialStorage.GetScriptData(storage));
             }
             catch (Exception e)
             {
@@ -86,7 +84,7 @@ namespace osu.Game.API.Scripting
         {
             try
             {
-                Manager.Runner.RunFile(ScriptStorage.LAUNCH_SCRIPT);
+                Manager.RunFile(ScriptStorage.LAUNCH_SCRIPT);
             }
             catch (Exception e)
             {
@@ -98,13 +96,7 @@ namespace osu.Game.API.Scripting
         {
             try
             {
-                ScriptStorage? storage = Manager.Repository.Storage;
-
-                if (storage != null && storage.Exists(ScriptStorage.EXIT_SCRIPT))
-                {
-                    var definition = new ScriptDefinition("on_exit", ScriptStorage.EXIT_SCRIPT, storage.Read(ScriptStorage.EXIT_SCRIPT));
-                    Manager.Runner.Run(definition);
-                }
+                Manager.RunFile(ScriptStorage.EXIT_SCRIPT);
             }
             catch (Exception e)
             {

@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using Jint;
 using Jint.Native;
@@ -13,15 +14,15 @@ namespace osu.Game.API.Scripting.Api
     internal class ScriptApiBuilder
     {
         private readonly Engine engine;
-        private readonly ScriptApiEnvironment environment;
+        private readonly ScriptServices services;
         private readonly ScriptRunner runner;
         private readonly ScriptInstance instance;
         private readonly IReadOnlyList<IScriptApiProvider> providers;
 
-        public ScriptApiBuilder(Engine engine, ScriptApiEnvironment environment, ScriptRunner runner, ScriptInstance instance, IReadOnlyList<IScriptApiProvider> providers)
+        public ScriptApiBuilder(Engine engine, ScriptServices services, ScriptRunner runner, ScriptInstance instance, IReadOnlyList<IScriptApiProvider> providers)
         {
             this.engine = engine;
-            this.environment = environment;
+            this.services = services;
             this.runner = runner;
             this.instance = instance;
             this.providers = providers;
@@ -30,7 +31,7 @@ namespace osu.Game.API.Scripting.Api
         public JsObject Build()
         {
             var api = new JsObject(engine);
-            var context = new ScriptApiContext(engine, instance, environment, runner, api);
+            var context = new ScriptApiContext(engine, instance, services, runner, api);
 
             foreach (IScriptApiProvider provider in providers)
             {
@@ -38,9 +39,9 @@ namespace osu.Game.API.Scripting.Api
                 {
                     provider.Register(context);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
-                    environment.Output.Log(ScriptOutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
+                    services.Output.Log(ScriptOutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
                 }
             }
 
