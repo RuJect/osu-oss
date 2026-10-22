@@ -49,6 +49,8 @@ namespace osu.Game.API.Scripting
             writeDefault(EXAMPLES_FOLDER + "/config.js", example_config);
             writeDefault(EXAMPLES_FOLDER + "/music.js", example_music);
             writeDefault(EXAMPLES_FOLDER + "/notifications.js", example_notifications);
+            writeDefault(EXAMPLES_FOLDER + "/ui.js", example_ui);
+            writeDefault(EXAMPLES_FOLDER + "/ui-menu.js", example_ui_menu);
         }
 
         private void writeDefault(string fileName, string content)
@@ -236,6 +238,70 @@ let timer = osu.setInterval(() =>
         p.complete();
     }
 }, 200);
+";
+
+        private const string example_ui = @"// examples/ui.js
+// A script-owned overlay with interactive elements.
+// Buttons update a shared label, so you can see the actions being tracked.
+
+let clicks = 0;
+
+let overlay = osu.ui.overlay(""Script counter"");
+let status = overlay.addLabel(""Clicks: 0"");
+
+overlay.addButton(""Click me"", () =>
+{
+    clicks++;
+    status.setText(""Clicks: "" + clicks);
+});
+
+overlay.addButton(""Reset"", () =>
+{
+    clicks = 0;
+    status.setText(""Clicks: 0"");
+});
+
+overlay.addButton(""Hide"", () => overlay.hide());
+
+overlay.show();
+
+// Keep the script running so the button callbacks stay alive.
+// A script with no timers, update callbacks or subscriptions is torn down.
+osu.onUpdate(() => {});
+";
+
+        private const string example_ui_menu = @"// examples/ui-menu.js
+// An overlay acting as a small menu, tracking every action it performs.
+
+let overlay = osu.ui.overlay(""Script menu"");
+let status = overlay.addLabel(""Pick an action"");
+
+function track(message)
+{
+    status.setText(message);
+    osu.log(""[menu] "" + message);
+}
+
+overlay.addButton(""Say hello"", () => track(""said hello""));
+
+overlay.addButton(""Play music"", () =>
+{
+    osu.music.play();
+    track(""told the music to play"");
+});
+
+overlay.addButton(""Notify"", () =>
+{
+    osu.notify.post(""Hello from the script menu"");
+    track(""posted a notification"");
+});
+
+overlay.addButton(""Close"", () => overlay.hide());
+
+overlay.show();
+
+// Keep the script alive for the button callbacks.
+osu.onUpdate(() => {});
 ";
     }
 }

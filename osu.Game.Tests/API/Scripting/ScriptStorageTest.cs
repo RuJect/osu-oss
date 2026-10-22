@@ -25,7 +25,7 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(scripts.Contains("on_launch.js"));
             ClassicAssert.IsTrue(scripts.Contains("on_exit.js"));
 
-            foreach (string name in new[] { "hello", "storage", "timers", "events", "config", "music", "notifications" })
+            foreach (string name in new[] { "hello", "storage", "timers", "events", "config", "music", "notifications", "ui", "ui-menu" })
                 ClassicAssert.IsTrue(scripts.Contains($"examples/{name}.js"), $"missing examples/{name}.js");
         }
 
