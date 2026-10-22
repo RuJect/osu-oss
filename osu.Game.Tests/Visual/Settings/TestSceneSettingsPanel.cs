@@ -12,6 +12,7 @@ using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Configuration;
+using osu.Game.Graphics.Backdrops;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
@@ -138,6 +139,13 @@ namespace osu.Game.Tests.Visual.Settings
                     expectedPosition == SettingsPanelPosition.Left
                         ? Precision.AlmostEquals(panelSidebar.ScreenSpaceDrawQuad.TopRight.X, panelContent.ScreenSpaceDrawQuad.TopLeft.X)
                         : Precision.AlmostEquals(panelContent.ScreenSpaceDrawQuad.TopRight.X, panelSidebar.ScreenSpaceDrawQuad.TopLeft.X));
+
+                AddAssert("sub panel renders in front of the settings backdrop", () =>
+                {
+                    // higher depth is drawn behind (see Drawable.Depth).
+                    var backdrop = settings.ChildrenOfType<GlassBackdrop>().First(b => b.Parent == panel.Parent);
+                    return panel.Depth < backdrop.Depth;
+                });
 
                 AddAssert("sub panel is within the window", () =>
                 {

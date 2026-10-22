@@ -136,6 +136,8 @@ namespace osu.Game.Overlays
                         Origin = Anchor.TopRight,
                         Scale = new Vector2(2, 1), // over-extend to the left for transitions
                         TintColour = colourProvider.Background4.Opacity(ThemeManager.Current.GetSurfaceAlpha("panel", 0.92f)),
+                        // the backdrop must always be behind everything else in the content area, including subpanels.
+                        Depth = float.MaxValue,
                     },
                     loading = new LoadingLayer
                     {
