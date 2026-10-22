@@ -6,7 +6,9 @@ using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.Configuration;
 using osu.Game.IO;
+using osu.Game.Overlays;
 
 namespace osu.Game.API.Scripting
 {
@@ -74,6 +76,10 @@ namespace osu.Game.API.Scripting
             {
                 logger.Add($"Failed to initialise scripting storage: {e.Message}");
             }
+
+            Manager.Services.Music = game.Dependencies.Get<MusicController>();
+            Manager.Services.Config = game.Dependencies.Get<OsuConfigManager>();
+            Manager.Services.Notifications = game.Dependencies.Get<INotificationOverlay>();
 
             Initialised?.Invoke(Manager);
 

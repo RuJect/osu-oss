@@ -33,7 +33,7 @@ namespace osu.Game.API.Scripting
 
         public ScriptRunner Runner { get; }
 
-        internal ScriptServices Services { get; }
+        public ScriptServices Services { get; }
 
         public ScriptManager(GameHost host, OsuGame game)
         {
@@ -55,6 +55,7 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(new NotificationApiProvider());
             RegisterApiProvider(new InternalApiProvider());
             RegisterApiProvider(new UtilityApiProvider());
+            RegisterApiProvider(new ConfigApiProvider());
         }
 
         /// <summary>

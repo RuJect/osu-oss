@@ -7,6 +7,7 @@ using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using osu.Framework.Testing;
 using osu.Game.API.Scripting;
+using osu.Game.Configuration;
 
 namespace osu.Game.Tests.API.Scripting
 {
@@ -177,6 +178,17 @@ namespace osu.Game.Tests.API.Scripting
             run("let sum = 0; osu.each([1, 2, 3], n => sum += n); osu.log('sum=' + sum);");
 
             ClassicAssert.IsTrue(logged("sum=6"));
+        }
+
+        [Test]
+        public void TestConfigGetAndSet()
+        {
+            manager.Services.Config = new OsuConfigManager(new TemporaryNativeStorage("config"));
+
+            run("osu.config.set('Username', 'player'); osu.log('name=' + osu.config.get('Username')); osu.config.set('ShowConvertedBeatmaps', false); osu.log('conv=' + osu.config.get('ShowConvertedBeatmaps'));");
+
+            ClassicAssert.IsTrue(logged("name=player"));
+            ClassicAssert.IsTrue(logged("conv=false"));
         }
 
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
