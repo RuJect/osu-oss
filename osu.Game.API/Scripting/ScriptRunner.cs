@@ -45,6 +45,7 @@ namespace osu.Game.API.Scripting
                 teardown(instance);
                 running.Add(instance);
                 RunningScriptsChanged?.Invoke();
+                Emit("scriptError", new object?[] { instance.Name, e.Message });
                 return instance;
             }
 
@@ -60,6 +61,7 @@ namespace osu.Game.API.Scripting
             running.Add(instance);
             services.Output.Log(ScriptOutputLevel.Info, definition.Name, "started");
             RunningScriptsChanged?.Invoke();
+            Emit("scriptStarted", new object?[] { instance.Name });
             return instance;
         }
 
@@ -120,12 +122,14 @@ namespace osu.Game.API.Scripting
             teardown(instance);
             services.Output.Log(ScriptOutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
             RunningScriptsChanged?.Invoke();
+            Emit("scriptStopped", new object?[] { instance.Name });
         }
 
         private void fail(ScriptInstance instance, Exception e)
         {
             services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
             stop(instance, ScriptExecutionState.Error);
+            Emit("scriptError", new object?[] { instance.Name, e.Message });
         }
 
         /// <summary>

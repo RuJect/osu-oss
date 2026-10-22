@@ -96,7 +96,19 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(logged("gone=true"));
         }
 
-        private ScriptInstance run(string source) => manager.Runner.Run(new ScriptDefinition("test", null, source));
+        [Test]
+        public void TestScriptLifecycleEvents()
+        {
+            run("osu.on('scriptStarted', n => osu.log('started:' + n)); osu.on('scriptStopped', n => osu.log('stopped:' + n));", "observer");
+
+            ScriptInstance worker = run("osu.every(1000, () => {});", "worker");
+            manager.Runner.Stop(worker);
+
+            ClassicAssert.IsTrue(logged("started:worker"));
+            ClassicAssert.IsTrue(logged("stopped:worker"));
+        }
+
+        private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);
     }
