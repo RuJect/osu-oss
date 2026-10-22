@@ -49,6 +49,25 @@ namespace osu.Game.Overlays
 
         protected override bool ApplyScreenDocking => true;
 
+        protected override void OnPanelPositionChanged()
+        {
+            foreach (var panel in subPanels)
+                updateSubPanelPosition(panel);
+        }
+
+        private void updateSubPanelPosition(SettingsSubPanel panel)
+        {
+            if (PanelPosition == SettingsPanelPosition.Right)
+                panel.Anchor = panel.Origin = Anchor.TopRight;
+            else
+            {
+                panel.Anchor = Anchor.TopRight;
+                panel.Origin = Anchor.TopLeft;
+            }
+
+            panel.HostPosition = PanelPosition;
+        }
+
         public override bool AcceptsFocus => lastOpenedSubPanel == null || lastOpenedSubPanel.State.Value == Visibility.Hidden;
 
         public void ShowAtControl<T>() where T : Drawable
@@ -125,7 +144,7 @@ namespace osu.Game.Overlays
             where T : SettingsSubPanel
         {
             subPanel.Depth = 1;
-            subPanel.Anchor = Anchor.TopRight;
+            updateSubPanelPosition(subPanel);
             subPanel.State.ValueChanged += e => subPanelStateChanged(subPanel, e);
 
             subPanels.Add(subPanel);

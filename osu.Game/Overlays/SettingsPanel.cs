@@ -81,9 +81,31 @@ namespace osu.Game.Overlays
         /// </summary>
         public SettingsPanelPosition PanelPosition { get; private set; } = SettingsPanelPosition.Left;
 
+        /// <summary>
+        /// The screen edge the panel hosting this panel is docked to.
+        /// </summary>
+        /// <remarks>
+        /// Only used by nested panels (see <see cref="ApplyScreenDocking"/>), which mirror their internal layout
+        /// accordingly while leaving their actual positioning to the hosting panel.
+        /// </remarks>
+        internal SettingsPanelPosition HostPosition
+        {
+            get => hostPosition;
+            set
+            {
+                if (hostPosition == value)
+                    return;
+
+                hostPosition = value;
+                updatePanelPositioning();
+            }
+        }
+
         protected virtual bool ApplyScreenDocking => false;
 
         private Bindable<SettingsPanelPosition> panelPositionBindable;
+
+        private SettingsPanelPosition hostPosition = SettingsPanelPosition.Left;
 
         [Resolved(canBeNull: true)]
         private SpecialConfigManager specialConfig { get; set; }
@@ -169,28 +191,47 @@ namespace osu.Game.Overlays
                 Width = sidebar_width
             });
 
-            panelPositionBindable = specialConfig?.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition);
-            PanelPosition = panelPositionBindable?.Value ?? SettingsPanelPosition.Left;
-
-            panelPositionBindable?.BindValueChanged(e =>
+            if (ApplyScreenDocking)
             {
-                PanelPosition = e.NewValue;
+                panelPositionBindable = specialConfig?.GetBindable<SettingsPanelPosition>(SpecialSetting.SettingsPanelPosition);
+                PanelPosition = panelPositionBindable?.Value ?? SettingsPanelPosition.Left;
+
+                panelPositionBindable?.BindValueChanged(e =>
+                {
+                    PanelPosition = e.NewValue;
+                    OnPanelPositionChanged();
+                    updatePanelPositioning();
+                }, true);
+            }
+            else
                 updatePanelPositioning();
-            }, true);
         }
 
-        private bool isRightDocked => PanelPosition == SettingsPanelPosition.Right;
+        /// <summary>
+        /// Invoked when the screen edge this panel is docked to changes.
+        /// </summary>
+        protected virtual void OnPanelPositionChanged()
+        {
+        }
+
+        private bool isRightDocked => (ApplyScreenDocking ? PanelPosition : HostPosition) == SettingsPanelPosition.Right;
 
         private void updatePanelPositioning()
         {
             if (ContentContainer == null || Sidebar == null || background == null)
                 return;
 
-            ClearTransforms();
+            ClearTransforms(targetMember: nameof(X));
+            ContentContainer.ClearTransforms(targetMember: nameof(X));
+            Sidebar.ClearTransforms(targetMember: nameof(X));
 
             if (isRightDocked)
             {
-                Anchor = Origin = Anchor.TopRight;
+                // Nested panels mirror their internal layout around the right edge of the host's content area,
+                // with their outer placement managed by the host. Only screen-docked panels anchor themselves.
+                if (ApplyScreenDocking)
+                    Anchor = Origin = Anchor.TopRight;
+
                 AutoSizeAxes = Axes.None;
                 Width = WIDTH;
 

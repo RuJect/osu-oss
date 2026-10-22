@@ -56,6 +56,107 @@ namespace osu.Game.Tests.Visual.Settings
         }
 
         [Test]
+        public void TestSubPanelPositioning()
+        {
+            AddUntilStep("wait for load", () => settings.ChildrenOfType<KeyBindingPanel>().Any());
+
+            KeyBindingPanel panel = null!;
+            SettingsSidebar panelSidebar = null!;
+            SettingsPanel.SettingsSectionsContainer panelContent = null!;
+            SettingsSidebar settingsSidebar = null!;
+
+            AddStep("get sub panel", () =>
+            {
+                panel = settings.ChildrenOfType<KeyBindingPanel>().Single();
+                panelSidebar = panel.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == panel);
+                panelContent = panel.ChildrenOfType<SettingsPanel.SettingsSectionsContainer>().Single();
+                settingsSidebar = settings.ChildrenOfType<SettingsSidebar>().Single(s => s.Parent == settings);
+            });
+
+            AddStep("open sub panel", () => panel.Show());
+            AddWaitStep("wait for transition", 60);
+
+            assertDocked(SettingsPanelPosition.Left);
+
+            AddStep("dock right", () => panelPosition.Value = SettingsPanelPosition.Right);
+            AddWaitStep("wait for transition", 60);
+
+            assertDocked(SettingsPanelPosition.Right);
+
+            AddStep("dock left", () => panelPosition.Value = SettingsPanelPosition.Left);
+            AddWaitStep("wait for transition", 60);
+
+            assertDocked(SettingsPanelPosition.Left);
+
+            AddStep("close sub panel", () => panel.Hide());
+            AddWaitStep("wait for transition", 60);
+
+            AddAssert("sub panel hidden", () => panel.State.Value == Visibility.Hidden);
+            AddAssert("sections visible again", () => settings.SectionsContainer.Alpha == 1);
+            AddAssert("settings sidebar expanded again", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.EXPANDED_WIDTH));
+
+            AddStep("dock right while closed", () => panelPosition.Value = SettingsPanelPosition.Right);
+            AddWaitStep("wait for transition", 60);
+
+            AddStep("open sub panel again", () => panel.Show());
+            AddWaitStep("wait for transition", 60);
+
+            assertDocked(SettingsPanelPosition.Right);
+
+            AddStep("close sub panel", () => panel.Hide());
+            AddWaitStep("wait for transition", 60);
+
+            AddStep("dock left while closed", () => panelPosition.Value = SettingsPanelPosition.Left);
+            AddWaitStep("wait for transition", 60);
+
+            AddStep("open sub panel again", () => panel.Show());
+            AddWaitStep("wait for transition", 60);
+
+            assertDocked(SettingsPanelPosition.Left);
+
+            AddStep("close sub panel", () => panel.Hide());
+            AddWaitStep("wait for transition", 60);
+
+            AddAssert("sub panel hidden again", () => panel.State.Value == Visibility.Hidden);
+            AddAssert("settings sidebar expanded again", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.EXPANDED_WIDTH));
+
+            void assertDocked(SettingsPanelPosition expectedPosition)
+            {
+                AddAssert($"sub panel docked {expectedPosition}", () => panel.HostPosition == expectedPosition);
+                AddAssert("sub panel visible", () => panel.State.Value == Visibility.Visible && panel.Alpha == 1);
+                AddAssert("sub panel has expected width", () => Precision.AlmostEquals(panel.DrawWidth, SettingsPanel.WIDTH));
+                AddAssert("sub panel content has expected width", () => Precision.AlmostEquals(panelContent.DrawWidth, SettingsPanel.PANEL_WIDTH));
+
+                AddAssert("settings sidebar collapsed", () => Precision.AlmostEquals(settingsSidebar.DrawWidth, SettingsSidebar.CONTRACTED_WIDTH));
+
+                AddAssert("sub panel is attached to the settings sidebar", () =>
+                    expectedPosition == SettingsPanelPosition.Left
+                        ? Precision.AlmostEquals(panel.ScreenSpaceDrawQuad.TopLeft.X, settingsSidebar.ScreenSpaceDrawQuad.TopRight.X)
+                        : Precision.AlmostEquals(panel.ScreenSpaceDrawQuad.TopRight.X, settingsSidebar.ScreenSpaceDrawQuad.TopLeft.X));
+
+                AddAssert("sub panel content and sidebar do not overlap", () =>
+                    expectedPosition == SettingsPanelPosition.Left
+                        ? Precision.AlmostEquals(panelSidebar.ScreenSpaceDrawQuad.TopRight.X, panelContent.ScreenSpaceDrawQuad.TopLeft.X)
+                        : Precision.AlmostEquals(panelContent.ScreenSpaceDrawQuad.TopRight.X, panelSidebar.ScreenSpaceDrawQuad.TopLeft.X));
+
+                AddAssert("sub panel is within the window", () =>
+                {
+                    var parentQuad = settings.Parent.ScreenSpaceDrawQuad;
+                    var panelQuad = panel.ScreenSpaceDrawQuad;
+
+                    return panelQuad.TopLeft.X >= parentQuad.TopLeft.X
+                           && panelQuad.BottomRight.X <= parentQuad.BottomRight.X
+                           && panelQuad.TopLeft.Y >= parentQuad.TopLeft.Y
+                           && panelQuad.BottomRight.Y <= parentQuad.BottomRight.Y;
+                });
+
+                AddAssert("sub panel has expected vertical bounds", () =>
+                    Precision.AlmostEquals(panel.ScreenSpaceDrawQuad.TopLeft.Y, settings.ScreenSpaceDrawQuad.TopLeft.Y)
+                    && Precision.AlmostEquals(panel.ScreenSpaceDrawQuad.BottomRight.Y, settings.ScreenSpaceDrawQuad.BottomRight.Y));
+            }
+        }
+
+        [Test]
         public void TestPanelPosition()
         {
             AddUntilStep("settings loaded", () => settings.IsLoaded);
