@@ -11,37 +11,31 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// Provides a simple event bus: <c>osu.on</c>, <c>osu.off</c> and <c>osu.emit</c>.
     /// The game emits a handful of built-in events (e.g. <c>"screen"</c>).
     /// </summary>
-    public class EventsApiProvider : IScriptApiProvider
+    public class EventsApiProvider : ScriptApiProvider
     {
-        public void Register(ScriptApiContext context)
+        [ScriptApi]
+        public void On(string? eventName, JsValue handler)
         {
-            context.AddFunction(context.Api, "on", (_, args) =>
+            if (eventName != null && handler.IsCallable())
+                Context.Services.Events.Subscribe(Context.Instance, eventName, handler);
+        }
+
+        [ScriptApi]
+        public void Off(string? eventName, JsValue handler)
+        {
+            if (eventName != null && handler.IsCallable())
+                Context.Services.Events.Unsubscribe(Context.Instance, eventName, handler);
+        }
+
+        [ScriptApi]
+        public void Emit(JsValue[] args)
+        {
+            if (args.Length >= 1 && args[0].IsString())
             {
-                if (args.Length >= 2 && args[0].IsString() && args[1].IsCallable())
-                    context.Services.Events.Subscribe(context.Instance, args[0].AsString(), args[1]);
-
-                return JsValue.Undefined;
-            });
-
-            context.AddFunction(context.Api, "off", (_, args) =>
-            {
-                if (args.Length >= 2 && args[0].IsString() && args[1].IsCallable())
-                    context.Services.Events.Unsubscribe(context.Instance, args[0].AsString(), args[1]);
-
-                return JsValue.Undefined;
-            });
-
-            context.AddFunction(context.Api, "emit", (_, args) =>
-            {
-                if (args.Length >= 1 && args[0].IsString())
-                {
-                    string name = args[0].AsString();
-                    object?[] payload = args.Skip(1).Cast<object?>().ToArray();
-                    context.Runner.Emit(name, payload);
-                }
-
-                return JsValue.Undefined;
-            });
+                string name = args[0].AsString();
+                object?[] payload = args.Skip(1).Cast<object?>().ToArray();
+                Context.Runner.Emit(name, payload);
+            }
         }
     }
 }

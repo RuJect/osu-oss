@@ -1,9 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Linq;
-using Jint;
-using Jint.Native;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -11,86 +10,62 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// Provides sandboxed file access via <c>osu.storage</c>. All paths are resolved relative to the
     /// dedicated data directory (<c>osu-oss/scripts/data</c>) and may not escape it.
     /// </summary>
-    public class StorageApiProvider : IScriptApiProvider
+    public class StorageApiProvider : ScriptApiProvider
     {
-        public void Register(ScriptApiContext context)
+        [ScriptApi(Target = "storage")]
+        public string? Read(string? path)
         {
-            JsObject storage = context.CreateObject();
-
-            context.AddFunction(storage, "read", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-                string? path = pathFrom(args, 0);
-
-                if (data == null || path == null || !data.Exists(path))
-                    return JsValue.Undefined;
-
-                return JsValue.FromObject(context.Engine, data.Read(path));
-            });
-
-            context.AddFunction(storage, "write", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-                string? path = pathFrom(args, 0);
-
-                if (data != null && path != null && args.Length >= 2)
-                    data.Write(path, args[1].ToString());
-
-                return JsValue.Undefined;
-            });
-
-            context.AddFunction(storage, "append", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-                string? path = pathFrom(args, 0);
-
-                if (data != null && path != null && args.Length >= 2)
-                    data.Append(path, args[1].ToString());
-
-                return JsValue.Undefined;
-            });
-
-            context.AddFunction(storage, "exists", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-                string? path = pathFrom(args, 0);
-
-                return JsValue.FromObject(context.Engine, data != null && path != null && data.Exists(path));
-            });
-
-            context.AddFunction(storage, "list", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-
-                if (data == null)
-                    return new JsArray(context.Engine);
-
-                string prefix = args.Length >= 1 && args[0].IsString() ? ScriptFileStore.SanitizePath(args[0].AsString()) ?? string.Empty : string.Empty;
-                string[] files = data.List(prefix).ToArray();
-                return new JsArray(context.Engine, files.Select(f => (JsValue)f).ToArray());
-            });
-
-            context.AddFunction(storage, "delete", (_, args) =>
-            {
-                ScriptDataStorage? data = context.Services.DataStorage;
-                string? path = pathFrom(args, 0);
-
-                if (data != null && path != null)
-                    data.Delete(path);
-
-                return JsValue.Undefined;
-            });
-
-            context.AddProperty(storage, "directory", context.Services.DataStorage?.Directory ?? string.Empty);
-            context.Api.Set("storage", storage);
+            ScriptDataStorage? data = Context.Services.DataStorage;
+            return data != null && path != null && data.Exists(path) ? data.Read(path) : null;
         }
 
-        private static string? pathFrom(JsValue[] args, int index)
+        [ScriptApi(Target = "storage")]
+        public void Write(string? path, string? content)
         {
-            if (args.Length <= index || !args[index].IsString())
-                return null;
+            ScriptDataStorage? data = Context.Services.DataStorage;
 
-            return ScriptFileStore.SanitizePath(args[index].AsString());
+            if (data != null && path != null && content != null)
+                data.Write(path, content);
         }
+
+        [ScriptApi(Target = "storage")]
+        public void Append(string? path, string? content)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data != null && path != null && content != null)
+                data.Append(path, content);
+        }
+
+        [ScriptApi(Target = "storage")]
+        public bool Exists(string? path)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+            return data != null && path != null && data.Exists(path);
+        }
+
+        [ScriptApi(Target = "storage")]
+        public string[] List(string? path)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data == null)
+                return Array.Empty<string>();
+
+            string prefix = path != null ? ScriptFileStore.SanitizePath(path) ?? string.Empty : string.Empty;
+            return data.List(prefix).ToArray();
+        }
+
+        [ScriptApi(Target = "storage")]
+        public void Delete(string? path)
+        {
+            ScriptDataStorage? data = Context.Services.DataStorage;
+
+            if (data != null && path != null)
+                data.Delete(path);
+        }
+
+        [ScriptApi(Target = "storage")]
+        public string Directory => Context.Services.DataStorage?.Directory ?? string.Empty;
     }
 }

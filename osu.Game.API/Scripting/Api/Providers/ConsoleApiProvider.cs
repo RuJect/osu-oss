@@ -10,29 +10,31 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// <summary>
     /// Provides the <c>console</c> object (and <c>osu.log</c>) which forward output to the scripting console.
     /// </summary>
-    public class ConsoleApiProvider : IScriptApiProvider
+    public class ConsoleApiProvider : ScriptApiProvider
     {
-        public void Register(ScriptApiContext context)
+        [ScriptApi(Target = "console", Global = true)]
+        public void Log(JsValue[] args) => write(ScriptOutputLevel.Log, args);
+
+        [ScriptApi(Target = "console", Global = true)]
+        public void Info(JsValue[] args) => write(ScriptOutputLevel.Info, args);
+
+        [ScriptApi(Target = "console", Global = true)]
+        public void Warn(JsValue[] args) => write(ScriptOutputLevel.Warn, args);
+
+        [ScriptApi(Target = "console", Global = true)]
+        public void Error(JsValue[] args) => write(ScriptOutputLevel.Error, args);
+
+        [ScriptApi(Target = "console", Global = true)]
+        public void Debug(JsValue[] args) => write(ScriptOutputLevel.Log, args);
+
+        protected override void OnRegistered(ScriptApiContext context)
         {
-            JsObject console = context.CreateObject();
-
-            context.AddFunction(console, "log", (_, args) => write(context, ScriptOutputLevel.Log, args));
-            context.AddFunction(console, "info", (_, args) => write(context, ScriptOutputLevel.Info, args));
-            context.AddFunction(console, "warn", (_, args) => write(context, ScriptOutputLevel.Warn, args));
-            context.AddFunction(console, "error", (_, args) => write(context, ScriptOutputLevel.Error, args));
-            context.AddFunction(console, "debug", (_, args) => write(context, ScriptOutputLevel.Log, args));
-
-            context.Engine.SetValue("console", console);
-
             // osu.log is an alias for console.log.
-            context.Api.Set("log", console.Get("log"));
+            context.Api.Set("log", context.GetObject("console", global: true).Get("log"));
         }
 
-        private static JsValue write(ScriptApiContext context, ScriptOutputLevel level, JsValue[] args)
-        {
-            context.Services.Output.Log(level, context.Instance.Name, string.Join(" ", args.Select(format)));
-            return JsValue.Undefined;
-        }
+        private void write(ScriptOutputLevel level, JsValue[] args)
+            => Context.Services.Output.Log(level, Context.Instance.Name, string.Join(" ", args.Select(format)));
 
         private static string format(JsValue value)
         {

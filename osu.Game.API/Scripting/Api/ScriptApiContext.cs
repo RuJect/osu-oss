@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Generic;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Interop;
@@ -14,6 +15,8 @@ namespace osu.Game.API.Scripting.Api
     /// </summary>
     public class ScriptApiContext
     {
+        private readonly Dictionary<string, JsObject> objects = new Dictionary<string, JsObject>();
+
         public Engine Engine { get; }
         public ScriptInstance Instance { get; }
         public ScriptServices Services { get; }
@@ -34,6 +37,32 @@ namespace osu.Game.API.Scripting.Api
         }
 
         public JsObject CreateObject() => new JsObject(Engine);
+
+        /// <summary>
+        /// Returns (creating and caching if needed) the object for the given target. A <see langword="null"/> or
+        /// empty <paramref name="name"/> returns the root <c>osu</c> object. A <paramref name="global"/> target is a
+        /// top-level global (e.g. <c>console</c>); otherwise it is nested under <c>osu</c> (e.g. <c>osu.storage</c>).
+        /// </summary>
+        public JsObject GetObject(string? name, bool global = false)
+        {
+            if (string.IsNullOrEmpty(name))
+                return Api;
+
+            string key = (global ? "global:" : "osu:") + name;
+
+            if (!objects.TryGetValue(key, out JsObject? obj))
+            {
+                obj = new JsObject(Engine);
+                objects[key] = obj;
+
+                if (global)
+                    Engine.SetValue(name!, obj);
+                else
+                    Api.Set(name!, obj);
+            }
+
+            return obj;
+        }
 
         public void AddFunction(JsObject target, string name, Func<JsValue, JsValue[], JsValue> function)
             => target.Set(name, new ClrFunction(Engine, name, (thisObj, args) =>

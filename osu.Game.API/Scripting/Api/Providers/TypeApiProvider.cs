@@ -3,7 +3,6 @@
 
 using System;
 using System.Reflection;
-using Jint;
 using Jint.Native;
 
 namespace osu.Game.API.Scripting.Api.Providers
@@ -11,22 +10,16 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// <summary>
     /// Provides <c>osu.type</c>, which resolves a CLR type by name across all loaded assemblies.
     /// </summary>
-    public class TypeApiProvider : IScriptApiProvider
+    public class TypeApiProvider : ScriptApiProvider
     {
-        public void Register(ScriptApiContext context)
+        [ScriptApi(Name = "type")]
+        public JsValue ResolveType(string? name)
         {
-            context.AddFunction(context.Api, "type", (_, args) =>
-            {
-                if (args.Length >= 1 && args[0].IsString())
-                {
-                    Type? type = resolve(args[0].AsString());
-
-                    if (type != null)
-                        return JsValue.FromObject(context.Engine, type);
-                }
-
+            if (name == null)
                 return JsValue.Undefined;
-            });
+
+            Type? type = resolve(name);
+            return type != null ? JsValue.FromObject(Context.Engine, type) : JsValue.Undefined;
         }
 
         private static Type? resolve(string name)

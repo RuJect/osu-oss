@@ -1,8 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System.Linq;
-using Jint;
 using Jint.Native;
 
 namespace osu.Game.API.Scripting.Api.Providers
@@ -10,25 +8,22 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// <summary>
     /// Provides the core scripting surface: <c>osu.version</c>, <c>osu.run</c> and <c>osu.scripts</c>.
     /// </summary>
-    public class CoreApiProvider : IScriptApiProvider
+    public class CoreApiProvider : ScriptApiProvider
     {
-        public void Register(ScriptApiContext context)
+        [ScriptApi]
+        public string Version => Context.Services.Version;
+
+        [ScriptApi]
+        public JsValue Run(string? name)
         {
-            context.AddProperty(context.Api, "version", context.Services.Version);
-
-            context.AddFunction(context.Api, "run", (_, args) =>
-            {
-                if (args.Length >= 1 && args[0].IsString())
-                    return JsValue.FromObject(context.Engine, context.Runner.RunByName(args[0].AsString()));
-
+            if (name == null)
                 return JsBoolean.False;
-            });
 
-            context.AddFunction(context.Api, "scripts", (_, _) =>
-            {
-                string[] names = context.Services.Repository.GetNames();
-                return new JsArray(context.Engine, names.Select(n => (JsValue)n).ToArray());
-            });
+            ScriptInstance? instance = Context.Runner.RunByName(name);
+            return instance != null ? JsValue.FromObject(Context.Engine, instance) : JsValue.Null;
         }
+
+        [ScriptApi]
+        public string[] Scripts() => Context.Services.Repository.GetNames();
     }
 }
