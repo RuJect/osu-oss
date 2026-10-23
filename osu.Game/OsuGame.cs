@@ -1120,9 +1120,6 @@ namespace osu.Game
         {
             base.LoadComplete();
 
-            showDevBuildBanner = SpecialConfig.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner);
-            showDevBuildBanner.BindValueChanged(_ => updateDevBuildBannerVisibility(), true);
-
             // The next time this is updated is in UpdateAfterChildren, which occurs too late and results
             // in the cursor being shown for a few frames during the intro.
             // This prevents the cursor from showing until we have a screen with CursorVisible = true
@@ -1235,6 +1232,9 @@ namespace osu.Game
             }, topMostOverlayContent.Add);
 
             loadComponentSingleFile(devBuildBanner = new DevBuildBanner(), ScreenContainer.Add);
+
+            showDevBuildBanner = SpecialConfig.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner);
+            showDevBuildBanner.BindValueChanged(_ => updateDevBuildBannerVisibility(), true);
 
             loadComponentSingleFile(osuLogo, _ =>
             {
