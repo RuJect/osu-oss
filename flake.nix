@@ -27,6 +27,7 @@
         libxrandr
         libxcb
         alsa-lib
+        pipewire
         ffmpeg
       ];
     in {
@@ -34,6 +35,7 @@
         packages = [sdk] ++ tools ++ runtimeLibs ++ [
           (pkgs.writeShellScriptBin "run-osu" ''
             export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            export ALSA_PLUGIN_DIR="${pkgs.pipewire}/lib/alsa-lib"
             dotnet run --project osu.Desktop -c Release
           '')
         ];
@@ -47,7 +49,8 @@
         shellHook = ''
           export DOTNET_CLI_HOME="''${XDG_CACHE_HOME:-$HOME/.cache}/dotnet"
           export NUGET_PACKAGES="''${DOTNET_CLI_HOME}/NuGet/packages"
-          # export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH"
+          export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          export ALSA_PLUGIN_DIR="${pkgs.pipewire}/lib/alsa-lib"
         '';
       };
     });
