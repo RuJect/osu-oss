@@ -18,9 +18,9 @@ namespace osu.Game.Tests
 {
     public abstract partial class ImportTest
     {
-        protected virtual TestOsuGameBase LoadOsuIntoHost(GameHost host, bool withBeatmap = false)
+        protected virtual TestOsuGameBase LoadOsuIntoHost(GameHost host, bool withBeatmap = false, bool noNetwork = false)
         {
-            var osu = new TestOsuGameBase(withBeatmap);
+            var osu = new TestOsuGameBase(withBeatmap, noNetwork) { NoNetwork = noNetwork };
             Task.Factory.StartNew(() => host.Run(osu), TaskCreationOptions.LongRunning)
                 .ContinueWith(t => Assert.Fail($"Host threw exception {t.Exception}"), TaskContinuationOptions.OnlyOnFaulted);
 
@@ -53,11 +53,12 @@ namespace osu.Game.Tests
 
             private readonly bool withBeatmap;
 
-            public TestOsuGameBase(bool withBeatmap)
+            public TestOsuGameBase(bool withBeatmap, bool noNetwork = false)
             {
                 this.withBeatmap = withBeatmap;
 
-                base.API = new DummyAPIAccess();
+                if (!noNetwork)
+                    base.API = new DummyAPIAccess();
             }
 
             [BackgroundDependencyLoader]
