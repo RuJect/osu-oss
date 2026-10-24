@@ -45,6 +45,9 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.AggressiveTinting, true);
             SetDefault(SpecialSetting.ScriptingEnabled, true);
             SetDefault(SpecialSetting.AllowClrAccess, true);
+            SetDefault(SpecialSetting.DisableScoreSubmission, false);
+            SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, true);
+            SetDefault(SpecialSetting.BlockUnsuccessfulScoreSubmission, false);
         }
     }
 
@@ -110,5 +113,14 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether scripts may access arbitrary .NET types via the CLR bridge.</summary>
         AllowClrAccess,
+
+        /// <summary>Whether any score submission to the online store should be disabled entirely.</summary>
+        DisableScoreSubmission,
+
+        /// <summary>Whether scores played with mutually incompatible mods should not be submitted.</summary>
+        BlockIncompatibleModsSubmission,
+
+        /// <summary>Whether failed or incomplete scores should not be submitted.</summary>
+        BlockUnsuccessfulScoreSubmission,
     }
 }

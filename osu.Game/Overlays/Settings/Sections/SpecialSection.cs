@@ -29,6 +29,7 @@ namespace osu.Game.Overlays.Settings.Sections
                 new InterfaceSettings(),
                 new NotificationSettings(),
                 new ThemeSettingsSubsection(),
+                new ScoreSubmissionSettings(),
                 new ScriptingSettings(),
                 new ServerSettingsSubsection(),
                 new MaintenanceSettings(),

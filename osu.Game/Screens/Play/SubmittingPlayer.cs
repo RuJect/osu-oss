@@ -25,6 +25,7 @@ using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Screens.Ranking;
+using osu.Game.Utils;
 
 namespace osu.Game.Screens.Play
 {
@@ -54,6 +55,9 @@ namespace osu.Game.Screens.Play
         [Resolved(canBeNull: true)]
         [CanBeNull]
         private INotificationOverlay notifications { get; set; }
+
+        [Resolved]
+        private SpecialConfigManager specialConfig { get; set; }
 
         private readonly Lock scoreSubmissionLock = new Lock();
         private TaskCompletionSource<bool> scoreSubmissionSource;
@@ -277,6 +281,24 @@ namespace osu.Game.Screens.Play
 
         private Task submitScore(Score score)
         {
+            if (specialConfig.Get<bool>(SpecialSetting.DisableScoreSubmission))
+            {
+                Logger.Log("Score submission disabled via settings, skipping.");
+                return Task.CompletedTask;
+            }
+
+            if (specialConfig.Get<bool>(SpecialSetting.BlockIncompatibleModsSubmission) && !ModUtils.CheckCompatibleSet(score.ScoreInfo.Mods))
+            {
+                Logger.Log("Score submission blocked due to incompatible mods.");
+                return Task.CompletedTask;
+            }
+
+            if (specialConfig.Get<bool>(SpecialSetting.BlockUnsuccessfulScoreSubmission) && !score.ScoreInfo.Passed)
+            {
+                Logger.Log("Score submission blocked due to unsuccessful score.");
+                return Task.CompletedTask;
+            }
+
             var masterClock = GameplayClockContainer as MasterGameplayClockContainer;
 
             if (masterClock?.PlaybackRateValid.Value != true)
