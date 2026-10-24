@@ -16,6 +16,7 @@ using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
 
@@ -31,6 +32,7 @@ namespace osu.Game.Rulesets.UI
         private SpriteIcon modIcon = null!;
         private SpriteText modAcronym = null!;
         private Sprite background = null!;
+        private Sprite? skinIcon;
 
         public static readonly Vector2 MOD_ICON_SIZE = new Vector2(80);
 
@@ -72,6 +74,14 @@ namespace osu.Game.Rulesets.UI
 
         [Resolved]
         private OverlayColourProvider? colourProvider { get; set; }
+
+        [Resolved]
+        private ISkinSource skin { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; } = null!;
+
+        private bool UseSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
 
         private Color4 backgroundColour;
 
@@ -154,6 +164,15 @@ namespace osu.Game.Rulesets.UI
                             Anchor = Anchor.Centre,
                             Origin = Anchor.Centre,
                         },
+                        skinIcon = new Sprite
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            FillMode = FillMode.Fit,
+                            Texture = null,
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            Alpha = 0,
+                        },
                         modAcronym = new OsuSpriteText
                         {
                             Origin = Anchor.Centre,
@@ -225,18 +244,41 @@ namespace osu.Game.Rulesets.UI
             }
 
             modAcronym.Text = value.Acronym;
-            modIcon.Icon = value.Icon ?? FontAwesome.Solid.Question;
             TooltipContent = showTooltip ? value as Mod : null;
 
-            if (value.Icon == null)
+            bool skinIconUsed = false;
+
+            if (UseSkinModIcons && value is Mod skinMod)
             {
-                modIcon.FadeOut();
-                modAcronym.FadeIn();
+                var skinTextureName = ModSkinTextureResolver.GetTextureName(skinMod);
+                var skinTexture = skin.GetTexture(skinTextureName);
+
+                if (skinTexture != null)
+                {
+                    skinIcon!.Texture = skinTexture;
+                    skinIcon.FadeIn();
+                    modIcon.FadeOut();
+                    modAcronym.FadeOut();
+                    skinIconUsed = true;
+                }
             }
-            else
+
+            if (!skinIconUsed)
             {
-                modIcon.FadeIn();
-                modAcronym.FadeOut();
+                skinIcon!.Texture = null;
+                skinIcon.FadeOut();
+                modIcon.Icon = value.Icon ?? FontAwesome.Solid.Question;
+
+                if (value.Icon == null)
+                {
+                    modIcon.FadeOut();
+                    modAcronym.FadeIn();
+                }
+                else
+                {
+                    modIcon.FadeIn();
+                    modAcronym.FadeOut();
+                }
             }
 
             backgroundColour = colours.ForModType(value.Type);

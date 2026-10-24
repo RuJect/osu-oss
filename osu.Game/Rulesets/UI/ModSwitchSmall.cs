@@ -8,9 +8,11 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Framework.Utils;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Skinning;
 using osuTK;
 using osuTK.Graphics;
 
@@ -26,12 +28,21 @@ namespace osu.Game.Rulesets.UI
 
         private Drawable background = null!;
         private SpriteIcon? modIcon;
+        private Sprite? skinIcon;
 
         private Color4 activeForegroundColour;
         private Color4 inactiveForegroundColour;
 
         private Color4 activeBackgroundColour;
         private Color4 inactiveBackgroundColour;
+
+        [Resolved]
+        private ISkinSource skin { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; } = null!;
+
+        private bool UseSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
 
         public ModSwitchSmall(IMod mod)
         {
@@ -72,7 +83,20 @@ namespace osu.Game.Rulesets.UI
                 }
             };
 
-            if (mod.Icon != null)
+            if (UseSkinModIcons && mod is Mod skinMod && skin.GetTexture(ModSkinTextureResolver.GetTextureName(skinMod)) is { } skinTexture)
+            {
+                contentFlow.Insert(-1, skinIcon = new Sprite
+                {
+                    Anchor = Anchor.TopCentre,
+                    Origin = Anchor.TopCentre,
+                    Size = new Vector2(37, 26),
+                    Margin = new MarginPadding { Top = -1 },
+                    Texture = skinTexture,
+                    FillMode = FillMode.Fit,
+                });
+                tinySwitch.Scale = new Vector2(0.3f);
+            }
+            else if (mod.Icon != null)
             {
                 contentFlow.Insert(-1, modIcon = new SpriteIcon
                 {
@@ -105,7 +129,8 @@ namespace osu.Game.Rulesets.UI
 
         private void updateState()
         {
-            modIcon?.FadeColour(Active.Value ? activeForegroundColour : inactiveForegroundColour, 200, Easing.OutQuint);
+            Drawable? icon = skinIcon ?? (Drawable?)modIcon;
+            icon?.FadeColour(Active.Value ? activeForegroundColour : inactiveForegroundColour, 200, Easing.OutQuint);
             background.FadeColour(Active.Value ? activeBackgroundColour : inactiveBackgroundColour, 200, Easing.OutQuint);
         }
     }

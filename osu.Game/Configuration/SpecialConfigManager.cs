@@ -45,6 +45,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.AggressiveTinting, true);
             SetDefault(SpecialSetting.ScriptingEnabled, true);
             SetDefault(SpecialSetting.AllowClrAccess, true);
+            SetDefault(SpecialSetting.UseSkinModIcons, true);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
             SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, true);
             SetDefault(SpecialSetting.BlockUnsuccessfulScoreSubmission, false);
@@ -122,5 +123,8 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether failed or incomplete scores should not be submitted.</summary>
         BlockUnsuccessfulScoreSubmission,
+
+        /// <summary>Whether mod icons should be resolved from the current skin.</summary>
+        UseSkinModIcons,
     }
 }
