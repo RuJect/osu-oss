@@ -26,6 +26,7 @@ namespace osu.Game.API.Scripting
     public class ScriptManager
     {
         private readonly List<Func<IScriptApiProvider>> apiProviderFactories = new List<Func<IScriptApiProvider>>();
+        private readonly ScriptEngineFactory engineFactory;
 
         public ScriptRepository Repository { get; }
 
@@ -47,7 +48,7 @@ namespace osu.Game.API.Scripting
             Services = new ScriptServices(game, host, Repository, Output, Events);
             Locator = new ScriptLocator(Repository);
 
-            var engineFactory = new ScriptEngineFactory(Services, buildProviderList);
+            engineFactory = new ScriptEngineFactory(Services, buildProviderList);
             Runner = new ScriptRunner(Services, engineFactory, Locator);
 
             RegisterApiProvider(() => new ConsoleApiProvider());
@@ -79,6 +80,16 @@ namespace osu.Game.API.Scripting
         public ScriptInstance? RunByName(string name) => Runner.RunByName(name);
 
         public ScriptInstance? RunFile(string fileName) => Runner.RunFile(fileName);
+
+        /// <summary>
+        /// Whether scripts may access arbitrary .NET types via the CLR bridge. Applies to engines created
+        /// after the change; already-running scripts keep their existing policy.
+        /// </summary>
+        public bool AllowClrAccess
+        {
+            get => engineFactory.AllowClr;
+            set => engineFactory.AllowClr = value;
+        }
 
         /// <summary>
         /// Registers a factory for an API provider. A fresh provider instance is created for every script

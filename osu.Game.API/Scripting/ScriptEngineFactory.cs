@@ -19,6 +19,11 @@ namespace osu.Game.API.Scripting
         private readonly ScriptServices services;
         private readonly Func<IReadOnlyList<IScriptApiProvider>> providerFactory;
 
+        /// <summary>
+        /// Whether created engines may access arbitrary .NET types via the CLR bridge.
+        /// </summary>
+        public bool AllowClr { get; set; } = true;
+
         public ScriptEngineFactory(ScriptServices services, Func<IReadOnlyList<IScriptApiProvider>> providerFactory)
         {
             this.services = services;
@@ -28,11 +33,15 @@ namespace osu.Game.API.Scripting
         public Engine Create(ScriptInstance instance, ScriptRunner runner)
         {
             Options options = new Options()
-                              .AllowClr(AppDomain.CurrentDomain.GetAssemblies())
-                              .AllowClrWrite()
                               .CatchClrExceptions()
                               .EnableModules(new InlineModuleLoader())
                               .CancellationToken(instance.Cancellation.Token);
+
+            if (AllowClr)
+            {
+                options.AllowClr(AppDomain.CurrentDomain.GetAssemblies());
+                options.AllowClrWrite();
+            }
 
             // Enable Task -> Promise interop so provider methods can return awaitable Tasks (e.g. osu.sleep).
             options.ExperimentalFeatures = ExperimentalFeature.TaskInterop;

@@ -20,6 +20,11 @@ namespace osu.Game.API.Scripting
         private readonly ScriptLocator locator;
         private readonly List<ScriptInstance> running = new List<ScriptInstance>();
 
+        /// <summary>
+        /// Whether scripts are allowed to start. Does not affect instances already running.
+        /// </summary>
+        public bool Enabled { get; set; } = true;
+
         public event Action? RunningScriptsChanged;
 
         public IReadOnlyList<ScriptInstance> Running => running;
@@ -35,6 +40,12 @@ namespace osu.Game.API.Scripting
 
         public ScriptInstance Run(ScriptDefinition definition)
         {
+            if (!Enabled)
+            {
+                services.Output.Log(OutputLevel.Warn, definition.Name, "not run: scripting is disabled");
+                return new ScriptInstance(definition) { State = ScriptExecutionState.Stopped };
+            }
+
             var instance = new ScriptInstance(definition);
             instance.Engine = engineFactory.Create(instance, this);
 

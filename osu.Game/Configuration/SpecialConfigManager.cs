@@ -43,6 +43,8 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.Theme, ThemeManager.DEFAULT_THEME);
             SetDefault(SpecialSetting.ThemeGlassEffects, true);
             SetDefault(SpecialSetting.AggressiveTinting, true);
+            SetDefault(SpecialSetting.ScriptingEnabled, true);
+            SetDefault(SpecialSetting.AllowClrAccess, true);
         }
     }
 
@@ -102,5 +104,11 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether all theme colours should have their hue replaced by the theme's main hue.</summary>
         AggressiveTinting,
+
+        /// <summary>Whether JavaScript scripts are allowed to run.</summary>
+        ScriptingEnabled,
+
+        /// <summary>Whether scripts may access arbitrary .NET types via the CLR bridge.</summary>
+        AllowClrAccess,
     }
 }

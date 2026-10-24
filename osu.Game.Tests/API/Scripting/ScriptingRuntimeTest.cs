@@ -99,6 +99,20 @@ namespace osu.Game.Tests.API.Scripting
         }
 
         [Test]
+        public void TestDisabledScriptingDoesNotRun()
+        {
+            manager.Runner.Enabled = false;
+            manager.Repository.CreateAnonymous("osu.log('should not run');");
+
+            ScriptInstance? instance = manager.RunByName("anonymous-1");
+
+            ClassicAssert.IsNotNull(instance);
+            ClassicAssert.AreEqual(ScriptExecutionState.Stopped, instance.State);
+            ClassicAssert.IsFalse(manager.Runner.Running.Any(i => i.Name == "anonymous-1"));
+            ClassicAssert.IsFalse(logged("should not run"));
+        }
+
+        [Test]
         public void TestWriteAndReadJson()
         {
             run("osu.storage.writeJson('data.json', { a: 1, b: 'x' }); let o = osu.storage.readJson('data.json'); osu.log('a=' + o.a + ',b=' + o.b);");

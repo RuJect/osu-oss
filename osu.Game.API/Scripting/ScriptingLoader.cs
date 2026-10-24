@@ -4,6 +4,7 @@
 using System;
 using osu.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.API.Events;
@@ -30,6 +31,10 @@ namespace osu.Game.API.Scripting
         private ScreenEventBridge? screenBridge;
         private bool initialised;
         private bool disposed;
+
+        // GetBindable returns a weakly-bound copy; these must stay referenced for the bindings to fire.
+        private Bindable<bool>? scriptingEnabledBindable;
+        private Bindable<bool>? allowClrAccessBindable;
 
         public ScriptManager Manager { get; }
 
@@ -82,6 +87,20 @@ namespace osu.Game.API.Scripting
                 logger.Add($"Failed to initialise scripting storage: {e.Message}");
             }
 
+            SpecialConfigManager specialConfig = game.Dependencies.Get<SpecialConfigManager>();
+
+            scriptingEnabledBindable = specialConfig.GetBindable<bool>(SpecialSetting.ScriptingEnabled);
+            scriptingEnabledBindable.BindValueChanged(e =>
+            {
+                Manager.Runner.Enabled = e.NewValue;
+
+                if (!e.NewValue)
+                    Manager.Runner.StopAll();
+            }, true);
+
+            allowClrAccessBindable = specialConfig.GetBindable<bool>(SpecialSetting.AllowClrAccess);
+            allowClrAccessBindable.BindValueChanged(e => Manager.AllowClrAccess = e.NewValue, true);
+
             Manager.Services.Music = new MusicService(game.Dependencies.Get<MusicController>(), Manager.Services.Host);
             Manager.Services.Config = new ConfigService(game.Dependencies.Get<OsuConfigManager>());
             Manager.Services.Notifications = new NotificationService(game.Dependencies.Get<INotificationOverlay>());
@@ -93,6 +112,9 @@ namespace osu.Game.API.Scripting
 
         private void runLaunchScript()
         {
+            if (!Manager.Runner.Enabled)
+                return;
+
             try
             {
                 Manager.RunFile(ScriptStorage.LAUNCH_SCRIPT);
@@ -105,6 +127,9 @@ namespace osu.Game.API.Scripting
 
         private void runExitScript()
         {
+            if (!Manager.Runner.Enabled)
+                return;
+
             try
             {
                 Manager.RunFile(ScriptStorage.EXIT_SCRIPT);

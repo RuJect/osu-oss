@@ -59,6 +59,8 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<string>(SpecialSetting.Theme).Value = ThemeManager.DEFAULT_THEME;
                 config.GetBindable<bool>(SpecialSetting.ThemeGlassEffects).Value = true;
                 config.GetBindable<bool>(SpecialSetting.AggressiveTinting).Value = true;
+                config.GetBindable<bool>(SpecialSetting.ScriptingEnabled).Value = true;
+                config.GetBindable<bool>(SpecialSetting.AllowClrAccess).Value = true;
 
                 Logger.Log("osu!oss data reset.", LoggingTarget.Runtime, LogLevel.Important);
             }
