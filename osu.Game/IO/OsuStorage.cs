@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Diagnostics;
 using System.Linq;
 using osu.Framework.Logging;
@@ -54,7 +55,7 @@ namespace osu.Game.IO
             ".management",
         };
 
-        public OsuStorage(GameHost host, Storage defaultStorage)
+        public OsuStorage(GameHost host, Storage defaultStorage, string? dataPath = null)
             : base(defaultStorage, string.Empty)
         {
             this.host = host;
@@ -62,7 +63,12 @@ namespace osu.Game.IO
 
             storageConfig = new StorageConfigManager(defaultStorage);
 
-            if (!string.IsNullOrEmpty(CustomStoragePath))
+            if (!string.IsNullOrEmpty(dataPath))
+            {
+                if (!tryChangeToCustomStorage(dataPath, out Error, requirePopulated: false))
+                    throw new ArgumentException($@"The provided data path ""{dataPath}"" could not be used ({Error}).", nameof(dataPath));
+            }
+            else if (!string.IsNullOrEmpty(CustomStoragePath))
                 TryChangeToCustomStorage(out Error);
         }
 
@@ -101,20 +107,25 @@ namespace osu.Game.IO
         {
             Debug.Assert(!string.IsNullOrEmpty(CustomStoragePath));
 
+            return tryChangeToCustomStorage(CustomStoragePath!, out error, requirePopulated: true);
+        }
+
+        private bool tryChangeToCustomStorage(string path, out OsuStorageError error, bool requirePopulated)
+        {
             error = OsuStorageError.None;
             Storage lastStorage = UnderlyingStorage;
 
-            Logger.Log($"Attempting to use custom storage location {CustomStoragePath}");
+            Logger.Log($"Attempting to use custom storage location {path}");
 
             try
             {
-                Storage userStorage = host.GetStorage(CustomStoragePath);
+                Storage userStorage = host.GetStorage(path);
 
-                if (!userStorage.ExistsDirectory(".") || !userStorage.GetFiles(".").Any())
+                if (requirePopulated && (!userStorage.ExistsDirectory(".") || !userStorage.GetFiles(".").Any()))
                     error = OsuStorageError.AccessibleButEmpty;
 
                 ChangeTargetStorage(userStorage);
-                Logger.Log($"Storage successfully changed to {CustomStoragePath}.");
+                Logger.Log($"Storage successfully changed to {path}.");
             }
             catch
             {

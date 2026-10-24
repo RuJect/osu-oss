@@ -109,6 +109,11 @@ namespace osu.Game
         /// </summary>
         public bool NoNetwork { get; init; }
 
+        /// <summary>
+        /// An optional data directory to use for this run, overriding the configured storage path.
+        /// </summary>
+        public string DataPath { get; init; }
+
         protected override OnlineStore CreateOnlineStore() => NoNetwork ? new OfflineOnlineStore() : new TrustedDomainOnlineStore();
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
@@ -842,7 +847,7 @@ namespace osu.Game
 
         protected virtual Container CreateScalingContainer() => new DrawSizePreservingFillContainer();
 
-        protected override Storage CreateStorage(GameHost host, Storage defaultStorage) => new OsuStorage(host, defaultStorage);
+        protected override Storage CreateStorage(GameHost host, Storage defaultStorage) => new OsuStorage(host, defaultStorage, DataPath);
 
         /// <summary>
         /// Creates an input settings subsection for an <see cref="InputHandler"/>.

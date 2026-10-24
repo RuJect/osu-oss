@@ -80,6 +80,7 @@ namespace osu.Desktop
             string cwd = Environment.CurrentDirectory;
 
             string gameName = base_game_name;
+            string? dataPath = null;
             bool tournamentClient = false;
             bool noNetwork = false;
 
@@ -100,6 +101,13 @@ namespace osu.Desktop
                         noNetwork = true;
                         break;
 
+                    case "--data-path":
+                        if (string.IsNullOrWhiteSpace(val))
+                            throw new ArgumentException("Provided data path must not be empty.");
+
+                        dataPath = Path.GetFullPath(val, cwd);
+                        break;
+
                     case "--debug-client-id":
                             throw new InvalidOperationException("Cannot use this argument in a non-debug build.");
 
@@ -108,6 +116,19 @@ namespace osu.Desktop
 
                         gameName = $"{base_game_name}-{clientID}";
                         break;
+                }
+            }
+
+            if (dataPath != null)
+            {
+                try
+                {
+                    Directory.CreateDirectory(dataPath);
+                }
+                catch (Exception e)
+                {
+                    Logger.Log($@"Could not use provided data path ""{dataPath}"": {e.Message}", LoggingTarget.Runtime, LogLevel.Error);
+                    return;
                 }
             }
 
@@ -143,7 +164,7 @@ namespace osu.Desktop
                 }
 
                 if (tournamentClient)
-                    host.Run(new TournamentGame());
+                    host.Run(new TournamentGame { DataPath = dataPath });
                 else
                 {
                     var game = new OsuGameDesktop(args)
@@ -151,6 +172,7 @@ namespace osu.Desktop
                         IsFirstRun = isFirstRun,
                         EnableWebSocketServer = Environment.GetEnvironmentVariable("OSU_WEBSOCKET_SERVER") == "1",
                         NoNetwork = noNetwork,
+                        DataPath = dataPath,
                     };
 
                     // Proprietary auth transplant: initialises APIRequest.Sign /

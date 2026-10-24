@@ -67,6 +67,35 @@ namespace osu.Game.Tests.NonVisual
         }
 
         [Test]
+        public void TestCustomDirectoryViaDataPath()
+        {
+            using (prepareCustomPath(out string configuredPath))
+            using (prepareCustomPath(out string dataPath))
+            using (var host = new CustomTestHeadlessGameHost())
+            {
+                using (var storageConfig = new StorageConfigManager(host.InitialStorage))
+                    storageConfig.SetValue(StorageConfig.FullPath, configuredPath);
+
+                try
+                {
+                    var osu = LoadOsuIntoHost(host, dataPath: dataPath);
+
+                    // switch to DI'd storage
+                    var storage = osu.Dependencies.Get<Storage>();
+                    var osuStorage = storage as OsuStorage;
+
+                    Assert.That(storage.GetFullPath("."), Is.EqualTo(dataPath));
+                    Assert.That(osuStorage?.Error, Is.EqualTo(OsuStorageError.None));
+                    Assert.That(osuStorage?.CustomStoragePath, Is.EqualTo(configuredPath));
+                }
+                finally
+                {
+                    host.Exit();
+                }
+            }
+        }
+
+        [Test]
         public void TestSubDirectoryLookup()
         {
             using (prepareCustomPath(out string customPath))
