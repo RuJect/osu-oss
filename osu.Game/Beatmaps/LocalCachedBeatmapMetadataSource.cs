@@ -25,13 +25,16 @@ namespace osu.Game.Beatmaps
     public class LocalCachedBeatmapMetadataSource : IOnlineBeatmapMetadataSource
     {
         private readonly Storage storage;
+        private readonly bool noNetwork;
 
         private FileWebRequest? cacheDownloadRequest;
 
         private const string cache_database_name = @"online.db";
 
-        public LocalCachedBeatmapMetadataSource(Storage storage)
+        public LocalCachedBeatmapMetadataSource(Storage storage, bool noNetwork = false)
         {
+            this.noNetwork = noNetwork;
+
             try
             {
                 // required to initialise native SQLite libraries on some platforms.
@@ -51,6 +54,9 @@ namespace osu.Game.Beatmaps
 
         private bool shouldFetchCache()
         {
+            if (noNetwork)
+                return false;
+
             // avoid downloading / using cache for unit tests.
             if (DebugUtils.IsNUnitRunning)
                 return false;
@@ -170,6 +176,9 @@ namespace osu.Game.Beatmaps
         /// </summary>
         public Task FetchCache()
         {
+            if (noNetwork)
+                return Task.CompletedTask;
+
             // This is guarded in the local call, but also included as a safety
             // for any incorrect public usage.
             if (DebugUtils.IsNUnitRunning)

@@ -6,6 +6,7 @@ using osu.Framework.Audio;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
 using osu.Framework.Graphics;
+using osu.Framework.IO.Stores;
 using osu.Framework.Logging;
 using osu.Game.Beatmaps;
 using osu.Game.Online;
@@ -15,6 +16,7 @@ namespace osu.Game.Audio
     public partial class PreviewTrackManager : Component
     {
         private readonly IAdjustableAudioComponent mainTrackAdjustments;
+        private readonly OnlineStore onlineStore;
 
         private readonly BindableDouble muteBindable = new BindableDouble();
 
@@ -24,15 +26,16 @@ namespace osu.Game.Audio
 
         public readonly BindableBool IsPlayingPreview = new BindableBool();
 
-        public PreviewTrackManager(IAdjustableAudioComponent mainTrackAdjustments)
+        public PreviewTrackManager(IAdjustableAudioComponent mainTrackAdjustments, OnlineStore? onlineStore = null)
         {
             this.mainTrackAdjustments = mainTrackAdjustments;
+            this.onlineStore = onlineStore ?? new TrustedDomainOnlineStore();
         }
 
         [BackgroundDependencyLoader]
         private void load(AudioManager audioManager)
         {
-            trackStore = audioManager.GetTrackStore(new TrustedDomainOnlineStore());
+            trackStore = audioManager.GetTrackStore(onlineStore);
         }
 
         /// <summary>

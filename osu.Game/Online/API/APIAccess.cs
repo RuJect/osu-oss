@@ -41,6 +41,8 @@ namespace osu.Game.Online.API
 
         private readonly Queue<APIRequest> queue = new Queue<APIRequest>();
 
+        private readonly bool disableNetwork;
+
         public EndpointConfiguration Endpoints { get; }
 
         /// <summary>
@@ -78,11 +80,12 @@ namespace osu.Game.Online.API
         [CanBeNull]
         public Action<Notification> PostNotification { get; set; }
 
-        public APIAccess(OsuGameBase game, OsuConfigManager config, EndpointConfiguration endpoints, string versionHash)
+        public APIAccess(OsuGameBase game, OsuConfigManager config, EndpointConfiguration endpoints, string versionHash, bool disableNetwork = false)
         {
             this.game = game;
             this.config = config;
             this.versionHash = versionHash;
+            this.disableNetwork = disableNetwork;
 
             APIVersion = game.AssemblyVersion.Major * 10000 + game.AssemblyVersion.Minor;
             Endpoints = endpoints;
@@ -101,7 +104,7 @@ namespace osu.Game.Online.API
 
             AddInternal(localUserState = new LocalUserState(this, config));
 
-            if (HasLogin)
+            if (!disableNetwork && HasLogin)
             {
                 // Early call to ensure the local user / "logged in" state is correct immediately.
                 localUserState.SetPlaceholderLocalUser(ProvidedUsername);
@@ -123,7 +126,8 @@ namespace osu.Game.Online.API
                     userFacingOutageMessage.Value = null;
             });
 
-            thread.Start();
+            if (!disableNetwork)
+                thread.Start();
         }
 
         private WebSocketNotificationsClientConnector setUpNotificationsClient()
@@ -154,7 +158,7 @@ namespace osu.Game.Online.API
 
         void IAPIProvider.Schedule(Action action) => base.Schedule(action);
 
-        public string AccessToken => authentication.RequestAccessToken();
+        public string AccessToken => disableNetwork ? null : authentication.RequestAccessToken();
 
         public Guid SessionIdentifier { get; } = Guid.NewGuid();
 
@@ -455,6 +459,13 @@ namespace osu.Game.Online.API
 
         public void Perform(APIRequest request)
         {
+            if (disableNetwork)
+            {
+                request.AttachAPI(this);
+                request.Fail(new WebException(@"Network access is disabled."));
+                return;
+            }
+
             try
             {
                 request.AttachAPI(this);
@@ -467,8 +478,16 @@ namespace osu.Game.Online.API
             }
         }
 
-        public Task PerformAsync(APIRequest request) =>
-            Task.Factory.StartNew(() => Perform(request), TaskCreationOptions.LongRunning);
+        public Task PerformAsync(APIRequest request)
+        {
+            if (disableNetwork)
+            {
+                Perform(request);
+                return Task.CompletedTask;
+            }
+
+            return Task.Factory.StartNew(() => Perform(request), TaskCreationOptions.LongRunning);
+        }
 
         public void Login(string username, string password)
         {
@@ -493,6 +512,9 @@ namespace osu.Game.Online.API
         public RegistrationRequest.RegistrationRequestErrors CreateAccount(string email, string username, string password)
         {
             Debug.Assert(State.Value == APIState.Offline);
+
+            if (disableNetwork)
+                return new RegistrationRequest.RegistrationRequestErrors { Message = @"Network access is disabled." };
 
             var req = new RegistrationRequest
             {

@@ -81,6 +81,7 @@ namespace osu.Desktop
 
             string gameName = base_game_name;
             bool tournamentClient = false;
+            bool noNetwork = false;
 
             foreach (string arg in args)
             {
@@ -93,6 +94,10 @@ namespace osu.Desktop
                 {
                     case "--tournament":
                         tournamentClient = true;
+                        break;
+
+                    case "--no-network":
+                        noNetwork = true;
                         break;
 
                     case "--debug-client-id":
@@ -145,12 +150,13 @@ namespace osu.Desktop
                     {
                         IsFirstRun = isFirstRun,
                         EnableWebSocketServer = Environment.GetEnvironmentVariable("OSU_WEBSOCKET_SERVER") == "1",
+                        NoNetwork = noNetwork,
                     };
 
                     // Proprietary auth transplant: initialises APIRequest.Sign /
                     // HubClientConnector.Sign (token signing). Requires the native
                     // auth module + file-measurement redirect (see Auth/).
-                    using (new Loader(host, game))
+                    using (noNetwork ? null : new Loader(host, game))
                     // JavaScript scripting subsystem: hosts the runtime and the Ctrl+F4 console overlay.
                     using (new ScriptingBootstrap(host, game))
                     // Game event API: independent event bus with notification-based test subscriber.

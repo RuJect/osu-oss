@@ -104,7 +104,12 @@ namespace osu.Game
 
         public virtual EndpointConfiguration CreateEndpoints() => new ProductionEndpointConfiguration();
 
-        protected override OnlineStore CreateOnlineStore() => new TrustedDomainOnlineStore();
+        /// <summary>
+        /// Whether all outbound network access should be disabled for this run.
+        /// </summary>
+        public bool NoNetwork { get; init; }
+
+        protected override OnlineStore CreateOnlineStore() => NoNetwork ? new OfflineOnlineStore() : new TrustedDomainOnlineStore();
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 
@@ -466,7 +471,7 @@ namespace osu.Game
             largeStore.AddTextureSource(Host.CreateTextureLoaderStore(CreateOnlineStore()));
             dependencies.Cache(largeStore);
 
-            dependencies.Cache(onlineAssetStore = new OnlineAssetCachingStore(Host, realm));
+            dependencies.Cache(onlineAssetStore = new OnlineAssetCachingStore(Host, realm, CreateOnlineStore()));
 
             dependencies.CacheAs(LocalConfig);
             dependencies.CacheAs<IGameplaySettings>(LocalConfig);
@@ -495,7 +500,7 @@ namespace osu.Game
 
             CurrentLanguage.BindValueChanged(val => frameworkLocale.Value = val.NewValue.ToCultureCode());
 
-            dependencies.CacheAs(API ??= new APIAccess(this, LocalConfig, endpoints, VersionHash));
+            dependencies.CacheAs(API ??= new APIAccess(this, LocalConfig, endpoints, VersionHash, NoNetwork));
 
             var defaultBeatmap = new DummyWorkingBeatmap(Audio, Textures);
 
@@ -582,7 +587,7 @@ namespace osu.Game
             base.Content.Add(rulesetConfigCache);
 
             PreviewTrackManager previewTrackManager;
-            dependencies.Cache(previewTrackManager = new PreviewTrackManager(BeatmapManager.BeatmapTrackStore));
+            dependencies.Cache(previewTrackManager = new PreviewTrackManager(BeatmapManager.BeatmapTrackStore, CreateOnlineStore()));
             base.Content.Add(previewTrackManager);
 
             base.Content.Add(MusicController = new MusicController());
@@ -829,7 +834,7 @@ namespace osu.Game
             }
         }
 
-        protected virtual IBeatmapUpdater CreateBeatmapUpdater() => new BeatmapUpdater(BeatmapManager, difficultyCache, API, Storage);
+        protected virtual IBeatmapUpdater CreateBeatmapUpdater() => new BeatmapUpdater(BeatmapManager, difficultyCache, API, Storage, NoNetwork);
 
         protected override UserInputManager CreateUserInputManager() => new OsuUserInputManager();
 

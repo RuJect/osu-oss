@@ -74,6 +74,9 @@ namespace osu.Game.Database
         [Resolved]
         private OsuConfigManager config { get; set; } = null!;
 
+        [Resolved]
+        private OsuGameBase game { get; set; } = null!;
+
         private LocalCachedBeatmapMetadataSource localMetadataSource = null!;
 
         protected virtual int TimeToSleepDuringGameplay => 30000;
@@ -87,7 +90,7 @@ namespace osu.Game.Database
             if (SkipProcessing)
                 return;
 
-            localMetadataSource = new LocalCachedBeatmapMetadataSource(storage);
+            localMetadataSource = new LocalCachedBeatmapMetadataSource(storage, game.NoNetwork);
 
             ProcessingTask = Task.Factory.StartNew(() =>
             {

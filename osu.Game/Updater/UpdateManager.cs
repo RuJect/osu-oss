@@ -85,7 +85,7 @@ namespace osu.Game.Updater
         /// </returns>
         public async Task<bool> CheckForUpdateAsync(CancellationToken cancellationToken = default) => await Task.Run(async () =>
         {
-            if (!CanCheckForUpdate)
+            if (game.NoNetwork || !CanCheckForUpdate)
                 return false;
 
             var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
