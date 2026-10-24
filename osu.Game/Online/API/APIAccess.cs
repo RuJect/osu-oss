@@ -26,6 +26,7 @@ using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
 using osu.Game.Online.Notifications.WebSocket;
+using osu.Game.Online.Server;
 using osu.Game.Overlays.Notifications;
 
 namespace osu.Game.Online.API
@@ -37,13 +38,21 @@ namespace osu.Game.Online.API
 
         private readonly string versionHash;
 
-        private readonly OAuth authentication;
+        private OAuth authentication;
 
         private readonly Queue<APIRequest> queue = new Queue<APIRequest>();
 
         private readonly bool disableNetwork;
 
-        public EndpointConfiguration Endpoints { get; }
+        /// <summary>
+        /// Holds configuration for online endpoints. This is a bindable so that online clients
+        /// (spectator, multiplayer, metadata) can react to server switches at runtime.
+        /// </summary>
+        public IBindable<EndpointConfiguration> Endpoints => endpoints;
+
+        private readonly Bindable<EndpointConfiguration> endpoints;
+
+        private ServerConfiguration activeServerConfiguration = new ServerConfiguration();
 
         /// <summary>
         /// The API response version.
@@ -80,7 +89,7 @@ namespace osu.Game.Online.API
         [CanBeNull]
         public Action<Notification> PostNotification { get; set; }
 
-        public APIAccess(OsuGameBase game, OsuConfigManager config, EndpointConfiguration endpoints, string versionHash, bool disableNetwork = false)
+        public APIAccess(OsuGameBase game, OsuConfigManager config, IServerManager serverManager, string versionHash, bool disableNetwork = false)
         {
             this.game = game;
             this.config = config;
@@ -88,13 +97,18 @@ namespace osu.Game.Online.API
             this.disableNetwork = disableNetwork;
 
             APIVersion = game.AssemblyVersion.Major * 10000 + game.AssemblyVersion.Minor;
-            Endpoints = endpoints;
+
+            activeServerConfiguration = serverManager.ActiveServer.Value.Endpoints;
+            endpoints = new Bindable<EndpointConfiguration>(activeServerConfiguration);
+
+            serverManager.ActiveServerChanged += onActiveServerChanged;
+
             NotificationsClient = setUpNotificationsClient();
 
-            authentication = new OAuth(endpoints.APIClientID, endpoints.APIClientSecret, Endpoints.APIUrl);
+            authentication = new OAuth(endpoints.Value.APIClientID, endpoints.Value.APIClientSecret, endpoints.Value.APIUrl);
 
             log = Logger.GetLogger(LoggingTarget.Network);
-            log.Add($@"API endpoint root: {Endpoints.APIUrl}");
+            log.Add($@"API endpoint root: {endpoints.Value.APIUrl}");
             log.Add($@"API request version: {APIVersion}");
 
             ProvidedUsername = config.Get<string>(OsuSetting.Username);
@@ -128,6 +142,38 @@ namespace osu.Game.Online.API
 
             if (!disableNetwork)
                 thread.Start();
+        }
+
+        /// <summary>
+        /// Legacy constructor used when the server subsystem is not wired (e.g. tests, tournament client).
+        /// The endpoints are static and cannot be switched at runtime.
+        /// </summary>
+        public APIAccess(OsuGameBase game, OsuConfigManager config, EndpointConfiguration endpoints, string versionHash, bool disableNetwork = false)
+            : this(game, config, new StaticServerManager(endpoints), versionHash, disableNetwork)
+        {
+        }
+
+        /// <summary>
+        /// Called when the user switches the active server at runtime.
+        /// Disconnects from the old server and reconnects to the new one.
+        /// </summary>
+        private void onActiveServerChanged(IServer server)
+        {
+            activeServerConfiguration = server.Endpoints;
+            endpoints.Value = activeServerConfiguration;
+
+            // Update the OAuth provider to use the new server's credentials.
+            var oldAuth = authentication;
+            authentication = new OAuth(activeServerConfiguration.APIClientID, activeServerConfiguration.APIClientSecret, activeServerConfiguration.APIUrl);
+            authentication.TokenString = oldAuth.TokenString;
+            authentication.Token.ValueChanged += onTokenChanged;
+
+            log.Add($@"Active server switched to {server.Name} ({server.Id})");
+            log.Add($@"API endpoint root: {activeServerConfiguration.APIUrl}");
+
+            // Flush the request queue and force a reconnection.
+            flushQueue();
+            state.Value = APIState.Offline;
         }
 
         private WebSocketNotificationsClientConnector setUpNotificationsClient()
@@ -246,13 +292,13 @@ namespace osu.Game.Online.API
         /// </returns>
         private bool probeLiveness([CanBeNull] out string reason)
         {
-            if (Endpoints.LivenessProbeUrl == null)
+            if (Endpoints.Value.LivenessProbeUrl == null)
             {
                 reason = null;
                 return true;
             }
 
-            var req = new OsuJsonWebRequest<LivenessProbeResponse>(Endpoints.LivenessProbeUrl);
+            var req = new OsuJsonWebRequest<LivenessProbeResponse>(Endpoints.Value.LivenessProbeUrl);
 
             try
             {
@@ -518,7 +564,7 @@ namespace osu.Game.Online.API
 
             var req = new RegistrationRequest
             {
-                Url = $@"{Endpoints.APIUrl}/users",
+                Url = $@"{Endpoints.Value.APIUrl}/users",
                 Method = HttpMethod.Post,
                 Username = username,
                 Email = email,
@@ -576,6 +622,12 @@ namespace osu.Game.Online.API
         /// <returns>true if the request succeeded.</returns>
         private bool handleRequest(APIRequest req)
         {
+            // Allow the active server to override / intercept the request.
+            // This enables custom servers to provide their own request handling without
+            // falling back to the standard HTTP pipeline.
+            if (activeServerConfiguration is IServer activeServer && activeServer.HandleRequest(req, this))
+                return true;
+
             try
             {
                 req.AttachAPI(this);

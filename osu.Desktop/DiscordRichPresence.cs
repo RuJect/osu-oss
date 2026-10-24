@@ -174,7 +174,7 @@ namespace osu.Desktop
                         new Button
                         {
                             Label = "View beatmap",
-                            Url = $@"{api.Endpoints.WebsiteUrl}/beatmaps/{beatmapId}?mode={ruleset.Value.ShortName}"
+                            Url = $@"{api.Endpoints.Value.WebsiteUrl}/beatmaps/{beatmapId}?mode={ruleset.Value.ShortName}"
                         }
                     };
                 }

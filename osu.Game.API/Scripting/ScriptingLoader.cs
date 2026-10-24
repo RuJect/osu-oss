@@ -11,6 +11,7 @@ using osu.Game.API.Events;
 using osu.Game.API.Services;
 using osu.Game.Configuration;
 using osu.Game.IO;
+using osu.Game.Online.Server;
 using osu.Game.Overlays;
 
 namespace osu.Game.API.Scripting
@@ -104,6 +105,12 @@ namespace osu.Game.API.Scripting
             Manager.Services.Music = new MusicService(game.Dependencies.Get<MusicController>(), Manager.Services.Host);
             Manager.Services.Config = new ConfigService(game.Dependencies.Get<OsuConfigManager>());
             Manager.Services.Notifications = new NotificationService(game.Dependencies.Get<INotificationOverlay>());
+
+            // Server subsystem: expose the runtime registry and manager so plugins/scripts can
+            // register custom servers. They are never persisted to the user's configuration file;
+            // only the selected server's ID is persisted.
+            Manager.Services.Servers = game.Dependencies.Get<IServerRegistry>();
+            Manager.Services.ServerManager = game.Dependencies.Get<IServerManager>();
 
             Initialised?.Invoke(Manager);
 

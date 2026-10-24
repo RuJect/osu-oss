@@ -59,9 +59,10 @@ namespace osu.Game.Online.API
         string ProvidedUsername { get; }
 
         /// <summary>
-        /// Holds configuration for online endpoints.
+        /// Holds configuration for online endpoints. This is a bindable so that online clients
+        /// (spectator, multiplayer, metadata) can react to server switches at runtime.
         /// </summary>
-        EndpointConfiguration Endpoints { get; }
+        IBindable<EndpointConfiguration> Endpoints { get; }
 
         /// <summary>
         /// The version of the API.

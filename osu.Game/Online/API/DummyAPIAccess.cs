@@ -43,11 +43,13 @@ namespace osu.Game.Online.API
 
         public string ProvidedUsername => LocalUser.Value.Username;
 
-        public EndpointConfiguration Endpoints { get; } = new EndpointConfiguration
+        public IBindable<EndpointConfiguration> Endpoints => endpoints;
+
+        private readonly Bindable<EndpointConfiguration> endpoints = new Bindable<EndpointConfiguration>(new EndpointConfiguration
         {
             APIUrl = "http://localhost",
             WebsiteUrl = "http://localhost",
-        };
+        });
 
         public int APIVersion => int.Parse(DateTime.Now.ToString("yyyyMMdd"));
 

@@ -416,7 +416,7 @@ namespace osu.Game.Screens.Edit.Submission
             if (configManager.Get<bool>(OsuSetting.EditorSubmissionLoadInBrowserAfterSubmission))
             {
                 await Task.Delay(1000).ConfigureAwait(true);
-                game?.OpenUrlExternally($"{api.Endpoints.WebsiteUrl}/beatmapsets/{beatmapSetId}");
+                game?.OpenUrlExternally($"{api.Endpoints.Value.WebsiteUrl}/beatmapsets/{beatmapSetId}");
             }
         }
 

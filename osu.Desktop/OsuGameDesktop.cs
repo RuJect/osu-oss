@@ -10,6 +10,8 @@ using osu.Desktop.IPC;
 using osu.Desktop.Security;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.API.Server;
+using osu.Game.Online.Server;
 using osu.Desktop.Updater;
 using osu.Framework;
 using osu.Framework.Logging;
@@ -59,6 +61,22 @@ namespace osu.Desktop
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Wires the server subsystem (defined in <c>osu.Game.API</c>) so the desktop game can
+        /// connect to the user's selected server (bancho/dev/custom). The subsystem's concrete
+        /// types live in <c>osu.Game.API</c>; this override is the only place in <c>osu.Desktop</c>
+        /// that touches them, keeping <c>osu.Game</c> free of any <c>osu.Game.API</c> dependency.
+        /// </summary>
+        protected override IServerRegistry? CreateServerRegistry() => ServerRegistry.CreateDefault();
+
+        protected override IServerManager? CreateServerManager(IServerRegistry? registry)
+        {
+            if (registry is not IServerRegistry serverRegistry)
+                return null;
+
+            return new ServerManager(serverRegistry, LocalConfig);
         }
 
         private string? getStableInstallPath()

@@ -624,7 +624,7 @@ namespace osu.Game.Screens.Select
                     items.Add(new OsuMenuItem(SongSelectStrings.UseTheseMods, MenuItemType.Highlighted, () => SelectedMods.Value = copyableMods));
 
                 if (Score.OnlineID > 0)
-                    items.Add(new OsuMenuItem(CommonStrings.CopyLink, MenuItemType.Standard, () => game?.CopyToClipboard($@"{api.Endpoints.WebsiteUrl}/scores/{Score.OnlineID}")));
+                    items.Add(new OsuMenuItem(CommonStrings.CopyLink, MenuItemType.Standard, () => game?.CopyToClipboard($@"{api.Endpoints.Value.WebsiteUrl}/scores/{Score.OnlineID}")));
 
                 if (Score.Files.Count <= 0) return items.ToArray();
 

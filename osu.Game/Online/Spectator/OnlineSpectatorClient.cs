@@ -15,7 +15,7 @@ namespace osu.Game.Online.Spectator
 {
     public partial class OnlineSpectatorClient : SpectatorClient
     {
-        private readonly string endpoint;
+        private readonly IBindable<EndpointConfiguration> endpoints;
 
         private IHubClientConnector? connector;
 
@@ -23,15 +23,15 @@ namespace osu.Game.Online.Spectator
 
         private HubConnection? connection => connector?.CurrentConnection;
 
-        public OnlineSpectatorClient(EndpointConfiguration endpoints)
+        public OnlineSpectatorClient(IBindable<EndpointConfiguration> endpoints)
         {
-            endpoint = endpoints.SpectatorUrl;
+            this.endpoints = endpoints;
         }
 
         [BackgroundDependencyLoader]
         private void load(IAPIProvider api)
         {
-            connector = api.GetHubConnector(nameof(SpectatorClient), endpoint);
+            connector = api.GetHubConnector(nameof(SpectatorClient), endpoints.Value.SpectatorUrl);
 
             if (connector != null)
             {

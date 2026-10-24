@@ -33,6 +33,8 @@
     <ProjectReference Include="..\osu.Game.Auth\osu.Game.Auth.csproj"/>
     <!-- JavaScript scripting subsystem (behaviour + console UI). -->
     <ProjectReference Include="..\osu.Game.API.UI\osu.Game.API.UI.csproj"/>
+    <!-- Server subsystem: runtime server registry/manager and the default Bancho/Dev servers. -->
+    <ProjectReference Include="..\osu.Game.API\osu.Game.API.csproj"/>
     <!-- Seccomp user-notification supervisor (Linux). Built alongside the game and shipped next
          to the executable; the game spawns it from osu.Game.Auth.Isolation. -->
     <ProjectReference Include="..\osu.Game.Auth.Supervisor\osu.Game.Auth.Supervisor.csproj" ReferenceOutputAssembly="false"/>

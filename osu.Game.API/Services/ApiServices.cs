@@ -3,6 +3,7 @@
 
 using osu.Framework.Input;
 using osu.Framework.Platform;
+using osu.Game.Online.Server;
 
 namespace osu.Game.API.Services
 {
@@ -34,6 +35,13 @@ namespace osu.Game.API.Services
 
         /// <summary>The game's root input manager, resolved once the game has loaded.</summary>
         public InputManager? InputManager { get; set; }
+
+        /// <summary>The registry of all servers available at runtime. Plugins and scripts can register
+        /// custom servers here; they are never persisted to the user's configuration file.</summary>
+        public IServerRegistry? Servers { get; set; }
+
+        /// <summary>The manager that bridges the registry with the user's persisted server preference.</summary>
+        public IServerManager? ServerManager { get; set; }
 
         public ApiServices(OsuGame game, GameHost host, OutputLog output)
         {

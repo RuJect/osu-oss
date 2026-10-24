@@ -55,6 +55,7 @@ using osu.Game.Online.Chat;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Online.Metadata;
 using osu.Game.Online.Multiplayer;
+using osu.Game.Online.Server;
 using osu.Game.Online.Spectator;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
@@ -103,6 +104,27 @@ namespace osu.Game
         private const double global_track_volume_adjust = 0.8;
 
         public virtual EndpointConfiguration CreateEndpoints() => new ProductionEndpointConfiguration();
+
+        /// <summary>
+        /// The manager that bridges the runtime <see cref="IServerRegistry"/> with the user's
+        /// persisted server preference. Only populated when the server subsystem is wired
+        /// (see <see cref="CreateServerRegistry"/> / <see cref="CreateServerManager"/>).
+        /// </summary>
+        protected IServerManager? ServerManager { get; set; }
+
+        /// <summary>
+        /// Hook for subclasses that reference <c>osu.Game.API</c> (e.g. the desktop game) to
+        /// provide a concrete <see cref="IServerRegistry"/> instance. Returns <c>null</c> by default,
+        /// in which case the legacy <see cref="CreateEndpoints"/> path is used.
+        /// </summary>
+        protected virtual IServerRegistry? CreateServerRegistry() => null;
+
+        /// <summary>
+        /// Hook for subclasses that reference <c>osu.Game.API</c> (e.g. the desktop game) to
+        /// wire the <see cref="IServerManager"/> from a <see cref="IServerRegistry"/>.
+        /// Returns <c>null</c> by default, in which case the legacy <see cref="CreateEndpoints"/> path is used.
+        /// </summary>
+        protected virtual IServerManager? CreateServerManager(IServerRegistry? registry) => null;
 
         /// <summary>
         /// Whether all outbound network access should be disabled for this run.
@@ -492,49 +514,88 @@ namespace osu.Game
             dependencies.Cache(SkinManager = new SkinManager(Storage, realm, Host, Resources, Audio, Scheduler));
             dependencies.CacheAs<ISkinSource>(SkinManager);
 
-            EndpointConfiguration endpoints = CreateEndpoints();
-
-            MessageFormatter.WebsiteRootUrl = endpoints.WebsiteUrl;
-
-            // Initialise localisation
-            frameworkLocale = frameworkConfig.GetBindable<string>(FrameworkSetting.Locale);
-            frameworkLocale.BindValueChanged(_ => updateLanguage());
-
-            localisationParameters = Localisation.CurrentParameters.GetBoundCopy();
-            localisationParameters.BindValueChanged(_ => updateLanguage(), true);
-
-            CurrentLanguage.BindValueChanged(val => frameworkLocale.Value = val.NewValue.ToCultureCode());
-
-            dependencies.CacheAs(API ??= new APIAccess(this, LocalConfig, endpoints, VersionHash, NoNetwork));
-
             var defaultBeatmap = new DummyWorkingBeatmap(Audio, Textures);
 
-            dependencies.Cache(difficultyCache = new BeatmapDifficultyCache());
+            // Initialise the server registry and manager.
+            // Concrete implementations (and the default Bancho/Dev servers) live in osu.Game.API.
+            // Subclasses that reference osu.Game.API (e.g. the desktop game) override the hooks below
+            // to wire the subsystem; otherwise we fall back to the legacy CreateEndpoints() path.
+            var serverRegistry = CreateServerRegistry();
+            var serverManager = CreateServerManager(serverRegistry);
 
-            // ordering is important here to ensure foreign keys rules are not broken in ModelStore.Cleanup()
-            dependencies.Cache(ScoreManager = new ScoreManager(RulesetStore, () => BeatmapManager, Storage, realm, API, LocalConfig));
-
-            dependencies.Cache(BeatmapManager = new BeatmapManager(Storage, realm, API, Audio, Resources, Host, defaultBeatmap, difficultyCache, performOnlineLookups: true));
-            dependencies.CacheAs<IWorkingBeatmapCache>(BeatmapManager);
-
-            dependencies.Cache(BeatmapDownloader = new BeatmapModelDownloader(BeatmapManager, API));
-
-            // Downloads complete on a background thread, so marshal the notification to the update thread.
-            BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
+            if (serverManager != null)
             {
-                foreach (Live<BeatmapSetInfo> live in downloaded)
-                    Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
-            });
-            dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
+                this.ServerManager = serverManager;
+                dependencies.CacheAs<IServerRegistry>(serverRegistry);
+                dependencies.CacheAs<IServerManager>(serverManager);
 
-            // Add after all the above cache operations as it depends on them.
-            base.Content.Add(difficultyCache);
+                MessageFormatter.WebsiteRootUrl = serverManager.ActiveServer.Value.Endpoints.WebsiteUrl;
 
-            // TODO: OsuGame or OsuGameBase?
-            dependencies.CacheAs(beatmapUpdater = CreateBeatmapUpdater());
-            dependencies.CacheAs(SpectatorClient = new OnlineSpectatorClient(endpoints));
-            dependencies.CacheAs(MultiplayerClient = new OnlineMultiplayerClient(endpoints));
-            dependencies.CacheAs(metadataClient = new OnlineMetadataClient(endpoints));
+                dependencies.CacheAs(API ??= new APIAccess(this, LocalConfig, serverManager, VersionHash, NoNetwork));
+
+                dependencies.Cache(difficultyCache = new BeatmapDifficultyCache());
+
+                // ordering is important here to ensure foreign keys rules are not broken in ModelStore.Cleanup()
+                dependencies.Cache(ScoreManager = new ScoreManager(RulesetStore, () => BeatmapManager, Storage, realm, API, LocalConfig));
+
+                dependencies.Cache(BeatmapManager = new BeatmapManager(Storage, realm, API, Audio, Resources, Host, defaultBeatmap, difficultyCache, performOnlineLookups: true));
+                dependencies.CacheAs<IWorkingBeatmapCache>(BeatmapManager);
+
+                dependencies.Cache(BeatmapDownloader = new BeatmapModelDownloader(BeatmapManager, API));
+
+                // Downloads complete on a background thread, so marshal the notification to the update thread.
+                BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
+                {
+                    foreach (Live<BeatmapSetInfo> live in downloaded)
+                        Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
+                });
+                dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
+
+                // Add after all the above cache operations as it depends on them.
+                base.Content.Add(difficultyCache);
+
+                // TODO: OsuGame or OsuGameBase?
+                dependencies.CacheAs(beatmapUpdater = CreateBeatmapUpdater());
+                dependencies.CacheAs(SpectatorClient = new OnlineSpectatorClient(API!.Endpoints));
+                dependencies.CacheAs(MultiplayerClient = new OnlineMultiplayerClient(API!.Endpoints));
+                dependencies.CacheAs(metadataClient = new OnlineMetadataClient(API!.Endpoints));
+            }
+            else
+            {
+                // Legacy fallback: use the static EndpointConfiguration provider.
+                EndpointConfiguration endpoints = CreateEndpoints();
+
+                MessageFormatter.WebsiteRootUrl = endpoints.WebsiteUrl;
+
+                dependencies.CacheAs(API ??= new APIAccess(this, LocalConfig, endpoints, VersionHash, NoNetwork));
+
+                dependencies.Cache(difficultyCache = new BeatmapDifficultyCache());
+
+                // ordering is important here to ensure foreign keys rules are not broken in ModelStore.Cleanup()
+                dependencies.Cache(ScoreManager = new ScoreManager(RulesetStore, () => BeatmapManager, Storage, realm, API, LocalConfig));
+
+                dependencies.Cache(BeatmapManager = new BeatmapManager(Storage, realm, API, Audio, Resources, Host, defaultBeatmap, difficultyCache, performOnlineLookups: true));
+                dependencies.CacheAs<IWorkingBeatmapCache>(BeatmapManager);
+
+                dependencies.Cache(BeatmapDownloader = new BeatmapModelDownloader(BeatmapManager, API));
+
+                // Downloads complete on a background thread, so marshal the notification to the update thread.
+                BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
+                {
+                    foreach (Live<BeatmapSetInfo> live in downloaded)
+                        Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
+                });
+                dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
+
+                // Add after all the above cache operations as it depends on them.
+                base.Content.Add(difficultyCache);
+
+                // TODO: OsuGame or OsuGameBase?
+                dependencies.CacheAs(beatmapUpdater = CreateBeatmapUpdater());
+                dependencies.CacheAs(SpectatorClient = new OnlineSpectatorClient(API!.Endpoints));
+                dependencies.CacheAs(MultiplayerClient = new OnlineMultiplayerClient(API!.Endpoints));
+                dependencies.CacheAs(metadataClient = new OnlineMetadataClient(API!.Endpoints));
+            }
 
             base.Content.Add(new BeatmapOnlineChangeIngest(beatmapUpdater, realm, metadataClient));
 

@@ -70,6 +70,7 @@ namespace osu.Game.Configuration
 
             // Online settings
             SetDefault(OsuSetting.Username, string.Empty);
+            SetDefault(OsuSetting.SelectedServerId, "bancho");
             SetDefault(OsuSetting.Token, string.Empty);
 
             SetDefault(OsuSetting.AutomaticallyDownloadMissingBeatmaps, true);
@@ -383,6 +384,15 @@ namespace osu.Game.Configuration
         BeatmapLeaderboardSortMode,
         BeatmapDetailModsFilter,
         Username,
+
+        /// <summary>
+        /// The ID of the server that the user has selected to connect to.
+        /// Only the ID is persisted; the server itself is registered at runtime
+        /// (via plugins, scripts, or the application entry point) and is never
+        /// serialised directly into the configuration.
+        /// </summary>
+        SelectedServerId,
+
         ReleaseStream,
         SavePassword,
         SaveUsername,

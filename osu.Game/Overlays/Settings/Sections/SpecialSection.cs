@@ -30,6 +30,7 @@ namespace osu.Game.Overlays.Settings.Sections
                 new NotificationSettings(),
                 new ThemeSettingsSubsection(),
                 new ScriptingSettings(),
+                new ServerSettingsSubsection(),
                 new MaintenanceSettings(),
             });
         }

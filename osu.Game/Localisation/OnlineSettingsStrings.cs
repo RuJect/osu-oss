@@ -94,6 +94,31 @@ namespace osu.Game.Localisation
         /// </summary>
         public static LocalisableString HideCountryFlags => new TranslatableString(getKey(@"hide_country_flags"), @"Hide all country flags");
 
+        /// <summary>
+        /// "Server"
+        /// </summary>
+        public static LocalisableString ServerHeader => new TranslatableString(getKey(@"server_header"), @"Server");
+
+        /// <summary>
+        /// "Active server"
+        /// </summary>
+        public static LocalisableString ActiveServerLabel => new TranslatableString(getKey(@"active_server_label"), @"Active server");
+
+        /// <summary>
+        /// "Select the server that the game will connect to."
+        /// </summary>
+        public static LocalisableString ActiveServerTooltip => new TranslatableString(getKey(@"active_server_tooltip"), @"Select the server that the game will connect to.");
+
+        /// <summary>
+        /// "Switching servers requires a restart to take effect."
+        /// </summary>
+        public static LocalisableString RestartRequiredTooltip => new TranslatableString(getKey(@"restart_required_tooltip"), @"Switching servers requires a restart to take effect.");
+
+        /// <summary>
+        /// "Restart required"
+        /// </summary>
+        public static LocalisableString RestartRequired => new TranslatableString(getKey(@"restart_required"), @"Restart required");
+
         private static string getKey(string key) => $@"{prefix}:{key}";
     }
 }

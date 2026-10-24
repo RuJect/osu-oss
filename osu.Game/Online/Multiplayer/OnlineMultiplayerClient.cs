@@ -27,7 +27,7 @@ namespace osu.Game.Online.Multiplayer
     /// </summary>
     public partial class OnlineMultiplayerClient : MultiplayerClient
     {
-        private readonly string endpoint;
+        private readonly IBindable<EndpointConfiguration> endpoints;
 
         private IHubClientConnector? connector;
 
@@ -35,9 +35,9 @@ namespace osu.Game.Online.Multiplayer
 
         private HubConnection? connection => connector?.CurrentConnection;
 
-        public OnlineMultiplayerClient(EndpointConfiguration endpoints)
+        public OnlineMultiplayerClient(IBindable<EndpointConfiguration> endpoints)
         {
-            endpoint = endpoints.MultiplayerUrl;
+            this.endpoints = endpoints;
         }
 
         [BackgroundDependencyLoader]
@@ -45,7 +45,7 @@ namespace osu.Game.Online.Multiplayer
         {
             // Importantly, we are intentionally not using MessagePack here to correctly support derived class serialization.
             // More information on the limitations / reasoning can be found in osu-server-spectator's initialisation code.
-            connector = api.GetHubConnector(nameof(OnlineMultiplayerClient), endpoint);
+            connector = api.GetHubConnector(nameof(OnlineMultiplayerClient), endpoints.Value.MultiplayerUrl);
 
             if (connector != null)
             {

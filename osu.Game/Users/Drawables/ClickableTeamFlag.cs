@@ -50,7 +50,7 @@ namespace osu.Game.Users.Drawables
                 // LinkWarnMode.AlwaysWarn is set to prevent users from being instantly kicked out of the game
                 // on accidental clicks (for example, when selecting a score on song select).
                 // This should be changed when in-game team profile overlay is added.
-                game?.OpenUrlExternally($@"{api.Endpoints.WebsiteUrl}/teams/{team.Id}", LinkWarnMode.AlwaysWarn);
+                game?.OpenUrlExternally($@"{api.Endpoints.Value.WebsiteUrl}/teams/{team.Id}", LinkWarnMode.AlwaysWarn);
         }
     }
 }

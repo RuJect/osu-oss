@@ -33,7 +33,7 @@ namespace osu.Game.Online.Metadata
         public override IBindable<DailyChallengeInfo?> DailyChallengeInfo => dailyChallengeInfo;
         private readonly Bindable<DailyChallengeInfo?> dailyChallengeInfo = new Bindable<DailyChallengeInfo?>();
 
-        private readonly string endpoint;
+        private readonly IBindable<EndpointConfiguration> endpoints;
 
         [Resolved]
         private IAPIProvider api { get; set; } = null!;
@@ -46,9 +46,9 @@ namespace osu.Game.Online.Metadata
 
         private HubConnection? connection => connector?.CurrentConnection;
 
-        public OnlineMetadataClient(EndpointConfiguration endpoints)
+        public OnlineMetadataClient(IBindable<EndpointConfiguration> endpoints)
         {
-            endpoint = endpoints.MetadataUrl;
+            this.endpoints = endpoints;
         }
 
         [BackgroundDependencyLoader]
@@ -56,7 +56,7 @@ namespace osu.Game.Online.Metadata
         {
             // Importantly, we are intentionally not using MessagePack here to correctly support derived class serialization.
             // More information on the limitations / reasoning can be found in osu-server-spectator's initialisation code.
-            connector = api.GetHubConnector(nameof(OnlineMetadataClient), endpoint);
+            connector = api.GetHubConnector(nameof(OnlineMetadataClient), endpoints.Value.MetadataUrl);
 
             if (connector != null)
             {

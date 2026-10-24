@@ -1373,7 +1373,7 @@ namespace osu.Game.Screens.Edit
 
             bool isSetMadeOfLegacyRulesetBeatmaps = (isNewBeatmap && Ruleset.Value.IsLegacyRuleset())
                                                     || (!isNewBeatmap && Beatmap.Value.BeatmapSetInfo.Beatmaps.All(b => b.Ruleset.IsLegacyRuleset()));
-            bool submissionAvailable = api.Endpoints.BeatmapSubmissionServiceUrl != null;
+            bool submissionAvailable = api.Endpoints.Value.BeatmapSubmissionServiceUrl != null;
 
             if (isSetMadeOfLegacyRulesetBeatmaps && submissionAvailable)
             {
@@ -1392,7 +1392,7 @@ namespace osu.Game.Screens.Edit
                     () => (Game as OsuGame)?.OpenUrlExternally(editorBeatmap.BeatmapInfo.GetOnlineURL(api, editorBeatmap.BeatmapInfo.Ruleset)));
                 yield return new EditorMenuItem(EditorStrings.OpenDiscussionPage, MenuItemType.Standard,
                     () => (Game as OsuGame)?.OpenUrlExternally(
-                        $@"{api.Endpoints.WebsiteUrl}/beatmapsets/{editorBeatmap.BeatmapInfo.BeatmapSet!.OnlineID}/discussion/{editorBeatmap.BeatmapInfo.OnlineID}"));
+                        $@"{api.Endpoints.Value.WebsiteUrl}/beatmapsets/{editorBeatmap.BeatmapInfo.BeatmapSet!.OnlineID}/discussion/{editorBeatmap.BeatmapInfo.OnlineID}"));
             }
 
             yield return new OsuMenuItemSpacer();

@@ -325,7 +325,7 @@ namespace osu.Game.Overlays.Comments
             if (WasDeleted)
                 makeDeleted();
 
-            actionsContainer.AddLink(WebCommonStrings.ButtonsPermalink, () => game?.CopyToClipboard($@"{api.Endpoints.APIUrl}/comments/{Comment.Id}"));
+            actionsContainer.AddLink(WebCommonStrings.ButtonsPermalink, () => game?.CopyToClipboard($@"{api.Endpoints.Value.APIUrl}/comments/{Comment.Id}"));
             actionsContainer.AddArbitraryDrawable(Empty().With(d => d.Width = 10));
             actionsContainer.AddLink(WebCommonStrings.ButtonsReply.ToLower(), toggleReply);
             actionsContainer.AddArbitraryDrawable(Empty().With(d => d.Width = 10));
