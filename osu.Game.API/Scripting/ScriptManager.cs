@@ -1,7 +1,9 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Platform;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Scripting.Api.Providers;
@@ -21,7 +23,7 @@ namespace osu.Game.API.Scripting
     /// </summary>
     public class ScriptManager
     {
-        private readonly List<IScriptApiProvider> apiProviders = new List<IScriptApiProvider>();
+        private readonly List<Func<IScriptApiProvider>> apiProviderFactories = new List<Func<IScriptApiProvider>>();
 
         public ScriptRepository Repository { get; }
 
@@ -46,18 +48,18 @@ namespace osu.Game.API.Scripting
             var engineFactory = new ScriptEngineFactory(Services, buildProviderList);
             Runner = new ScriptRunner(Services, engineFactory, Locator);
 
-            RegisterApiProvider(new ConsoleApiProvider());
-            RegisterApiProvider(new CoreApiProvider());
-            RegisterApiProvider(new SchedulerApiProvider());
-            RegisterApiProvider(new EventsApiProvider());
-            RegisterApiProvider(new StorageApiProvider());
-            RegisterApiProvider(new TypeApiProvider());
-            RegisterApiProvider(new NotificationApiProvider());
-            RegisterApiProvider(new InternalApiProvider());
-            RegisterApiProvider(new UtilityApiProvider());
-            RegisterApiProvider(new ConfigApiProvider());
-            RegisterApiProvider(new MusicApiProvider());
-            RegisterApiProvider(new UiApiProvider());
+            RegisterApiProvider(() => new ConsoleApiProvider());
+            RegisterApiProvider(() => new CoreApiProvider());
+            RegisterApiProvider(() => new SchedulerApiProvider());
+            RegisterApiProvider(() => new EventsApiProvider());
+            RegisterApiProvider(() => new StorageApiProvider());
+            RegisterApiProvider(() => new TypeApiProvider());
+            RegisterApiProvider(() => new NotificationApiProvider());
+            RegisterApiProvider(() => new InternalApiProvider());
+            RegisterApiProvider(() => new UtilityApiProvider());
+            RegisterApiProvider(() => new ConfigApiProvider());
+            RegisterApiProvider(() => new MusicApiProvider());
+            RegisterApiProvider(() => new UiApiProvider());
         }
 
         /// <summary>
@@ -74,12 +76,18 @@ namespace osu.Game.API.Scripting
 
         public ScriptInstance? RunFile(string fileName) => Runner.RunFile(fileName);
 
-        public void RegisterApiProvider(IScriptApiProvider provider)
+        /// <summary>
+        /// Registers a factory for an API provider. A fresh provider instance is created for every script
+        /// engine, because providers keep per-script state (notably their <see cref="ScriptApiProvider.Context"/>).
+        /// </summary>
+        public void RegisterApiProvider(Func<IScriptApiProvider> providerFactory)
         {
-            if (!apiProviders.Contains(provider))
-                apiProviders.Add(provider);
+            ArgumentNullException.ThrowIfNull(providerFactory);
+
+            if (!apiProviderFactories.Contains(providerFactory))
+                apiProviderFactories.Add(providerFactory);
         }
 
-        private IReadOnlyList<IScriptApiProvider> buildProviderList() => new List<IScriptApiProvider>(apiProviders);
+        private IReadOnlyList<IScriptApiProvider> buildProviderList() => apiProviderFactories.Select(factory => factory()).ToList();
     }
 }

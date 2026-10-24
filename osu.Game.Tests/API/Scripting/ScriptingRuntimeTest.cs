@@ -167,6 +167,18 @@ namespace osu.Game.Tests.API.Scripting
         }
 
         [Test]
+        public void TestApiProviderStateIsPerScriptInstance()
+        {
+            run("osu.setTimeout(() => osu.log('from-first'), 100);", "first");
+            run(string.Empty, "second");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.IsTrue(manager.Output.History.Any(o => o.Text == "from-first" && o.Source == "first"));
+        }
+
+        [Test]
         public void TestKvStore()
         {
             run("osu.kv.set('name', 'osu'); osu.kv.set('count', 42); osu.log('name=' + osu.kv.get('name')); osu.log('count=' + osu.kv.get('count')); osu.kv.delete('count'); osu.log('deleted=' + (osu.kv.get('count') === undefined));");
