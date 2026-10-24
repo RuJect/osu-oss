@@ -3,25 +3,31 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using osu.Framework.Bindables;
+using osu.Framework.Input;
+using osu.Framework.Input.Handlers;
 using osu.Framework.Testing;
 using osu.Game.API.Scripting;
 using osu.Game.Configuration;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
+using osuTK;
+using osuTK.Input;
 
 namespace osu.Game.Tests.API.Scripting
 {
     [TestFixture]
-    public class ScriptingRuntimeTest
+    public partial class ScriptingRuntimeTest
     {
         private ScriptManager manager = null!;
         private TemporaryNativeStorage scriptStorage = null!;
         private TemporaryNativeStorage dataStorage = null!;
+        private TestInputManager inputManager = null!;
 
         [SetUp]
         public void SetUp()
@@ -31,6 +37,9 @@ namespace osu.Game.Tests.API.Scripting
 
             manager = new ScriptManager(null!, new OsuGame());
             manager.AttachStorage(new ScriptStorage(scriptStorage), dataStorage);
+
+            inputManager = new TestInputManager();
+            manager.Services.InputManager = inputManager;
         }
 
         [TearDown]
@@ -260,9 +269,269 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(logged("overlay=true"));
         }
 
+        [Test]
+        public void TestCursorMoveToInstant()
+        {
+            run("osu.cursor.moveTo(100, 200); osu.log('pos=' + osu.cursor.position().x + ',' + osu.cursor.position().y);");
+
+            ClassicAssert.IsTrue(logged("pos=100,200"));
+            ClassicAssert.AreEqual(new Vector2(100, 200), inputManager.CurrentState.Mouse.Position);
+        }
+
+        [Test]
+        public void TestCursorMoveOverDuration()
+        {
+            run("osu.cursor.moveTo(100, 0, 100);", "cursor");
+
+            manager.Runner.Tick(0);
+            ClassicAssert.AreEqual(0, inputManager.CurrentState.Mouse.Position.X);
+
+            manager.Runner.Tick(50);
+            ClassicAssert.AreEqual(50, inputManager.CurrentState.Mouse.Position.X, 1);
+
+            manager.Runner.Tick(100);
+            ClassicAssert.AreEqual(100, inputManager.CurrentState.Mouse.Position.X);
+        }
+
+        [Test]
+        public void TestCursorMoveAtSpeed()
+        {
+            run("osu.cursor.moveAtSpeed(100, 0, 1000);", "cursor");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(50);
+
+            ClassicAssert.AreEqual(50, inputManager.CurrentState.Mouse.Position.X, 1);
+
+            manager.Runner.Tick(100);
+            ClassicAssert.AreEqual(100, inputManager.CurrentState.Mouse.Position.X);
+        }
+
+        [Test]
+        public void TestKeyboardDownAndUp()
+        {
+            run("osu.keyboard.down(['ctrl', 's']); osu.log('down=' + osu.keyboard.isDown('ctrl+s')); osu.keyboard.up('ctrl+s'); osu.log('up=' + osu.keyboard.isDown('ctrl+s'));");
+
+            ClassicAssert.IsTrue(logged("down=true"));
+            ClassicAssert.IsTrue(logged("up=false"));
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.S));
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.LControl));
+        }
+
+        [Test]
+        public void TestKeyboardPressDuration()
+        {
+            run("osu.keyboard.press('a', 100);", "keyboard");
+
+            manager.Runner.Tick(0);
+            ClassicAssert.IsTrue(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+
+            manager.Runner.Tick(50);
+            ClassicAssert.IsTrue(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+
+            manager.Runner.Tick(100);
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+        }
+
+        [Test]
+        public void TestKeyboardListeners()
+        {
+            run("osu.keyboard.onPress(k => osu.log('pressed:' + k)); osu.keyboard.onRelease(k => osu.log('released:' + k));", "keyboard");
+
+            manager.Runner.Tick(0);
+
+            inputManager.CurrentState.Keyboard.Keys.SetPressed(Key.A, true);
+            manager.Runner.Tick(50);
+            ClassicAssert.IsTrue(logged("pressed:A"));
+
+            inputManager.CurrentState.Keyboard.Keys.SetPressed(Key.A, false);
+            manager.Runner.Tick(100);
+            ClassicAssert.IsTrue(logged("released:A"));
+        }
+
+        [Test]
+        public void TestKeyboardReleasesOwnedKeysOnStop()
+        {
+            ScriptInstance instance = run("osu.keyboard.down('a'); osu.every(1000, () => {});", "keyboard");
+
+            ClassicAssert.IsTrue(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+
+            manager.Runner.Stop(instance);
+
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+        }
+
+        [Test]
+        public void TestKeyboardNoOpWhenUnavailable()
+        {
+            manager.Services.InputManager = null;
+
+            run("osu.keyboard.down('a'); osu.log('down=' + osu.keyboard.isDown('a')); osu.log('pos=' + (osu.cursor.position() === undefined));");
+
+            ClassicAssert.IsTrue(logged("down=false"));
+            ClassicAssert.IsTrue(logged("pos=true"));
+        }
+
+        [Test]
+        public void TestEmptyScriptCompletes()
+        {
+            ScriptInstance instance = run(string.Empty, "empty");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitSleep()
+        {
+            ScriptInstance instance = run("osu.log('before'); await osu.sleep(100); osu.log('after');", "async");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Running, instance.State);
+            ClassicAssert.IsTrue(logged("before"));
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.IsTrue(logged("after"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitCursorMove()
+        {
+            ScriptInstance instance = run("await osu.cursor.moveTo(100, 0, 100); osu.log('done');", "cursor");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Running, instance.State);
+
+            manager.Runner.Tick(0);
+            ClassicAssert.AreEqual(0, inputManager.CurrentState.Mouse.Position.X);
+
+            manager.Runner.Tick(100);
+
+            ClassicAssert.AreEqual(100, inputManager.CurrentState.Mouse.Position.X);
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitSequentialCursorMoves()
+        {
+            ScriptInstance instance = run("await osu.cursor.moveTo(100, 0, 100); await osu.cursor.moveTo(200, 0, 100); osu.log('done');", "cursor");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(100);
+            ClassicAssert.AreEqual(100, inputManager.CurrentState.Mouse.Position.X);
+
+            manager.Runner.Tick(200);
+            ClassicAssert.AreEqual(200, inputManager.CurrentState.Mouse.Position.X);
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitMoveAtSpeed()
+        {
+            ScriptInstance instance = run("await osu.cursor.moveAtSpeed(100, 0, 1000); osu.log('done');", "cursor");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(50);
+            ClassicAssert.AreEqual(50, inputManager.CurrentState.Mouse.Position.X, 1);
+
+            manager.Runner.Tick(100);
+            ClassicAssert.AreEqual(100, inputManager.CurrentState.Mouse.Position.X);
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestSupersededCursorMoveResolvesAwait()
+        {
+            ScriptInstance instance = run(
+                "osu.after(50, () => osu.cursor.moveTo(200, 0, 100)); await osu.cursor.moveTo(100, 0, 1000); osu.log('first'); await osu.cursor.moveTo(300, 0, 100); osu.log('second');",
+                "cursor");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(50);
+
+            ClassicAssert.IsTrue(logged("first"));
+
+            manager.Runner.Tick(150);
+
+            ClassicAssert.IsTrue(logged("second"));
+            ClassicAssert.AreEqual(300, inputManager.CurrentState.Mouse.Position.X);
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitKeyboardPress()
+        {
+            ScriptInstance instance = run("await osu.keyboard.press('a', 100); osu.log('done');", "keyboard");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Running, instance.State);
+
+            manager.Runner.Tick(0);
+            ClassicAssert.IsTrue(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+
+            manager.Runner.Tick(100);
+
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitKeyboardPressEarlyUp()
+        {
+            ScriptInstance instance = run("osu.after(50, () => osu.keyboard.up('a')); await osu.keyboard.press('a', 1000); osu.log('done');", "keyboard");
+
+            manager.Runner.Tick(0);
+            ClassicAssert.IsTrue(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+
+            manager.Runner.Tick(50);
+
+            ClassicAssert.IsFalse(inputManager.CurrentState.Keyboard.Keys.IsPressed(Key.A));
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitRejectionFailsScript()
+        {
+            ScriptInstance instance = run("await osu.sleep(100); throw new Error('boom');", "async");
+
+            manager.Runner.Tick(0);
+            manager.Runner.Tick(200);
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Error, instance.State);
+            ClassicAssert.IsTrue(manager.Output.History.Any(o => o.Text.Contains("boom")));
+        }
+
+        [Test]
+        public void TestModuleSyntaxErrorFailsScript()
+        {
+            ScriptInstance instance = run("await", "bad");
+
+            ClassicAssert.AreEqual(ScriptExecutionState.Error, instance.State);
+        }
+
+        [Test]
+        public void TestTopLevelAwaitNoInputCompletes()
+        {
+            manager.Services.InputManager = null;
+
+            ScriptInstance instance = run("await osu.cursor.moveTo(1, 1); await osu.keyboard.press('a'); osu.log('done');", "async");
+
+            ClassicAssert.IsTrue(logged("done"));
+            ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);
+
+        private partial class TestInputManager : InputManager
+        {
+            protected override ImmutableArray<InputHandler> InputHandlers => ImmutableArray<InputHandler>.Empty;
+        }
 
         private class TestNotificationOverlay : INotificationOverlay
         {

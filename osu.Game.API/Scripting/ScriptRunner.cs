@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using Jint.Runtime.Modules;
 using osu.Game.API.Scripting.Api;
 
 namespace osu.Game.API.Scripting
@@ -36,26 +37,29 @@ namespace osu.Game.API.Scripting
 
             try
             {
-                instance.Engine.Execute(definition.Source, definition.Name);
+                // Scripts run as modules so they can use top-level await.
+                string moduleName = string.IsNullOrEmpty(definition.Name) ? "script" : definition.Name;
+                instance.Engine.Modules.Add(moduleName, definition.Source);
+                instance.ModuleImport = instance.Engine.Modules.StartImport(moduleName);
+                instance.Engine.Advanced.ProcessTasks();
             }
             catch (Exception e)
             {
-                instance.State = ScriptExecutionState.Error;
-                services.Output.Log(ScriptOutputLevel.Error, definition.Name, e.Message);
-                teardown(instance);
-                running.Add(instance);
-                RunningScriptsChanged?.Invoke();
-                Emit("scriptError", new object?[] { instance.Name, e.Message });
-                return instance;
+                return failStartup(instance, e);
             }
 
-            if (!instance.Scheduler.HasPendingCallbacks && !services.Events.HasSubscriptions(instance))
+            if (instance.ModuleImport.IsFaulted)
+                return failStartup(instance, moduleException(instance.ModuleImport));
+
+            if (instance.ModuleImport.IsCompleted)
             {
-                instance.State = ScriptExecutionState.Completed;
-                services.Output.Log(ScriptOutputLevel.Info, definition.Name, "completed");
-                teardown(instance);
-                RunningScriptsChanged?.Invoke();
-                return instance;
+                instance.ModuleImport = null;
+
+                if (isIdle(instance))
+                {
+                    complete(instance);
+                    return instance;
+                }
             }
 
             running.Add(instance);
@@ -88,7 +92,35 @@ namespace osu.Game.API.Scripting
                     continue;
 
                 instance.Scheduler.Tick(instance.Engine, currentTime, e => fail(instance, e));
-                instance.Engine.Advanced.ProcessTasks();
+
+                if (instance.State != ScriptExecutionState.Running)
+                    continue;
+
+                try
+                {
+                    instance.Engine.Advanced.ProcessTasks();
+                }
+                catch (Exception e)
+                {
+                    fail(instance, e);
+                    continue;
+                }
+
+                ModuleImportOperation? import = instance.ModuleImport;
+
+                if (import == null || (!import.IsCompleted && !import.IsFaulted))
+                    continue;
+
+                instance.ModuleImport = null;
+
+                if (import.IsFaulted)
+                {
+                    fail(instance, moduleException(import));
+                    continue;
+                }
+
+                if (isIdle(instance))
+                    complete(instance);
             }
         }
 
@@ -132,6 +164,43 @@ namespace osu.Game.API.Scripting
             services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
             stop(instance, ScriptExecutionState.Error);
             Emit("scriptError", new object?[] { instance.Name, e.Message });
+        }
+
+        private ScriptInstance failStartup(ScriptInstance instance, Exception e)
+        {
+            instance.State = ScriptExecutionState.Error;
+            services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
+            teardown(instance);
+            running.Add(instance);
+            RunningScriptsChanged?.Invoke();
+            Emit("scriptError", new object?[] { instance.Name, e.Message });
+            return instance;
+        }
+
+        private void complete(ScriptInstance instance)
+        {
+            instance.State = ScriptExecutionState.Completed;
+            services.Output.Log(ScriptOutputLevel.Info, instance.Name, "completed");
+            teardown(instance);
+            running.Remove(instance);
+            RunningScriptsChanged?.Invoke();
+        }
+
+        private bool isIdle(ScriptInstance instance)
+            => !instance.Scheduler.HasPendingCallbacks && !services.Events.HasSubscriptions(instance);
+
+        private static Exception moduleException(ModuleImportOperation import)
+        {
+            try
+            {
+                import.GetResult();
+            }
+            catch (Exception e)
+            {
+                return e;
+            }
+
+            return new InvalidOperationException("Module import failed.");
         }
 
         /// <summary>

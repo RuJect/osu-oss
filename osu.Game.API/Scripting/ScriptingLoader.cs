@@ -59,7 +59,10 @@ namespace osu.Game.API.Scripting
 
             initialised = true;
 
-            game.Add(new ScriptRuntimeComponent(Manager.Runner));
+            var runtime = new ScriptRuntimeComponent(Manager.Runner);
+            game.Add(runtime);
+
+            Manager.Services.InputManager = runtime.FindInputManager();
 
             if (game.ScreenStack != null)
                 screenBridge = new ScreenEventBridge(Manager.Runner, game.ScreenStack);

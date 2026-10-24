@@ -22,6 +22,9 @@ namespace osu.Game.API.Scripting
         private bool timeBaseSet;
         private double elapsed;
 
+        /// <summary>Time elapsed since the scheduler's first tick, in milliseconds.</summary>
+        public double Elapsed => elapsed;
+
         public void AddUpdateHandler(JsValue handler) => updateHandlers.Add(handler);
 
         /// <summary>Registers a timer and returns its id, used to cancel it via <see cref="CancelTimer"/>.</summary>

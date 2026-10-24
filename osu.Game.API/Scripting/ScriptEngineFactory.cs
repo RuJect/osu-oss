@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Jint;
 using Jint.Native;
+using Jint.Runtime.Modules;
 using osu.Game.API.Scripting.Api;
 
 namespace osu.Game.API.Scripting
@@ -30,6 +31,7 @@ namespace osu.Game.API.Scripting
                               .AllowClr(AppDomain.CurrentDomain.GetAssemblies())
                               .AllowClrWrite()
                               .CatchClrExceptions()
+                              .EnableModules(new InlineModuleLoader())
                               .CancellationToken(instance.Cancellation.Token);
 
             // Enable Task -> Promise interop so provider methods can return awaitable Tasks (e.g. osu.sleep).
@@ -43,6 +45,17 @@ namespace osu.Game.API.Scripting
             engine.SetValue("osu", api);
 
             return engine;
+        }
+
+        // Scripts run as modules so they can use top-level await. Imports are not supported; only the
+        // inline module registered for the script can be loaded.
+        private sealed class InlineModuleLoader : IModuleLoader
+        {
+            public ResolvedSpecifier Resolve(string? referencingModuleLocation, ModuleRequest moduleRequest)
+                => new ResolvedSpecifier(moduleRequest, moduleRequest.Specifier, Uri: null, SpecifierType.Bare);
+
+            public Module LoadModule(Engine engine, ResolvedSpecifier resolved)
+                => throw new InvalidOperationException($"Module '{resolved.Key}' is not registered.");
         }
     }
 }

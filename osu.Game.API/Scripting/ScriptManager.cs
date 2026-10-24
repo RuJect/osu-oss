@@ -60,6 +60,8 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(() => new ConfigApiProvider());
             RegisterApiProvider(() => new MusicApiProvider());
             RegisterApiProvider(() => new UiApiProvider());
+            RegisterApiProvider(() => new CursorApiProvider());
+            RegisterApiProvider(() => new KeyboardApiProvider());
         }
 
         /// <summary>

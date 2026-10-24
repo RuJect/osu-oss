@@ -149,12 +149,9 @@ osu.clearTimeout(once);
 // Cancel the repeating timer after 2 s.
 osu.setTimeout(() => { osu.cancel(tick); osu.log(""cancelled""); }, 2000);
 
-// await osu.sleep inside an async function.
-(async () =>
-{
-    await osu.sleep(1200);
-    osu.log(""woke up after 1.2 s"");
-})();
+// Top-level await (scripts run as modules).
+await osu.sleep(1200);
+osu.log(""woke up after 1.2 s"");
 ";
 
         private const string example_events = @"// examples/events.js
