@@ -175,6 +175,9 @@ namespace osu.Game.Theming
 
         public float GetSurfaceAlpha(string slot, float fallback)
         {
+            if (!ThemeManager.GlassActive)
+                return 1;
+
             float value = surfaceAlpha.TryGetValue(slot, out float themed) ? themed : fallback;
             return Math.Clamp(value * surfaceAlphaMultiplier, 0, 1);
         }

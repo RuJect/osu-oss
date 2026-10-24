@@ -5,7 +5,6 @@ using System;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
-using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Theming;
@@ -50,16 +49,8 @@ namespace osu.Game.Graphics.Backdrops
             set
             {
                 tintColour = value;
-                tint.Colour = ThemeManager.GlassActive ? value : value.Opacity(1);
+                tint.Colour = displayTint;
             }
-        }
-
-        /// <summary>
-        /// Like <see cref="TintColour"/>, but accepts a gradient for surfaces which fade their translucency.
-        /// </summary>
-        public ColourInfo TintColourInfo
-        {
-            set => tint.Colour = value;
         }
 
         /// <summary>
@@ -82,14 +73,27 @@ namespace osu.Game.Graphics.Backdrops
         /// </summary>
         public Vector2? FrameBufferScaleVector { get; init; }
 
+        private bool isBlurAvailable => ThemeManager.GlassActive && backdrop?.Available == true;
+
+        private Color4 displayTint
+        {
+            get
+            {
+                if (isBlurAvailable)
+                    return tintColour;
+
+                // 1f is required: Opacity(1) binds to the byte overload and sets alpha to 1/255.
+                return tintColour.Opacity(1f);
+            }
+        }
+
         [BackgroundDependencyLoader]
         private void load()
         {
-            if (!ThemeManager.GlassActive || backdrop?.Available != true)
-            {
-                tint.Colour = tintColour.Opacity(1);
+            tint.Colour = displayTint;
+
+            if (backdrop == null || !isBlurAvailable)
                 return;
-            }
 
             var sceneView = backdrop.CreateSceneView();
             sceneView.RelativeSizeAxes = Axes.Both;

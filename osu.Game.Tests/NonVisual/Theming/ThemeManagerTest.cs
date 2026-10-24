@@ -144,6 +144,24 @@ namespace osu.Game.Tests.NonVisual.Theming
         }
 
         [Test]
+        public void TestSurfaceAlphaIsOpaqueWithoutGlass()
+        {
+            ThemeManager.Initialise(storage, "torii-glass");
+
+            Assert.That(ThemeManager.Current.GetSurfaceAlpha("panel", 0.92f), Is.LessThan(1f));
+            Assert.That(ThemeManager.Current.ApplySurfaceAlpha("panel", Colour4.White).A, Is.LessThan(1f));
+
+            ThemeManager.Initialise(storage, "torii-glass", glassEffectsAllowed: false);
+
+            Assert.That(ThemeManager.Current.GetSurfaceAlpha("panel", 0.92f), Is.EqualTo(1f));
+            Assert.That(ThemeManager.Current.ApplySurfaceAlpha("panel", Colour4.White).A, Is.EqualTo(1f));
+
+            ThemeManager.Initialise(storage, "torii-legacy");
+
+            Assert.That(ThemeManager.Current.GetSurfaceAlpha("panel", 0.92f), Is.EqualTo(1f));
+        }
+
+        [Test]
         public void TestOsuColourUsesTheme()
         {
             ThemeManager.Initialise(storage, "nord", aggressiveTinting: false);
