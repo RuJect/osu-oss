@@ -23,7 +23,14 @@ namespace osu.Game.Overlays.Settings.Sections
 
         public SpecialSection()
         {
-            Add(new SpecialSettings());
+            AddRange(new Drawable[]
+            {
+                new GeneralSettings(),
+                new InterfaceSettings(),
+                new NotificationSettings(),
+                new ThemeSettingsSubsection(),
+                new MaintenanceSettings(),
+            });
         }
     }
 }
