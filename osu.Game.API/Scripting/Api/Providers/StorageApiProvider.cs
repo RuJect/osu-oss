@@ -54,8 +54,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             if (data == null)
                 return Array.Empty<string>();
 
-            string prefix = path != null ? ScriptFileStore.SanitizePath(path) ?? string.Empty : string.Empty;
-            return data.List(prefix).ToArray();
+            return data.List(path ?? string.Empty).ToArray();
         }
 
         [ScriptApi(Target = "storage")]
@@ -84,7 +83,8 @@ namespace osu.Game.API.Scripting.Api.Providers
             if (data == null || path == null || !data.Exists(path))
                 return JsValue.Undefined;
 
-            return ScriptJson.Parse(Context.Engine, data.Read(path));
+            string? content = data.Read(path);
+            return content == null ? JsValue.Undefined : ScriptJson.Parse(Context.Engine, content);
         }
 
         [ScriptApi(Target = "storage")]

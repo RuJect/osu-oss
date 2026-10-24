@@ -28,7 +28,12 @@ namespace osu.Game.API.Scripting
             if (storage == null || !storage.Exists(fileName))
                 return null;
 
-            return new ScriptDefinition(Path.GetFileNameWithoutExtension(fileName), fileName, storage.Read(fileName));
+            string? source = storage.Read(fileName);
+
+            if (source == null)
+                return null;
+
+            return new ScriptDefinition(Path.GetFileNameWithoutExtension(fileName), fileName, source);
         }
     }
 }

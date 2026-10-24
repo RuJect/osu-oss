@@ -60,7 +60,8 @@ namespace osu.Game.API.Scripting.Api.Providers
             if (data == null || path == null || !data.Exists(path))
                 return JsValue.Undefined;
 
-            return ScriptJson.Parse(Context.Engine, data.Read(path));
+            string? content = data.Read(path);
+            return content == null ? JsValue.Undefined : ScriptJson.Parse(Context.Engine, content);
         }
 
         [ScriptApi(Target = "kv")]

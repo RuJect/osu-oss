@@ -59,6 +59,14 @@ namespace osu.Game.Tests.API.Scripting
         }
 
         [Test]
+        public void TestLoadFromFileRejectsTraversal()
+        {
+            repository.Storage = new ScriptStorage(storage);
+
+            ClassicAssert.IsNull(locator.LoadFromFile("../outside.js"));
+        }
+
+        [Test]
         public void TestLoadFromFileReadsSource()
         {
             var scriptStorage = new ScriptStorage(storage);

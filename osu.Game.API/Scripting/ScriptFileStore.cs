@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using osu.Framework.Platform;
@@ -23,47 +24,72 @@ namespace osu.Game.API.Scripting
         /// <summary>The absolute path of the store's root directory.</summary>
         public string Directory => storage.GetFullPath(string.Empty);
 
-        public bool Exists(string path) => storage.Exists(path);
+        public bool Exists(string path)
+            => tryResolve(path, out string safe) && storage.Exists(safe);
 
-        public string Read(string path)
+        public string? Read(string path)
         {
-            using Stream stream = storage.GetStream(path, FileAccess.Read, FileMode.Open);
+            if (!tryResolve(path, out string safe))
+                return null;
+
+            using Stream stream = storage.GetStream(safe, FileAccess.Read, FileMode.Open);
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
         }
 
         public void Write(string path, string content)
         {
-            using Stream stream = storage.CreateFileSafely(path);
+            if (!tryResolve(path, out string safe))
+                return;
+
+            using Stream stream = storage.CreateFileSafely(safe);
             using var writer = new StreamWriter(stream);
             writer.Write(content);
         }
 
         public void Append(string path, string content)
         {
-            storage.GetFullPath(path, true);
+            if (!tryResolve(path, out string safe))
+                return;
 
-            using Stream stream = storage.GetStream(path, FileAccess.Write, FileMode.Append);
+            storage.GetFullPath(safe, true);
+
+            using Stream stream = storage.GetStream(safe, FileAccess.Write, FileMode.Append);
             using var writer = new StreamWriter(stream);
             writer.Write(content);
         }
 
         public void Delete(string path)
         {
-            if (storage.Exists(path))
-                storage.Delete(path);
-            else if (storage.ExistsDirectory(path))
-                storage.DeleteDirectory(path);
+            if (!tryResolve(path, out string safe))
+                return;
+
+            if (storage.Exists(safe))
+                storage.Delete(safe);
+            else if (storage.ExistsDirectory(safe))
+                storage.DeleteDirectory(safe);
         }
 
         /// <summary>Creates the directory at <paramref name="path"/>, including any missing parents.</summary>
-        public void CreateDirectory(string path) => storage.GetFullPath(path, true);
+        public void CreateDirectory(string path)
+        {
+            if (tryResolve(path, out string safe))
+                storage.GetFullPath(safe, true);
+        }
 
         /// <summary>Lists the files immediately under <paramref name="path"/>, optionally filtered by a wildcard pattern.</summary>
-        public IEnumerable<string> ListFiles(string path = "", string pattern = "*") => storage.GetFiles(path, pattern);
+        public IEnumerable<string> ListFiles(string path = "", string pattern = "*")
+            => tryResolveDirectory(path, out string safe) ? storage.GetFiles(safe, pattern) : Array.Empty<string>();
 
         /// <summary>Recursively lists all files under <paramref name="prefix"/>, which may be empty to list everything.</summary>
-        public IEnumerable<string> List(string prefix = "") => enumerate(string.IsNullOrEmpty(prefix) ? string.Empty : prefix);
+        public IEnumerable<string> List(string prefix = "")
+        {
+            if (!tryResolveDirectory(prefix, out string safe))
+                yield break;
+
+            foreach (string file in enumerate(safe))
+                yield return file;
+        }
 
         /// <summary>
         /// Normalises a script-supplied path and rejects absolute paths or directory traversal.
@@ -92,6 +118,23 @@ namespace osu.Game.API.Scripting
             }
 
             return kept.Count == 0 ? null : string.Join("/", kept);
+        }
+
+        private static bool tryResolve(string path, out string safe)
+        {
+            safe = SanitizePath(path) ?? string.Empty;
+            return safe.Length > 0;
+        }
+
+        private static bool tryResolveDirectory(string path, out string safe)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                safe = string.Empty;
+                return true;
+            }
+
+            return tryResolve(path, out safe);
         }
 
         private IEnumerable<string> enumerate(string prefix)

@@ -44,8 +44,12 @@ namespace osu.Game.API.Scripting
 
             foreach (string file in Storage.EnumerateScripts())
             {
+                string? source = Storage.Read(file);
+
+                if (source == null)
+                    continue;
+
                 string name = Path.GetFileNameWithoutExtension(file);
-                string source = Storage.Read(file);
                 definitions.Add(new ScriptDefinition(name, file, source));
             }
 
@@ -101,7 +105,12 @@ namespace osu.Game.API.Scripting
             if (Storage == null || definition.FileName == null || !Storage.Exists(definition.FileName))
                 return;
 
-            definition.Source = Storage.Read(definition.FileName);
+            string? source = Storage.Read(definition.FileName);
+
+            if (source == null)
+                return;
+
+            definition.Source = source;
             DefinitionsChanged?.Invoke();
         }
 

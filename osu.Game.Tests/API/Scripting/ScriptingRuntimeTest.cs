@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -99,6 +100,30 @@ namespace osu.Game.Tests.API.Scripting
 
             ClassicAssert.IsTrue(logged("exists=true"));
             ClassicAssert.IsTrue(logged("gone=true"));
+        }
+
+        [Test]
+        public void TestStorageTraversalIsRejected()
+        {
+            string outsideFile = Path.Combine(dataStorage.GetFullPath(string.Empty), "..", $"outside-{Guid.NewGuid():N}.txt");
+            string name = Path.GetFileName(outsideFile);
+            File.WriteAllText(outsideFile, "secret");
+
+            try
+            {
+                run($"osu.storage.write('../{name}', 'overwritten'); osu.storage.append('../{name}', 'appended'); osu.storage.delete('../{name}'); osu.kv.set('../{name}', 'value'); osu.log('exists=' + osu.storage.exists('../{name}')); osu.log('read=' + osu.storage.read('../{name}')); osu.log('list=' + osu.storage.list('../').join(''));");
+
+                ClassicAssert.IsTrue(logged("exists=false"));
+                ClassicAssert.IsTrue(logged("read=undefined"));
+                ClassicAssert.IsTrue(logged("list="));
+                ClassicAssert.IsTrue(File.Exists(outsideFile));
+                ClassicAssert.AreEqual("secret", File.ReadAllText(outsideFile));
+            }
+            finally
+            {
+                if (File.Exists(outsideFile))
+                    File.Delete(outsideFile);
+            }
         }
 
         [Test]
