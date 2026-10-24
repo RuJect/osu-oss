@@ -960,8 +960,11 @@ namespace osu.Game
                 return newMod;
             }).Where(newMod => newMod != null).ToList();
 
-            if (!ModUtils.CheckValidForGameplay(convertedMods, out var invalid))
-                invalid.ForEach(newMod => convertedMods.Remove(newMod));
+            if (SpecialConfig?.Get<bool>(SpecialSetting.AllowIncompatibleMods) != true)
+            {
+                if (!ModUtils.CheckValidForGameplay(convertedMods, out var invalid))
+                    invalid.ForEach(newMod => convertedMods.Remove(newMod));
+            }
 
             SelectedMods.Value = convertedMods;
 

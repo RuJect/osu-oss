@@ -1045,6 +1045,9 @@ namespace osu.Game
             if (SelectedMods.Disabled)
                 return;
 
+            if (SpecialConfig?.Get<bool>(SpecialSetting.AllowIncompatibleMods) == true)
+                return;
+
             if (!ModUtils.CheckValidForGameplay(mods.NewValue, out var invalid))
             {
                 // ensure we always have a valid set of mods.
