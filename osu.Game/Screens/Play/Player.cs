@@ -4,6 +4,7 @@
 #nullable disable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -184,6 +185,12 @@ namespace osu.Game.Screens.Play
         private bool outroSkipPending;
 
         /// <summary>
+        /// The effective breaks of the playable beatmap (post-conversion, post-mod), used to decide when a break may be skipped.
+        /// Reads from the playable beatmap rather than the raw beatmap so that mods which add, remove or alter breaks are respected.
+        /// </summary>
+        private IReadOnlyList<BreakPeriod> breakSkipPeriods = Array.Empty<BreakPeriod>();
+
+        /// <summary>
         /// The break which has been requested to be skipped, pending application at the start of the next update.
         /// The seek must be applied before the <see cref="DrawableRuleset"/> updates so the <see cref="FrameStabilityContainer"/>
         /// observes frame-stable playback as disabled on the frame the seek takes effect.
@@ -340,6 +347,8 @@ namespace osu.Game.Screens.Play
             {
                 Breaks = Beatmap.Value.Beatmap.Breaks
             };
+
+            breakSkipPeriods = playableBeatmap.Breaks.Where(b => b.HasEffect).ToArray();
 
             // load the skinning hierarchy first.
             // this is intentionally done in two stages to ensure things are in a loaded state before exposing the ruleset to skin sources.
@@ -660,7 +669,7 @@ namespace osu.Game.Screens.Play
 
             double time = GameplayClockContainer.CurrentTime;
 
-            return Beatmap.Value.Beatmap.Breaks.FirstOrDefault(b => b.HasEffect && b.Contains(time));
+            return breakSkipPeriods.FirstOrDefault(b => b.Contains(time));
         }
 
         private SkipOverlay createBreakSkipOverlay(BreakPeriod breakPeriod)
