@@ -6,6 +6,8 @@ using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.API.Events;
+using osu.Game.API.Services;
 using osu.Game.Configuration;
 using osu.Game.IO;
 using osu.Game.Overlays;
@@ -37,11 +39,11 @@ namespace osu.Game.API.Scripting
         /// </summary>
         public event Action<ScriptManager>? Initialised;
 
-        public ScriptingLoader(GameHost host, OsuGame game)
+        public ScriptingLoader(GameHost host, OsuGame game, OsuEventBus eventBus)
         {
             this.game = game;
 
-            Manager = new ScriptManager(host, game);
+            Manager = new ScriptManager(host, game, eventBus);
 
             // Deferred until the game has finished loading: adding drawables to (or resolving
             // dependencies from) a not-yet-loaded OsuGame is not valid, and the game's scheduler
@@ -65,7 +67,7 @@ namespace osu.Game.API.Scripting
             Manager.Services.InputManager = runtime.FindInputManager();
 
             if (game.ScreenStack != null)
-                screenBridge = new ScreenEventBridge(Manager.Runner, game.ScreenStack);
+                screenBridge = new ScreenEventBridge(Manager.Events, game.ScreenStack);
 
             try
             {
@@ -80,9 +82,9 @@ namespace osu.Game.API.Scripting
                 logger.Add($"Failed to initialise scripting storage: {e.Message}");
             }
 
-            Manager.Services.Music = game.Dependencies.Get<MusicController>();
-            Manager.Services.Config = game.Dependencies.Get<OsuConfigManager>();
-            Manager.Services.Notifications = game.Dependencies.Get<INotificationOverlay>();
+            Manager.Services.Music = new MusicService(game.Dependencies.Get<MusicController>(), Manager.Services.Host);
+            Manager.Services.Config = new ConfigService(game.Dependencies.Get<OsuConfigManager>());
+            Manager.Services.Notifications = new NotificationService(game.Dependencies.Get<INotificationOverlay>());
 
             Initialised?.Invoke(Manager);
 

@@ -3,6 +3,7 @@
 
 using System;
 using Jint.Native;
+using osu.Game.API.Services;
 using osu.Game.Configuration;
 
 namespace osu.Game.API.Scripting.Api.Providers
@@ -16,30 +17,30 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "config")]
         public JsValue Get(string? key)
         {
-            OsuConfigManager? config = Context.Services.Config;
+            ConfigService? config = Context.Services.Config;
             OsuSetting? setting = parse(key);
 
             if (config == null || setting == null)
                 return JsValue.Undefined;
 
-            object? value = ScriptConfigHelper.GetValue(config, setting.Value);
+            object? value = config.GetValue(setting.Value);
             return value == null ? JsValue.Undefined : JsValue.FromObject(Context.Engine, value);
         }
 
         [ScriptApi(Target = "config")]
         public void Set(string? key, JsValue value)
         {
-            OsuConfigManager? config = Context.Services.Config;
+            ConfigService? config = Context.Services.Config;
             OsuSetting? setting = parse(key);
 
             if (config == null || setting == null)
                 return;
 
-            ScriptConfigHelper.SetValue(config, setting.Value, value);
+            config.SetValue(setting.Value, value.ToObject());
         }
 
         [ScriptApi(Target = "config")]
-        public string[] Keys() => Enum.GetNames<OsuSetting>();
+        public string[] Keys() => Context.Services.Config?.Keys() ?? Array.Empty<string>();
 
         private static OsuSetting? parse(string? key)
             => key == null || !Enum.TryParse<OsuSetting>(key, true, out OsuSetting setting) ? null : setting;

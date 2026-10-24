@@ -4,6 +4,7 @@
 using System;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.API.Events;
 using osu.Game.API.Scripting;
 
 namespace osu.Game.API.UI.Scripting
@@ -23,11 +24,11 @@ namespace osu.Game.API.UI.Scripting
 
         public ScriptManager Manager => loader.Manager;
 
-        public ScriptingBootstrap(GameHost host, OsuGame game)
+        public ScriptingBootstrap(GameHost host, OsuGame game, OsuEventBus eventBus)
         {
             this.game = game;
 
-            loader = new ScriptingLoader(host, game);
+            loader = new ScriptingLoader(host, game, eventBus);
             loader.Initialised += onInitialised;
         }
 

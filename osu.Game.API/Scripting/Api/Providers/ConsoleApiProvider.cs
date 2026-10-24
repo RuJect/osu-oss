@@ -4,6 +4,7 @@
 using System.Linq;
 using Jint;
 using Jint.Native;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -13,22 +14,22 @@ namespace osu.Game.API.Scripting.Api.Providers
     public class ConsoleApiProvider : ScriptApiProvider
     {
         [ScriptApi(Target = "console", Global = true)]
-        public void Log(JsValue[] args) => write(ScriptOutputLevel.Log, args);
+        public void Log(JsValue[] args) => write(OutputLevel.Log, args);
 
         [ScriptApi(Target = "console", Global = true)]
-        public void Info(JsValue[] args) => write(ScriptOutputLevel.Info, args);
+        public void Info(JsValue[] args) => write(OutputLevel.Info, args);
 
         [ScriptApi(Target = "console", Global = true)]
-        public void Warn(JsValue[] args) => write(ScriptOutputLevel.Warn, args);
+        public void Warn(JsValue[] args) => write(OutputLevel.Warn, args);
 
         [ScriptApi(Target = "console", Global = true)]
-        public void Error(JsValue[] args) => write(ScriptOutputLevel.Error, args);
+        public void Error(JsValue[] args) => write(OutputLevel.Error, args);
 
         [ScriptApi(Target = "console", Global = true)]
-        public void Debug(JsValue[] args) => write(ScriptOutputLevel.Log, args);
+        public void Debug(JsValue[] args) => write(OutputLevel.Log, args);
 
         [ScriptApi(Target = "console", Global = true)]
-        public void Table(JsValue value) => write(ScriptOutputLevel.Log, new[] { stringify(value) });
+        public void Table(JsValue value) => write(OutputLevel.Log, new[] { stringify(value) });
 
         protected override void OnRegistered(ScriptApiContext context)
         {
@@ -36,7 +37,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             context.Api.Set("log", context.GetObject("console", global: true).Get("log"));
         }
 
-        private void write(ScriptOutputLevel level, JsValue[] args)
+        private void write(OutputLevel level, JsValue[] args)
             => Context.Services.Output.Log(level, Context.Instance.Name, string.Join(" ", args.Select(format)));
 
         private JsValue stringify(JsValue value)

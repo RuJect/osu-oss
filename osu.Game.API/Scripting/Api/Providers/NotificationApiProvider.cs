@@ -4,10 +4,7 @@
 using System;
 using Jint;
 using Jint.Native;
-using osu.Framework.Graphics;
-using osu.Framework.Graphics.Sprites;
-using osu.Game.Overlays;
-using osu.Game.Overlays.Notifications;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -25,11 +22,11 @@ namespace osu.Game.API.Scripting.Api.Providers
 
             try
             {
-                Context.Services.Notifications?.Post(createNotification(message, level));
+                Context.Services.Notifications?.Post(message, level);
             }
             catch (Exception e)
             {
-                Context.Services.Output.Log(ScriptOutputLevel.Warn, "osu", $"notify failed: {e.Message}");
+                Context.Services.Output.Log(OutputLevel.Warn, "osu", $"notify failed: {e.Message}");
             }
         }
 
@@ -39,57 +36,34 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "notify")]
         public JsValue Progress(string? message)
         {
-            INotificationOverlay? overlay = Context.Services.Notifications;
-
-            if (overlay == null || message == null)
+            if (Context.Services.Notifications == null || message == null)
                 return JsValue.Undefined;
 
-            var notification = new ProgressNotification { Text = message };
-            overlay.Post(notification);
+            ProgressNotificationHandle notification = Context.Services.Notifications.Progress(message);
 
             JsObject handle = Context.CreateObject();
 
             Context.AddFunction(handle, "setProgress", (_, args) =>
             {
                 if (args.Length >= 1 && args[0].IsNumber())
-                    notification.Progress = (float)Math.Clamp(args[0].AsNumber(), 0, 1);
+                    notification.SetProgress((float)args[0].AsNumber());
 
                 return JsValue.Undefined;
             });
 
-            Context.AddFunction(handle, "complete", (_, args) =>
+            Context.AddFunction(handle, "complete", (_, _) =>
             {
-                notification.State = ProgressNotificationState.Completed;
+                notification.Complete();
                 return JsValue.Undefined;
             });
 
             Context.AddFunction(handle, "cancel", (_, _) =>
             {
-                notification.State = ProgressNotificationState.Cancelled;
+                notification.Cancel();
                 return JsValue.Undefined;
             });
 
             return handle;
-        }
-
-        private static SimpleNotification createNotification(string message, string? level)
-        {
-            var notification = new SimpleNotification { Text = message };
-
-            switch (level)
-            {
-                case "error":
-                    notification.Icon = FontAwesome.Solid.ExclamationTriangle;
-                    notification.IconColour = Colour4.Red;
-                    break;
-
-                case "warn":
-                    notification.Icon = FontAwesome.Solid.ExclamationTriangle;
-                    notification.IconColour = Colour4.Yellow;
-                    break;
-            }
-
-            return notification;
         }
     }
 }

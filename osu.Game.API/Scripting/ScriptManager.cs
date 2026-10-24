@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Platform;
+using osu.Game.API.Events;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Scripting.Api.Providers;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting
 {
@@ -27,7 +29,7 @@ namespace osu.Game.API.Scripting
 
         public ScriptRepository Repository { get; }
 
-        public ScriptOutputLog Output { get; }
+        public OutputLog Output { get; }
 
         public ScriptEventBus Events { get; }
 
@@ -37,11 +39,11 @@ namespace osu.Game.API.Scripting
 
         public ScriptServices Services { get; }
 
-        public ScriptManager(GameHost host, OsuGame game)
+        public ScriptManager(GameHost host, OsuGame game, OsuEventBus eventBus)
         {
-            Output = new ScriptOutputLog();
+            Output = new OutputLog();
             Repository = new ScriptRepository(Output);
-            Events = new ScriptEventBus();
+            Events = new ScriptEventBus(eventBus);
             Services = new ScriptServices(game, host, Repository, Output, Events);
             Locator = new ScriptLocator(Repository);
 
@@ -70,7 +72,7 @@ namespace osu.Game.API.Scripting
         public void AttachStorage(ScriptStorage scriptStorage, Storage dataStorage)
         {
             Repository.Storage = scriptStorage;
-            Services.DataStorage = new ScriptDataStorage(dataStorage);
+            Services.Storage = new StorageService(new ScopedStorage(dataStorage));
             Repository.Refresh();
         }
 

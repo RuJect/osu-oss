@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Jint.Runtime.Modules;
 using osu.Game.API.Scripting.Api;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting
 {
@@ -28,6 +29,8 @@ namespace osu.Game.API.Scripting
             this.services = services;
             this.engineFactory = engineFactory;
             this.locator = locator;
+
+            services.Events.OnHandlerError = (instance, e) => fail(instance, e);
         }
 
         public ScriptInstance Run(ScriptDefinition definition)
@@ -63,9 +66,9 @@ namespace osu.Game.API.Scripting
             }
 
             running.Add(instance);
-            services.Output.Log(ScriptOutputLevel.Info, definition.Name, "started");
+            services.Output.Log(OutputLevel.Info, definition.Name, "started");
             RunningScriptsChanged?.Invoke();
-            Emit("scriptStarted", new object?[] { instance.Name });
+            services.Events.PublishScriptStarted(instance.Name);
             return instance;
         }
 
@@ -91,7 +94,7 @@ namespace osu.Game.API.Scripting
                 if (instance.State != ScriptExecutionState.Running)
                     continue;
 
-                instance.Scheduler.Tick(instance.Engine, currentTime, e => fail(instance, e));
+                instance.Scheduler.Tick(currentTime, e => fail(instance, e));
 
                 if (instance.State != ScriptExecutionState.Running)
                     continue;
@@ -124,28 +127,7 @@ namespace osu.Game.API.Scripting
             }
         }
 
-        public void Emit(string eventName, object?[] args)
-        {
-            foreach (ScriptEventBus.EventSubscription subscription in services.Events.HandlersFor(eventName))
-            {
-                if (!running.Contains(subscription.Instance) || subscription.Instance.State != ScriptExecutionState.Running)
-                    continue;
-
-                try
-                {
-                    subscription.Instance.Engine.Invoke(subscription.Handler, args);
-                    subscription.Instance.Engine.Advanced.ProcessTasks();
-                }
-                catch (Exception e)
-                {
-                    fail(subscription.Instance, e);
-                    continue;
-                }
-
-                if (subscription.Once)
-                    services.Events.Unsubscribe(subscription.Instance, eventName, subscription.Handler);
-            }
-        }
+        public void Emit(string eventName, object?[] args) => services.Events.Emit(eventName, args);
 
         private void stop(ScriptInstance instance, ScriptExecutionState state)
         {
@@ -154,33 +136,33 @@ namespace osu.Game.API.Scripting
 
             instance.State = state;
             teardown(instance);
-            services.Output.Log(ScriptOutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
+            services.Output.Log(OutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
             RunningScriptsChanged?.Invoke();
-            Emit("scriptStopped", new object?[] { instance.Name });
+            services.Events.PublishScriptStopped(instance.Name);
         }
 
         private void fail(ScriptInstance instance, Exception e)
         {
-            services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
+            services.Output.Log(OutputLevel.Error, instance.Name, e.Message);
             stop(instance, ScriptExecutionState.Error);
-            Emit("scriptError", new object?[] { instance.Name, e.Message });
+            services.Events.PublishScriptError(instance.Name, e.Message);
         }
 
         private ScriptInstance failStartup(ScriptInstance instance, Exception e)
         {
             instance.State = ScriptExecutionState.Error;
-            services.Output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
+            services.Output.Log(OutputLevel.Error, instance.Name, e.Message);
             teardown(instance);
             running.Add(instance);
             RunningScriptsChanged?.Invoke();
-            Emit("scriptError", new object?[] { instance.Name, e.Message });
+            services.Events.PublishScriptError(instance.Name, e.Message);
             return instance;
         }
 
         private void complete(ScriptInstance instance)
         {
             instance.State = ScriptExecutionState.Completed;
-            services.Output.Log(ScriptOutputLevel.Info, instance.Name, "completed");
+            services.Output.Log(OutputLevel.Info, instance.Name, "completed");
             teardown(instance);
             running.Remove(instance);
             RunningScriptsChanged?.Invoke();

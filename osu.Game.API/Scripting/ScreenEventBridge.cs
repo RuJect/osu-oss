@@ -12,14 +12,14 @@ namespace osu.Game.API.Scripting
     /// </summary>
     internal class ScreenEventBridge : IDisposable
     {
-        private readonly ScriptRunner runner;
+        private readonly ScriptEventBus events;
         private readonly ScreenStack screenStack;
 
         private string? lastScreen;
 
-        public ScreenEventBridge(ScriptRunner runner, ScreenStack screenStack)
+        public ScreenEventBridge(ScriptEventBus events, ScreenStack screenStack)
         {
-            this.runner = runner;
+            this.events = events;
             this.screenStack = screenStack;
 
             screenStack.ScreenPushed += onScreenChanged;
@@ -40,7 +40,7 @@ namespace osu.Game.API.Scripting
             lastScreen = name;
 
             if (name != null)
-                runner.Emit("screen", new object?[] { name });
+                events.PublishScreen(name);
         }
 
         public void Dispose()

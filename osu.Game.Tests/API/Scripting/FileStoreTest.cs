@@ -8,14 +8,15 @@ using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using osu.Framework.Testing;
 using osu.Game.API.Scripting;
+using osu.Game.API.Services;
 
 namespace osu.Game.Tests.API.Scripting
 {
     [TestFixture]
-    public class ScriptFileStoreTest
+    public class FileStoreTest
     {
         private TemporaryNativeStorage storage = null!;
-        private ScriptDataStorage store = null!;
+        private ScopedStorage store = null!;
         private string outsideFile = null!;
         private string outsideDirectory = null!;
 
@@ -23,7 +24,7 @@ namespace osu.Game.Tests.API.Scripting
         public void SetUp()
         {
             storage = new TemporaryNativeStorage("script-file-store");
-            store = new ScriptDataStorage(storage);
+            store = new ScopedStorage(storage);
 
             string parent = Path.Combine(storage.GetFullPath(string.Empty), "..");
             outsideFile = Path.Combine(parent, $"outside-{Guid.NewGuid():N}.txt");
@@ -65,13 +66,13 @@ namespace osu.Game.Tests.API.Scripting
         [TestCase("/abs/path.txt", null)]
         public void TestSanitizePath(string input, string? expected)
         {
-            ClassicAssert.AreEqual(expected, ScriptFileStore.SanitizePath(input));
+            ClassicAssert.AreEqual(expected, FileStore.SanitizePath(input));
         }
 
         [Test]
         public void TestSanitizePathRejectsCurrentPlatformAbsolutePath()
         {
-            ClassicAssert.IsNull(ScriptFileStore.SanitizePath(Path.GetFullPath("escape.txt")));
+            ClassicAssert.IsNull(FileStore.SanitizePath(Path.GetFullPath("escape.txt")));
         }
 
         [Test]

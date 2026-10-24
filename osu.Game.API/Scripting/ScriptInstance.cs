@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Jint;
 using Jint.Runtime.Modules;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting
 {
@@ -24,7 +25,7 @@ namespace osu.Game.API.Scripting
 
         internal Engine Engine = null!;
         internal CancellationTokenSource Cancellation { get; } = new CancellationTokenSource();
-        internal ScriptScheduler Scheduler { get; } = new ScriptScheduler();
+        internal SchedulerService Scheduler { get; } = new SchedulerService();
         internal ModuleImportOperation? ModuleImport;
 
         private readonly List<Action> teardownActions = new List<Action>();

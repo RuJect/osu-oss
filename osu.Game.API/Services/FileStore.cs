@@ -6,17 +6,17 @@ using System.Collections.Generic;
 using System.IO;
 using osu.Framework.Platform;
 
-namespace osu.Game.API.Scripting
+namespace osu.Game.API.Services
 {
     /// <summary>
     /// Shared file operations over a scoped <see cref="Storage"/>. Used by both the script store and the
     /// script data store so read/write/list logic lives in a single place.
     /// </summary>
-    public abstract class ScriptFileStore
+    public abstract class FileStore
     {
         private readonly Storage storage;
 
-        protected ScriptFileStore(Storage storage)
+        protected FileStore(Storage storage)
         {
             this.storage = storage;
         }

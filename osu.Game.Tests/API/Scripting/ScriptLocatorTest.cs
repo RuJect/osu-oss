@@ -5,6 +5,7 @@ using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using osu.Framework.Testing;
 using osu.Game.API.Scripting;
+using osu.Game.API.Services;
 
 namespace osu.Game.Tests.API.Scripting
 {
@@ -19,7 +20,7 @@ namespace osu.Game.Tests.API.Scripting
         public void SetUp()
         {
             storage = new TemporaryNativeStorage("script-locator");
-            repository = new ScriptRepository(new ScriptOutputLog());
+            repository = new ScriptRepository(new OutputLog());
             locator = new ScriptLocator(repository);
         }
 

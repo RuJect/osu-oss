@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Jint;
 using Jint.Native;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api
 {
@@ -41,7 +42,7 @@ namespace osu.Game.API.Scripting.Api
                 }
                 catch (Exception e)
                 {
-                    services.Output.Log(ScriptOutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
+                    services.Output.Log(OutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
                 }
             }
 

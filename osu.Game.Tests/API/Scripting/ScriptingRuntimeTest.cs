@@ -12,7 +12,9 @@ using osu.Framework.Bindables;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Testing;
+using osu.Game.API.Events;
 using osu.Game.API.Scripting;
+using osu.Game.API.Services;
 using osu.Game.Configuration;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
@@ -28,6 +30,7 @@ namespace osu.Game.Tests.API.Scripting
         private TemporaryNativeStorage scriptStorage = null!;
         private TemporaryNativeStorage dataStorage = null!;
         private TestInputManager inputManager = null!;
+        private OsuEventBus eventBus = null!;
 
         [SetUp]
         public void SetUp()
@@ -35,7 +38,8 @@ namespace osu.Game.Tests.API.Scripting
             scriptStorage = new TemporaryNativeStorage("scripts");
             dataStorage = new TemporaryNativeStorage("data");
 
-            manager = new ScriptManager(null!, new OsuGame());
+            eventBus = new OsuEventBus();
+            manager = new ScriptManager(null!, new OsuGame(), eventBus);
             manager.AttachStorage(new ScriptStorage(scriptStorage), dataStorage);
 
             inputManager = new TestInputManager();
@@ -233,7 +237,7 @@ namespace osu.Game.Tests.API.Scripting
         [Test]
         public void TestConfigGetAndSet()
         {
-            manager.Services.Config = new OsuConfigManager(new TemporaryNativeStorage("config"));
+            manager.Services.Config = new ConfigService(new OsuConfigManager(new TemporaryNativeStorage("config")));
 
             run("osu.config.set('Username', 'player'); osu.log('name=' + osu.config.get('Username')); osu.config.set('ShowConvertedBeatmaps', false); osu.log('conv=' + osu.config.get('ShowConvertedBeatmaps'));");
 
@@ -245,7 +249,7 @@ namespace osu.Game.Tests.API.Scripting
         public void TestNotifyProgress()
         {
             var overlay = new TestNotificationOverlay();
-            manager.Services.Notifications = overlay;
+            manager.Services.Notifications = new NotificationService(overlay);
 
             run("let p = osu.notify.progress('Loading'); osu.log('type=' + typeof p.setProgress); p.setProgress(0.5); p.complete();");
 
@@ -522,6 +526,45 @@ namespace osu.Game.Tests.API.Scripting
 
             ClassicAssert.IsTrue(logged("done"));
             ClassicAssert.AreEqual(ScriptExecutionState.Completed, instance.State);
+        }
+
+        [Test]
+        public void TestScreenEventFromSharedBusReachesScript()
+        {
+            run("osu.on('screen', n => osu.log('screen:' + n));", "observer");
+
+            manager.Events.PublishScreen("SongSelect");
+
+            ClassicAssert.IsTrue(logged("screen:SongSelect"));
+        }
+
+        [Test]
+        public void TestLifecycleEventIsPublishedOnSharedBus()
+        {
+            ScriptStartedEvent? received = null;
+            using (eventBus.Subscribe<ScriptStartedEvent>(e => received = e))
+                run("osu.every(1000, () => {});", "worker");
+
+            ClassicAssert.IsNotNull(received);
+            ClassicAssert.AreEqual("worker", received!.Name);
+        }
+
+        [Test]
+        public void TestScriptErrorEventCarriesMessage()
+        {
+            ScriptErrorEvent? received = null;
+
+            using (eventBus.Subscribe<ScriptErrorEvent>(e => received = e))
+            {
+                run("osu.every(50, () => { throw new Error('boom'); });", "faulty");
+
+                manager.Runner.Tick(0);
+                manager.Runner.Tick(100);
+            }
+
+            ClassicAssert.IsNotNull(received);
+            ClassicAssert.AreEqual("faulty", received!.Name);
+            ClassicAssert.AreEqual("boom", received.Message);
         }
 
         private ScriptInstance run(string source, string name = "test") => manager.Runner.Run(new ScriptDefinition(name, null, source));

@@ -5,8 +5,10 @@ using Jint;
 using Jint.Native;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using osu.Game.API.Events;
 using osu.Game.API.Scripting;
 using osu.Game.API.Scripting.Api;
+using osu.Game.API.Services;
 
 namespace osu.Game.Tests.API.Scripting
 {
@@ -21,9 +23,9 @@ namespace osu.Game.Tests.API.Scripting
         {
             engine = new Engine();
 
-            var output = new ScriptOutputLog();
+            var output = new OutputLog();
             var repository = new ScriptRepository(output);
-            var events = new ScriptEventBus();
+            var events = new ScriptEventBus(new OsuEventBus());
             var services = new ScriptServices(new OsuGame(), null!, repository, output, events);
 
             context = new ScriptApiContext(engine, null!, services, null!, new JsObject(engine));

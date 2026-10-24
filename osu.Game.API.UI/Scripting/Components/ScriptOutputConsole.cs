@@ -15,6 +15,7 @@ using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
 using osuTK;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.UI.Scripting.Components
 {
@@ -26,7 +27,7 @@ namespace osu.Game.API.UI.Scripting.Components
         private const int max_display = 1000;
         private const float header_height = 44;
 
-        private readonly ScriptOutputLog output;
+        private readonly OutputLog output;
         private readonly FillFlowContainer flow;
         private readonly OsuScrollContainer scroll;
         private readonly FontUsage font = OsuFont.GetFont(size: 15);
@@ -44,7 +45,7 @@ namespace osu.Game.API.UI.Scripting.Components
         [Resolved]
         private OsuColour colours { get; set; } = null!;
 
-        public ScriptOutputConsole(ScriptOutputLog output)
+        public ScriptOutputConsole(OutputLog output)
         {
             this.output = output;
             RelativeSizeAxes = Axes.Both;
@@ -170,7 +171,7 @@ namespace osu.Game.API.UI.Scripting.Components
 
             flow.Clear();
 
-            IReadOnlyList<ScriptOutput> history = output.History;
+            IReadOnlyList<OutputEntry> history = output.History;
             int start = Math.Max(0, history.Count - max_display);
 
             for (int i = start; i < history.Count; i++)
@@ -182,9 +183,9 @@ namespace osu.Game.API.UI.Scripting.Components
             scroll.ScrollToEnd(false);
         }
 
-        private bool matches(ScriptOutput entry) => filter == null || entry.Source == filter;
+        private bool matches(OutputEntry entry) => filter == null || entry.Source == filter;
 
-        private void append(ScriptOutput entry)
+        private void append(OutputEntry entry)
         {
             if (!IsLoaded || IsDisposed)
                 return;
@@ -199,7 +200,7 @@ namespace osu.Game.API.UI.Scripting.Components
             });
         }
 
-        private void addEntry(ScriptOutput entry)
+        private void addEntry(OutputEntry entry)
         {
             var line = new OsuTextFlowContainer(t =>
             {

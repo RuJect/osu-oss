@@ -2,11 +2,10 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Jint;
 using Jint.Native;
-using Jint.Runtime.Interop;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -16,8 +15,6 @@ namespace osu.Game.API.Scripting.Api.Providers
     /// </summary>
     public class UtilityApiProvider : ScriptApiProvider
     {
-        private const string kv_prefix = "kv/";
-
         /// <summary>
         /// Resolves after <paramref name="ms"/> game-time. Awaitable, e.g. <c>await osu.sleep(1000)</c>.
         /// </summary>
@@ -25,14 +22,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         public Task Sleep(double ms)
         {
             var completion = new TaskCompletionSource<bool>();
-
-            JsValue handler = new ClrFunction(Context.Engine, "sleep", (_, _) =>
-            {
-                completion.TrySetResult(true);
-                return JsValue.Undefined;
-            });
-
-            Context.Instance.Scheduler.AddTimer(handler, ms, false);
+            Context.Instance.Scheduler.AddTimer(() => completion.TrySetResult(true), ms, false);
             return completion.Task;
         }
 
@@ -54,56 +44,36 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "kv")]
         public JsValue Get(string? key)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
-            string? path = keyPath(key);
+            StorageService? data = Context.Services.Storage;
 
-            if (data == null || path == null || !data.Exists(path))
+            if (data == null || key == null)
                 return JsValue.Undefined;
 
-            string? content = data.Read(path);
+            string? content = data.KvRead(key);
             return content == null ? JsValue.Undefined : ScriptJson.Parse(Context.Engine, content);
         }
 
         [ScriptApi(Target = "kv")]
         public void Set(string? key, JsValue value)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
-            string? path = keyPath(key);
+            StorageService? data = Context.Services.Storage;
 
-            if (data == null || path == null || value.IsUndefined())
+            if (data == null || key == null || value.IsUndefined())
                 return;
 
-            data.Write(path, ScriptJson.Stringify(Context.Engine, value));
+            data.KvWrite(key, ScriptJson.Stringify(Context.Engine, value));
         }
 
         [ScriptApi(Target = "kv")]
         public void Delete(string? key)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
-            string? path = keyPath(key);
+            StorageService? data = Context.Services.Storage;
 
-            if (data != null && path != null)
-                data.Delete(path);
+            if (data != null && key != null)
+                data.KvDelete(key);
         }
 
         [ScriptApi(Target = "kv")]
-        public string[] Keys()
-        {
-            ScriptDataStorage? data = Context.Services.DataStorage;
-
-            if (data == null)
-                return Array.Empty<string>();
-
-            return data.List("kv").Select(f => f[kv_prefix.Length..]).ToArray();
-        }
-
-        private static string? keyPath(string? key)
-        {
-            if (string.IsNullOrEmpty(key))
-                return null;
-
-            string? path = ScriptFileStore.SanitizePath(key);
-            return path == null ? null : kv_prefix + path;
-        }
+        public string[] Keys() => Context.Services.Storage?.KvKeys() ?? Array.Empty<string>();
     }
 }

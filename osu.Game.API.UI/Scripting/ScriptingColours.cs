@@ -3,6 +3,7 @@
 
 using osu.Game.API.Scripting;
 using osuTK.Graphics;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.UI.Scripting
 {
@@ -60,11 +61,11 @@ namespace osu.Game.API.UI.Scripting
             _ => TokenPlain,
         };
 
-        public static Color4 ForLevel(ScriptOutputLevel level) => level switch
+        public static Color4 ForLevel(OutputLevel level) => level switch
         {
-            ScriptOutputLevel.Info => LevelInfo,
-            ScriptOutputLevel.Warn => LevelWarn,
-            ScriptOutputLevel.Error => LevelError,
+            OutputLevel.Info => LevelInfo,
+            OutputLevel.Warn => LevelWarn,
+            OutputLevel.Error => LevelError,
             _ => LevelLog,
         };
     }

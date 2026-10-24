@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting
 {
@@ -13,7 +14,7 @@ namespace osu.Game.API.Scripting
     /// </summary>
     public class ScriptRepository
     {
-        private readonly ScriptOutputLog output;
+        private readonly OutputLog output;
         private readonly List<ScriptDefinition> definitions = new List<ScriptDefinition>();
 
         private int anonymousCounter;
@@ -25,7 +26,7 @@ namespace osu.Game.API.Scripting
 
         public IReadOnlyList<ScriptDefinition> Definitions => definitions;
 
-        public ScriptRepository(ScriptOutputLog output)
+        public ScriptRepository(OutputLog output)
         {
             this.output = output;
         }
@@ -77,7 +78,7 @@ namespace osu.Game.API.Scripting
                 return;
 
             Storage.Write(definition.FileName, definition.Source);
-            output.Log(ScriptOutputLevel.Info, definition.Name, "saved");
+            output.Log(OutputLevel.Info, definition.Name, "saved");
         }
 
         /// <summary>
@@ -95,7 +96,7 @@ namespace osu.Game.API.Scripting
                 fileName += ".js";
 
             Storage.Write(fileName, definition.Source);
-            output.Log(ScriptOutputLevel.Info, definition.Name, $"saved as {fileName}");
+            output.Log(OutputLevel.Info, definition.Name, $"saved as {fileName}");
             Refresh();
             return fileName;
         }

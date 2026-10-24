@@ -13,7 +13,7 @@ namespace osu.Game.Tests.API.Scripting
     public class ScriptStorageTest
     {
         [Test]
-        public void TestEnsureInitialisedWritesMagicScriptsAndExamples()
+        public void TestEnsureInitialisedWritesMagicScripts()
         {
             using var storage = new TemporaryNativeStorage("scripts");
             var scriptStorage = new ScriptStorage(storage);
@@ -24,9 +24,6 @@ namespace osu.Game.Tests.API.Scripting
 
             ClassicAssert.IsTrue(scripts.Contains("on_launch.js"));
             ClassicAssert.IsTrue(scripts.Contains("on_exit.js"));
-
-            foreach (string name in new[] { "hello", "storage", "timers", "events", "config", "music", "notifications", "ui", "ui-menu" })
-                ClassicAssert.IsTrue(scripts.Contains($"examples/{name}.js"), $"missing examples/{name}.js");
         }
 
         [Test]
@@ -50,10 +47,10 @@ namespace osu.Game.Tests.API.Scripting
             using var storage = new TemporaryNativeStorage("scripts");
             var scriptStorage = new ScriptStorage(storage);
 
-            scriptStorage.Write("examples/hello.js", "// custom");
+            scriptStorage.Write("on_launch.js", "// custom");
             scriptStorage.EnsureInitialised();
 
-            ClassicAssert.AreEqual("// custom", scriptStorage.Read("examples/hello.js"));
+            ClassicAssert.AreEqual("// custom", scriptStorage.Read("on_launch.js"));
         }
     }
 }

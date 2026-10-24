@@ -12,6 +12,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.API.Events;
+using osu.Game.API.Plugins;
 using osu.Game.API.UI.Commands;
 using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
@@ -179,10 +180,12 @@ namespace osu.Desktop
                     // HubClientConnector.Sign (token signing). Requires the native
                     // auth module + file-measurement redirect (see Auth/).
                     using (noNetwork ? null : new Loader(host, game))
+                    // Game event API: shared typed event bus consumed by the scripting subsystem and plugins.
+                    using (var events = new OsuEventBootstrap(host, game))
                     // JavaScript scripting subsystem: hosts the runtime and the Ctrl+F4 console overlay.
-                    using (new ScriptingBootstrap(host, game))
-                    // Game event API: independent event bus with notification-based test subscriber.
-                    using (new OsuEventBootstrap(host, game))
+                    using (var scripting = new ScriptingBootstrap(host, game, events.Bus))
+                    // C# plugin subsystem: loads plugins from osu-oss/plugins, sharing the scripting services.
+                    using (new PluginBootstrap(game, scripting.Manager.Services, events.Bus))
                     // Command API + Ctrl+Space command palette.
                     using (new CommandPaletteBootstrap(game))
                     {

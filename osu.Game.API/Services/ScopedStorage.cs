@@ -3,15 +3,15 @@
 
 using osu.Framework.Platform;
 
-namespace osu.Game.API.Scripting
+namespace osu.Game.API.Services
 {
     /// <summary>
-    /// Storage abstraction over the scripts data directory (<c>osu-oss/scripts/data</c>), where scripts may
-    /// freely read and write files.
+    /// Storage abstraction over the scripts data directory (<c>osu-oss/scripts/data</c>), where scripts and
+    /// plugins may freely read and write files.
     /// </summary>
-    public class ScriptDataStorage : ScriptFileStore
+    public class ScopedStorage : FileStore
     {
-        public ScriptDataStorage(Storage storage)
+        public ScopedStorage(Storage storage)
             : base(storage)
         {
         }

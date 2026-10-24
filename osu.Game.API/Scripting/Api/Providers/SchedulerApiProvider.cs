@@ -16,7 +16,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         public void OnUpdate(JsValue handler)
         {
             if (handler.IsCallable())
-                Context.Instance.Scheduler.AddUpdateHandler(handler);
+                Context.Instance.Scheduler.AddUpdateHandler(() => Context.Engine.Invoke(handler));
         }
 
         [ScriptApi]
@@ -63,7 +63,7 @@ namespace osu.Game.API.Scripting.Api.Providers
                 return -1;
             }
 
-            return Context.Instance.Scheduler.AddTimer(handler, interval, repeat);
+            return Context.Instance.Scheduler.AddTimer(() => Context.Engine.Invoke(handler), interval, repeat);
         }
     }
 }

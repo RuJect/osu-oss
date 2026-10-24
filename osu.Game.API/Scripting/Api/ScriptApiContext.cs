@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Interop;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api
 {
@@ -73,7 +74,7 @@ namespace osu.Game.API.Scripting.Api
                 }
                 catch (Exception e)
                 {
-                    Services.Output.Log(ScriptOutputLevel.Error, Instance.Name, e.Message);
+                    Services.Output.Log(OutputLevel.Error, Instance.Name, e.Message);
                     return JsValue.Undefined;
                 }
             }));

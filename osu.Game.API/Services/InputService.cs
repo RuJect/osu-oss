@@ -7,17 +7,17 @@ using osu.Framework.Input.States;
 using osuTK;
 using osuTK.Input;
 
-namespace osu.Game.API.Scripting.Api
+namespace osu.Game.API.Services
 {
     /// <summary>
     /// Applies synthetic cursor and keyboard input to the game's input state.
     /// </summary>
-    internal class ScriptInput
+    public class InputService
     {
         private readonly InputState state;
         private readonly IInputStateChangeHandler handler;
 
-        public ScriptInput(InputState state, IInputStateChangeHandler handler)
+        public InputService(InputState state, IInputStateChangeHandler handler)
         {
             this.state = state;
             this.handler = handler;
@@ -34,16 +34,16 @@ namespace osu.Game.API.Scripting.Api
         public void SetKeyPressed(Key key, bool pressed) => new KeyboardKeyInput(key, pressed).Apply(state, handler);
 
         /// <summary>
-        /// Resolves the input state for a script, or <see langword="null"/> when input is unavailable or the
-        /// caller is not on the update thread.
+        /// Resolves the input state for a script or plugin, or <see langword="null"/> when input is unavailable
+        /// or the caller is not on the update thread.
         /// </summary>
-        public static ScriptInput? FromServices(ScriptServices services)
+        public static InputService? FromServices(ApiServices services)
         {
             if (services.Host != null && !services.Host.UpdateThread.IsCurrent)
                 return null;
 
             InputManager? inputManager = services.InputManager;
-            return inputManager == null ? null : new ScriptInput(inputManager.CurrentState, inputManager);
+            return inputManager == null ? null : new InputService(inputManager.CurrentState, inputManager);
         }
     }
 }

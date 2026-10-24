@@ -3,19 +3,17 @@
 
 using System;
 using System.Collections.Generic;
-using Jint;
-using Jint.Native;
 
-namespace osu.Game.API.Scripting
+namespace osu.Game.API.Services
 {
     /// <summary>
-    /// Holds the frame callbacks and timers registered by a single script instance.
-    /// Executed by <see cref="ScriptRunner.Tick"/> on the game's update thread.
+    /// Holds the frame callbacks and timers registered by a single script or plugin.
+    /// Executed by the owning component on the game's update thread.
     /// </summary>
-    internal class ScriptScheduler
+    public class SchedulerService
     {
-        private readonly List<JsValue> updateHandlers = new List<JsValue>();
-        private readonly List<JsTimer> timers = new List<JsTimer>();
+        private readonly List<Action> updateHandlers = new List<Action>();
+        private readonly List<Timer> timers = new List<Timer>();
 
         private int nextTimerId;
         private double timeBase;
@@ -25,16 +23,16 @@ namespace osu.Game.API.Scripting
         /// <summary>Time elapsed since the scheduler's first tick, in milliseconds.</summary>
         public double Elapsed => elapsed;
 
-        public void AddUpdateHandler(JsValue handler) => updateHandlers.Add(handler);
+        public void AddUpdateHandler(Action handler) => updateHandlers.Add(handler);
 
         /// <summary>Registers a timer and returns its id, used to cancel it via <see cref="CancelTimer"/>.</summary>
-        public int AddTimer(JsValue handler, double interval, bool repeat)
+        public int AddTimer(Action handler, double interval, bool repeat)
         {
             if (interval < 0)
                 interval = 0;
 
             int id = ++nextTimerId;
-            timers.Add(new JsTimer(id, handler, interval, repeat, elapsed + interval));
+            timers.Add(new Timer(id, handler, interval, repeat, elapsed + interval));
             return id;
         }
 
@@ -53,7 +51,7 @@ namespace osu.Game.API.Scripting
         /// <summary>Whether any frame callbacks or timers are still registered.</summary>
         public bool HasPendingCallbacks => updateHandlers.Count > 0 || timers.Count > 0;
 
-        public void Tick(Engine engine, double currentTime, Action<Exception> onError)
+        public void Tick(double currentTime, Action<Exception> onError)
         {
             // Anchor the scheduler's clock to its first tick so timer countdowns are relative to the script's
             // lifetime rather than the game's absolute clock (which would fire them immediately).
@@ -65,12 +63,12 @@ namespace osu.Game.API.Scripting
 
             elapsed = currentTime - timeBase;
 
-            foreach (JsValue handler in updateHandlers.ToArray())
-                invoke(engine, handler, onError);
+            foreach (Action handler in updateHandlers.ToArray())
+                invoke(handler, onError);
 
             for (int i = timers.Count - 1; i >= 0; i--)
             {
-                JsTimer timer = timers[i];
+                Timer timer = timers[i];
 
                 if (elapsed < timer.NextRun)
                     continue;
@@ -80,15 +78,15 @@ namespace osu.Game.API.Scripting
                 else
                     timers.RemoveAt(i);
 
-                invoke(engine, timer.Handler, onError);
+                invoke(timer.Handler, onError);
             }
         }
 
-        private static void invoke(Engine engine, JsValue handler, Action<Exception> onError)
+        private static void invoke(Action handler, Action<Exception> onError)
         {
             try
             {
-                engine.Invoke(handler);
+                handler();
             }
             catch (Exception e)
             {
@@ -102,16 +100,16 @@ namespace osu.Game.API.Scripting
             timers.Clear();
         }
 
-        private class JsTimer
+        private class Timer
         {
             public readonly int Id;
-            public readonly JsValue Handler;
+            public readonly Action Handler;
             public readonly double Interval;
             public readonly bool Repeat;
 
             public double NextRun;
 
-            public JsTimer(int id, JsValue handler, double interval, bool repeat, double nextRun)
+            public Timer(int id, Action handler, double interval, bool repeat, double nextRun)
             {
                 Id = id;
                 Handler = handler;

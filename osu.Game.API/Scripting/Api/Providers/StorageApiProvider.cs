@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using Jint;
 using Jint.Native;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -17,14 +18,14 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public string? Read(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
             return data != null && path != null && data.Exists(path) ? data.Read(path) : null;
         }
 
         [ScriptApi(Target = "storage")]
         public void Write(string? path, string? content)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data != null && path != null && content != null)
                 data.Write(path, content);
@@ -33,7 +34,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public void Append(string? path, string? content)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data != null && path != null && content != null)
                 data.Append(path, content);
@@ -42,14 +43,14 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public bool Exists(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
             return data != null && path != null && data.Exists(path);
         }
 
         [ScriptApi(Target = "storage")]
         public string[] List(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data == null)
                 return Array.Empty<string>();
@@ -60,7 +61,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public void Delete(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data != null && path != null)
                 data.Delete(path);
@@ -69,7 +70,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public void Mkdir(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data != null && path != null)
                 data.CreateDirectory(path);
@@ -78,7 +79,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public JsValue ReadJson(string? path)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data == null || path == null || !data.Exists(path))
                 return JsValue.Undefined;
@@ -90,7 +91,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "storage")]
         public void WriteJson(string? path, JsValue value)
         {
-            ScriptDataStorage? data = Context.Services.DataStorage;
+            StorageService? data = Context.Services.Storage;
 
             if (data == null || path == null || value.IsUndefined())
                 return;
@@ -99,6 +100,6 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         [ScriptApi(Target = "storage")]
-        public string Directory => Context.Services.DataStorage?.Directory ?? string.Empty;
+        public string Directory => Context.Services.Storage?.Directory ?? string.Empty;
     }
 }

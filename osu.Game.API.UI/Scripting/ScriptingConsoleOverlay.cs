@@ -20,6 +20,7 @@ using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.UI.Scripting
 {
@@ -33,7 +34,7 @@ namespace osu.Game.API.UI.Scripting
 
         private readonly ScriptRepository repository;
         private readonly ScriptRunner runner;
-        private readonly ScriptOutputLog outputLog;
+        private readonly OutputLog outputLog;
 
         private ScriptListPanel scriptList = null!;
         private RunningScriptsPanel runningPanel = null!;

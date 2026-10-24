@@ -9,6 +9,7 @@ using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Platform;
 using osu.Game.Graphics.Sprites;
 using osuTK;
+using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api.Providers
 {
@@ -29,7 +30,7 @@ namespace osu.Game.API.Scripting.Api.Providers
             OsuGame game = Context.Services.Game;
             Engine engine = Context.Engine;
             ScriptInstance instance = Context.Instance;
-            ScriptOutputLog output = Context.Services.Output;
+            OutputLog output = Context.Services.Output;
 
             if (host == null)
                 return JsValue.Undefined;
@@ -110,7 +111,7 @@ namespace osu.Game.API.Scripting.Api.Providers
                         }
                         catch (Exception e)
                         {
-                            output.Log(ScriptOutputLevel.Error, instance.Name, e.Message);
+                            output.Log(OutputLevel.Error, instance.Name, e.Message);
                         }
                     };
                 }
