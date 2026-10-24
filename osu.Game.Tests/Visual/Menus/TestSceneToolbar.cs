@@ -117,6 +117,28 @@ namespace osu.Game.Tests.Visual.Menus
         }
 
         [Test]
+        public void TestHiddenToolbarDoesNotReserveInset()
+        {
+            AddStep("replace with hidden toolbar", () =>
+            {
+                Remove(toolbar, true);
+                Add(toolbar = new TestToolbar());
+            });
+
+            AddUntilStep("toolbar hidden without inset", () => toolbar.IsLoaded
+                                                             && toolbar.State.Value == Visibility.Hidden
+                                                             && Precision.AlmostEquals(toolbar.CurrentInset, 0));
+
+            foreach (var position in new[] { ToolbarPosition.Bottom, ToolbarPosition.Left, ToolbarPosition.Right, ToolbarPosition.Top })
+            {
+                AddStep($"set placement to {position}", () => toolbarPosition.Value = position);
+                AddUntilStep("placement applied", () => toolbar.Placement == position);
+                AddWaitStep("wait for layout", 5);
+                AddAssert("toolbar reserves no space", () => Precision.AlmostEquals(toolbar.CurrentInset, 0));
+            }
+        }
+
+        [Test]
         public void TestPlacementChangeAtRuntime()
         {
             AddUntilStep("toolbar visible", () => toolbar.State.Value == Visibility.Visible);

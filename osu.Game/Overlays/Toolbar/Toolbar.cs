@@ -279,7 +279,20 @@ namespace osu.Game.Overlays.Toolbar
                 Origin = bottom ? Anchor.BottomLeft : Anchor.TopLeft;
             }
 
-            Position = Vector2.Zero;
+            if (State.Value == Visibility.Visible)
+            {
+                Position = Vector2.Zero;
+            }
+            else
+            {
+                Position = placement switch
+                {
+                    ToolbarPosition.Bottom => new Vector2(0, HEIGHT),
+                    ToolbarPosition.Left => new Vector2(-HEIGHT, 0),
+                    ToolbarPosition.Right => new Vector2(HEIGHT, 0),
+                    _ => new Vector2(0, -HEIGHT),
+                };
+            }
 
             // Button groups. Each group stays in its own drawable; inversion changes which edge each group is docked
             // to and reverses the button order within each group (the framework does not support relocating
