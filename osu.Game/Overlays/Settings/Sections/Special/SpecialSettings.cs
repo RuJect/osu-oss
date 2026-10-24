@@ -20,7 +20,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
         protected override LocalisableString Header => @"osu!oss";
 
         [BackgroundDependencyLoader]
-        private void load(SpecialConfigManager config, Storage storage, IDialogOverlay? dialogOverlay)
+        private void load(SpecialConfigManager config, OsuConfigManager osuConfig, Storage storage, IDialogOverlay? dialogOverlay)
         {
             AddRange(new Drawable[]
             {
@@ -113,6 +113,12 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     LabelText = "Enable glass effects",
                     TooltipText = "Allows themes to blur and tint the game content behind panels. Requires a restart.",
                     Current = config.GetBindable<bool>(SpecialSetting.ThemeGlassEffects),
+                },
+                new SettingsButtonV2
+                {
+                    Text = "Audio offset calibration",
+                    TooltipText = "Measure your audio and input latency by tapping along to a metronome.",
+                    Action = () => dialogOverlay?.Push(new AudioOffsetCalibrationDialog(osuConfig.GetBindable<double>(OsuSetting.AudioOffset))),
                 },
                 new DangerousSettingsButtonV2
                 {
