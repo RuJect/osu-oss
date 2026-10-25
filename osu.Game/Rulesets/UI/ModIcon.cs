@@ -230,8 +230,11 @@ namespace osu.Game.Rulesets.UI
 
             Selected.BindValueChanged(_ => updateColour());
 
+            skin.SourceChanged += onSkinChanged;
             updateMod(mod);
         }
+
+        private void onSkinChanged() => Scheduler.AddOnce(() => updateMod(mod));
 
         private void updateMod(IMod value)
         {
@@ -259,6 +262,7 @@ namespace osu.Game.Rulesets.UI
                     skinIcon.FadeIn();
                     modIcon.FadeOut();
                     modAcronym.FadeOut();
+                    background.FadeOut();
                     skinIconUsed = true;
                 }
             }
@@ -267,6 +271,7 @@ namespace osu.Game.Rulesets.UI
             {
                 skinIcon!.Texture = null;
                 skinIcon.FadeOut();
+                background.FadeIn();
                 modIcon.Icon = value.Icon ?? FontAwesome.Solid.Question;
 
                 if (value.Icon == null)
@@ -314,6 +319,9 @@ namespace osu.Game.Rulesets.UI
         {
             base.Dispose(isDisposing);
             modSettingsChangeTracker?.Dispose();
+
+            if (skin != null)
+                skin.SourceChanged -= onSkinChanged;
         }
 
         public ITooltip<Mod> GetCustomTooltip() => new ModTooltip(colourProvider);

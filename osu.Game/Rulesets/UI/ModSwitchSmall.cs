@@ -29,6 +29,7 @@ namespace osu.Game.Rulesets.UI
         private Drawable background = null!;
         private SpriteIcon? modIcon;
         private Sprite? skinIcon;
+        private bool skinIconUsed;
 
         private Color4 activeForegroundColour;
         private Color4 inactiveForegroundColour;
@@ -54,9 +55,6 @@ namespace osu.Game.Rulesets.UI
         [BackgroundDependencyLoader]
         private void load(TextureStore textures, OsuColour colours, OverlayColourProvider? colourProvider)
         {
-            FillFlowContainer contentFlow;
-            ModSwitchTiny tinySwitch;
-
             InternalChildren = new[]
             {
                 background = new Sprite
@@ -66,6 +64,15 @@ namespace osu.Game.Rulesets.UI
                     Texture = textures.Get("Icons/BeatmapDetails/mod-icon"),
                     Anchor = Anchor.Centre,
                     Origin = Anchor.Centre,
+                },
+                skinIcon = new Sprite
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    FillMode = FillMode.Fit,
+                    Texture = null,
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Alpha = 0,
                 },
                 contentFlow = new FillFlowContainer
                 {
@@ -83,33 +90,6 @@ namespace osu.Game.Rulesets.UI
                 }
             };
 
-            if (UseSkinModIcons && mod is Mod skinMod && skin.GetTexture(ModSkinTextureResolver.GetTextureName(skinMod)) is { } skinTexture)
-            {
-                contentFlow.Insert(-1, skinIcon = new Sprite
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.TopCentre,
-                    Size = new Vector2(37, 26),
-                    Margin = new MarginPadding { Top = -1 },
-                    Texture = skinTexture,
-                    FillMode = FillMode.Fit,
-                });
-                tinySwitch.Scale = new Vector2(0.3f);
-            }
-            else if (mod.Icon != null)
-            {
-                contentFlow.Insert(-1, modIcon = new SpriteIcon
-                {
-                    Anchor = Anchor.TopCentre,
-                    Origin = Anchor.TopCentre,
-                    Size = new Vector2(37, 26),
-                    // arbitrary adjustment for better vertical alignment
-                    Margin = new MarginPadding { Top = -1 },
-                    Icon = mod.Icon.Value
-                });
-                tinySwitch.Scale = new Vector2(0.3f);
-            }
-
             var modTypeColour = colours.ForModType(mod.Type);
 
             inactiveForegroundColour = colourProvider?.Background5 ?? colours.Gray3;
@@ -124,14 +104,88 @@ namespace osu.Game.Rulesets.UI
             base.LoadComplete();
 
             Active.BindValueChanged(_ => updateState(), true);
+            skin.SourceChanged += onSkinChanged;
+
+            if (specialConfig != null)
+            {
+                specialConfig.GetBindable<bool>(SpecialSetting.UseSkinModIcons).BindValueChanged(_ => onSkinChanged());
+            }
+
             FinishTransforms(true);
+            updateIcon();
+            updateState(); // Apply initial colours after modIcon is created
+        }
+
+        private void onSkinChanged() => Scheduler.AddOnce(updateIcon);
+
+        private void updateIcon()
+        {
+            if (UseSkinModIcons && mod is Mod skinMod && skin.GetTexture(ModSkinTextureResolver.GetTextureName(skinMod)) is { } skinTexture)
+            {
+                skinIcon!.Texture = skinTexture;
+                skinIcon.FadeIn();
+                background.FadeOut();
+                tinySwitch.ShowPill = false;
+                skinIconUsed = true;
+            }
+            else
+            {
+                skinIcon!.Texture = null;
+                skinIcon.FadeOut();
+                background.FadeIn();
+                skinIconUsed = false;
+
+                if (mod.Icon != null)
+                {
+                    // Lazy-create modIcon if it doesn't exist yet
+                    if (modIcon == null)
+                    {
+                        contentFlow.Insert(-1, modIcon = new SpriteIcon
+                        {
+                            Anchor = Anchor.TopCentre,
+                            Origin = Anchor.TopCentre,
+                            Size = new Vector2(37, 26),
+                            // arbitrary adjustment for better vertical alignment
+                            Margin = new MarginPadding { Top = -1 },
+                            Icon = mod.Icon.Value
+                        });
+                        tinySwitch.Scale = new Vector2(0.3f);
+                    }
+                    else
+                    {
+                        modIcon.Icon = mod.Icon.Value;
+                    }
+                    modIcon.FadeIn();
+                }
+                else if (modIcon != null)
+                {
+                    modIcon.FadeOut();
+                }
+
+                tinySwitch.ShowPill = true;
+            }
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            if (skin != null)
+                skin.SourceChanged -= onSkinChanged;
         }
 
         private void updateState()
         {
-            Drawable? icon = skinIcon ?? (Drawable?)modIcon;
-            icon?.FadeColour(Active.Value ? activeForegroundColour : inactiveForegroundColour, 200, Easing.OutQuint);
-            background.FadeColour(Active.Value ? activeBackgroundColour : inactiveBackgroundColour, 200, Easing.OutQuint);
+            if (!skinIconUsed)
+            {
+                modIcon?.FadeColour(Active.Value ? activeForegroundColour : inactiveForegroundColour, 200, Easing.OutQuint);
+                background.FadeColour(Active.Value ? activeBackgroundColour : inactiveBackgroundColour, 200, Easing.OutQuint);
+            }
         }
+
+        // ReSharper disable once UnusedMember.Local
+        private ModSwitchTiny tinySwitch = null!;
+        // ReSharper disable once UnusedMember.Local
+        private FillFlowContainer contentFlow = null!;
     }
 }

@@ -29,6 +29,19 @@ namespace osu.Game.Rulesets.UI
 
         private readonly Box background;
         private readonly OsuSpriteText acronymText;
+        private readonly CircularContainer pillContainer;
+
+        private bool showPill = true;
+
+        public bool ShowPill
+        {
+            get => showPill;
+            set
+            {
+                showPill = value;
+                pillContainer.FadeTo(value ? 1 : 0);
+            }
+        }
 
         private Color4 activeForegroundColour;
         private Color4 inactiveForegroundColour;
@@ -75,7 +88,7 @@ namespace osu.Game.Rulesets.UI
                         },
                     }
                 },
-                new CircularContainer
+                pillContainer = new CircularContainer
                 {
                     Width = WIDTH,
                     RelativeSizeAxes = Axes.Y,
