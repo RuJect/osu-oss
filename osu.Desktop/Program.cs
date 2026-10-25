@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.Versioning;
 using osu.Desktop.LegacyIpc;
+using osu.Desktop.Recording;
 using osu.Desktop.Windows;
 using osu.Framework;
 using osu.Framework.Development;
@@ -17,6 +18,7 @@ using osu.Game.API.UI.Commands;
 using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
 using osu.Game.IPC;
+using osu.Game.Recording;
 using osu.Game.Tournament;
 using SDL;
 using Velopack;
@@ -84,6 +86,7 @@ namespace osu.Desktop
             string? dataPath = null;
             bool tournamentClient = false;
             bool noNetwork = false;
+            RecordingOptions? recordingOptions = null;
 
             foreach (string arg in args)
             {
@@ -117,7 +120,51 @@ namespace osu.Desktop
 
                         gameName = $"{base_game_name}-{clientID}";
                         break;
+
+                    case "--recording":
+                    case "--recording-output":
+                    case "--recording-duration":
+                    case "--recording-dry-run":
+                    case "--recording-codec":
+                    case "--recording-preset":
+                        // These will be parsed by RecordingOptions.Parse
+                        break;
                 }
+            }
+
+            // Parse recording options
+            try
+            {
+                recordingOptions = RecordingOptions.Parse(args);
+            }
+            catch (ArgumentException ex)
+            {
+                Logger.Log($"Invalid recording arguments: {ex.Message}", LoggingTarget.Runtime, LogLevel.Error);
+                return;
+            }
+
+            // If recording mode is enabled, run recording and exit
+            if (recordingOptions?.Enabled == true)
+            {
+                // Use provided data path or default
+                string recordingDataPath = dataPath ?? GetDefaultDataPath();
+                
+                try
+                {
+                    Directory.CreateDirectory(recordingDataPath);
+                }
+                catch (Exception e)
+                {
+                    Logger.Log($@"Could not use data path ""{recordingDataPath}"": {e.Message}", LoggingTarget.Runtime, LogLevel.Error);
+                    return;
+                }
+
+                Logger.Log($"Starting recording: {recordingOptions}", LoggingTarget.Runtime, LogLevel.Important);
+
+                using (var recordingHost = new RecordingHost(recordingOptions, recordingDataPath))
+                    Environment.ExitCode = recordingHost.RunAndRecord();
+
+                return;
             }
 
             if (dataPath != null)
@@ -221,6 +268,13 @@ namespace osu.Desktop
             }
 
             return false;
+        }
+
+        private static string GetDefaultDataPath()
+        {
+            // Use the same logic as OsuGameBase for default data path
+            string basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return Path.Combine(basePath, "osu");
         }
 
         private static void setupVelopack(string[] args)
