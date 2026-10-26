@@ -192,7 +192,7 @@ namespace osu.Game.Screens.Select
         private IOverlayManager? overlayManager { get; set; }
 
         [Resolved]
-        private GameEventHub events { get; set; } = null!;
+        private OsuEventBus events { get; set; } = null!;
 
         private InputManager inputManager = null!;
 
@@ -626,7 +626,7 @@ namespace osu.Game.Screens.Select
 
             carousel.CurrentGroupedBeatmap = groupedBeatmap;
 
-            events.RaiseBeatmapSelected(groupedBeatmap.Beatmap, this);
+            events.Publish(new BeatmapSelectedEvent(groupedBeatmap.Beatmap) { UI = this });
 
             // Debounce consideration is to avoid beatmap churn on key repeat selection.
             debounceQueueSelection(groupedBeatmap.Beatmap);

@@ -3,7 +3,7 @@
 
 using osu.Framework.Graphics;
 
-namespace osu.Game.API.Events
+namespace osu.Game.Events
 {
     /// <summary>
     /// Base type for all events published on <see cref="OsuEventBus"/>.

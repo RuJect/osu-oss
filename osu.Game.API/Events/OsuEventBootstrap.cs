@@ -10,18 +10,12 @@ namespace osu.Game.API.Events
 {
     /// <summary>
     /// Composition root for the game event subsystem. Constructed from <c>osu.Desktop/Program.cs</c> around
-    /// <c>host.Run(game)</c>, it owns the <see cref="OsuEventBus"/> and wires the bridge which forwards
-    /// <see cref="GameEventHub"/> signals into it.
+    /// <c>host.Run(game)</c>, it owns the <see cref="OsuEventBus"/>.
     /// </summary>
-    /// <remarks>
-    /// This subsystem is intentionally independent from the scripting module.
-    /// </remarks>
     public class OsuEventBootstrap : IDisposable
     {
         private readonly GameHost host;
         private readonly OsuGame game;
-
-        private GameEventBridge? bridge;
 
         private bool initialised;
         private bool disposed;
@@ -51,11 +45,6 @@ namespace osu.Game.API.Events
 
             // The update thread (and its scheduler) only exists once the host has started running.
             Bus.Scheduler = host.UpdateThread?.Scheduler;
-
-            GameEventHub? hub = game.Dependencies.Get<GameEventHub>();
-
-            if (hub != null)
-                bridge = new GameEventBridge(hub, Bus);
         }
 
         public void Dispose()
@@ -64,9 +53,6 @@ namespace osu.Game.API.Events
                 return;
 
             disposed = true;
-
-            bridge?.Dispose();
-            bridge = null;
         }
     }
 }

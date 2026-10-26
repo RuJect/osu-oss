@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Services;
 
 namespace osu.Game.API.Plugins

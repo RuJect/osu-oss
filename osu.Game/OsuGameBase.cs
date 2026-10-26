@@ -408,7 +408,7 @@ namespace osu.Game
         /// <summary>
         /// Central transport for game-wide events, consumed by external modules (see <c>osu.Game.API</c>).
         /// </summary>
-        public GameEventHub Events { get; private set; }
+        public OsuEventBus Events { get; private set; }
 
         private BeatmapDifficultyCache difficultyCache;
 
@@ -547,7 +547,7 @@ namespace osu.Game
                 BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
                 {
                     foreach (Live<BeatmapSetInfo> live in downloaded)
-                        Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
+                        Events.Publish(new BeatmapDownloadedEvent(live.PerformRead(set => set.Detach())) { UI = null });
                 });
                 dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
 
@@ -583,7 +583,7 @@ namespace osu.Game
                 BeatmapDownloader.DownloadCompleted += downloaded => Schedule(() =>
                 {
                     foreach (Live<BeatmapSetInfo> live in downloaded)
-                        Events.RaiseBeatmapDownloaded(live.PerformRead(set => set.Detach()));
+                        Events.Publish(new BeatmapDownloadedEvent(live.PerformRead(set => set.Detach())) { UI = null });
                 });
                 dependencies.Cache(ScoreDownloader = new ScoreModelDownloader(ScoreManager, API));
 
@@ -613,7 +613,7 @@ namespace osu.Game
             if (powerStatus != null)
                 dependencies.CacheAs(powerStatus);
 
-            dependencies.Cache(Events = new GameEventHub());
+            dependencies.Cache(Events = new OsuEventBus());
 
             BeatmapManager.Events = Events;
 
@@ -712,7 +712,7 @@ namespace osu.Game
 
         private void updateLanguage() => CurrentLanguage.Value = LanguageExtensions.GetLanguageFor(frameworkLocale.Value, localisationParameters.Value);
 
-        private void raiseSelectedModsChanged() => Events.RaiseSelectedModsChanged(SelectedMods.Value, null);
+        private void raiseSelectedModsChanged() => Events.Publish(new SelectedModsChangedEvent(SelectedMods.Value) { UI = null });
 
         private void addFilesWarning()
         {
@@ -1009,7 +1009,7 @@ namespace osu.Game
 
             AvailableMods.Value = dict;
 
-            Events.RaiseRulesetChanged(r.NewValue, null);
+            Events.Publish(new RulesetChangedEvent(r.NewValue) { UI = null });
 
             if (SelectedMods.Disabled)
                 return;

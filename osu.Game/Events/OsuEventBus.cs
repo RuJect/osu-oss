@@ -3,14 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using osu.Framework.Development;
 using osu.Framework.Threading;
 
-namespace osu.Game.API.Events
+namespace osu.Game.Events
 {
     /// <summary>
-    /// A strongly-typed event bus for game-wide events. Independent from the scripting subsystem.
+    /// A strongly-typed event bus for game-wide events.
     /// </summary>
     /// <remarks>
     /// Handlers are always invoked on the update thread; publishing from another thread is marshalled via the

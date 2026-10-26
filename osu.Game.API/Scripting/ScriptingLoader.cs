@@ -7,7 +7,7 @@ using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Services;
 using osu.Game.Configuration;
 using osu.Game.IO;

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Platform;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Scripting.Api.Providers;
 using osu.Game.API.Services;

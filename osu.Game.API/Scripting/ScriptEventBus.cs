@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Jint.Native;
+using osu.Game.Events;
 using osu.Game.API.Events;
 
 namespace osu.Game.API.Scripting

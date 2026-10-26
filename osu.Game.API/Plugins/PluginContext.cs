@@ -2,7 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Platform;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Services;
 
 namespace osu.Game.API.Plugins

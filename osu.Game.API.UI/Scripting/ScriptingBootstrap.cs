@@ -4,7 +4,7 @@
 using System;
 using osu.Framework.Platform;
 using osu.Game;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Scripting;
 
 namespace osu.Game.API.UI.Scripting

@@ -195,7 +195,7 @@ namespace osu.Game.Screens.Play
         private LeaderboardManager? leaderboardManager { get; set; }
 
         [Resolved]
-        private GameEventHub events { get; set; } = null!;
+        private OsuEventBus events { get; set; } = null!;
 
         public PlayerLoader(Func<Player> createPlayer)
         {
@@ -560,7 +560,7 @@ namespace osu.Game.Screens.Play
             CurrentPlayer.RestartCount = restartCount++;
             CurrentPlayer.PrepareLoaderForRestart = prepareForRestart;
 
-            events.RaiseGameplayLoadingStarted(CurrentPlayer);
+            events.Publish(new GameplayLoadingEvent(CurrentPlayer) { UI = CurrentPlayer });
 
             LoadTask = LoadComponentAsync(CurrentPlayer, _ =>
             {

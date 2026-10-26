@@ -8,7 +8,7 @@ using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Screens.Play;
 
-namespace osu.Game.API.Events
+namespace osu.Game.Events
 {
     /// <summary>A beatmap was selected in the song select carousel (selected, not launched).</summary>
     public sealed record BeatmapSelectedEvent(BeatmapInfo Beatmap) : OsuApiEvent;

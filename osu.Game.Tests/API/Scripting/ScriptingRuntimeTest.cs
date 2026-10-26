@@ -12,6 +12,7 @@ using osu.Framework.Bindables;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Testing;
+using osu.Game.Events;
 using osu.Game.API.Events;
 using osu.Game.API.Scripting;
 using osu.Game.API.Services;

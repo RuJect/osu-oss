@@ -54,7 +54,7 @@ namespace osu.Game.Beatmaps
         /// <summary>
         /// Optional transport used to raise game-wide events (assigned by <see cref="OsuGameBase"/>).
         /// </summary>
-        public GameEventHub? Events { get; set; }
+        public OsuEventBus? Events { get; set; }
 
         public override bool PauseImports
         {
@@ -434,7 +434,7 @@ namespace osu.Game.Beatmaps
             bool deleted = base.Delete(item);
 
             if (deleted)
-                Events?.RaiseBeatmapDeleted(item);
+                Events?.Publish(new BeatmapDeletedEvent(item) { UI = null });
 
             return deleted;
         }

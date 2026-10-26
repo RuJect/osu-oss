@@ -5,7 +5,7 @@ using Jint;
 using Jint.Native;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Scripting;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Services;

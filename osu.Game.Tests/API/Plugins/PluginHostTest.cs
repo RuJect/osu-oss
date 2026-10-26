@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using osu.Game.API.Events;
+using osu.Game.Events;
 using osu.Game.API.Plugins;
 using osu.Game.API.Services;
 
