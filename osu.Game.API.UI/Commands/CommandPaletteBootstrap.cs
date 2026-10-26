@@ -22,10 +22,10 @@ namespace osu.Game.API.UI.Commands
 
         public CommandRegistry Registry => commands.Registry;
 
-        public CommandPaletteBootstrap(OsuGame game)
+        public CommandPaletteBootstrap(OsuGame game, CommandBootstrap commands)
         {
             this.game = game;
-            commands = new CommandBootstrap(game);
+            this.commands = commands;
 
             if (game.IsLoaded)
                 createOverlay();

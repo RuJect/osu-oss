@@ -12,6 +12,8 @@ using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
+using osu.Game.Events;
+using osu.Game.API.Commands;
 using osu.Game.API.Events;
 using osu.Game.API.Plugins;
 using osu.Game.API.UI.Commands;
@@ -234,7 +236,8 @@ namespace osu.Desktop
                     // C# plugin subsystem: loads plugins from osu-oss/plugins, sharing the scripting services.
                     using (new PluginBootstrap(game, scripting.Manager.Services, events.Bus))
                     // Command API + Ctrl+Space command palette.
-                    using (new CommandPaletteBootstrap(game))
+                    using (var commands = new CommandBootstrap(game))
+                    using (new CommandPaletteBootstrap(game, commands))
                     {
                         host.Run(game);
                     }

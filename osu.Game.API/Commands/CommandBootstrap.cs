@@ -58,8 +58,8 @@ namespace osu.Game.API.Commands
             registrations.Add(Registry.Add("mods")
                                     .Description("Set the active mods.")
                                     .Argument<string[]>("mods", argument => argument
-                                                                             .Description("Mod acronyms to enable.")
-                                                                             .SuggestElements(suggestMods))
+                                                                                 .Description("Mod acronyms to enable.")
+                                                                                 .SuggestElements(suggestMods))
                                     .Handler<string[]>(acronyms =>
                                     {
                                         if (game.TrySetModsByAcronyms(acronyms, out string? error))
@@ -77,9 +77,9 @@ namespace osu.Game.API.Commands
                                     .Description("Select the next skin, or a skin by name.")
                                     .Aliases("skins")
                                     .Argument<string>("name", argument => argument
-                                                                          .Description("The skin name, or 'random'.")
-                                                                          .Optional()
-                                                                          .Suggest(suggestSkins))
+                                                                           .Description("The skin name, or 'random'.")
+                                                                           .Optional()
+                                                                           .Suggest(suggestSkins))
                                     .Handler<string?>(name =>
                                     {
                                         if (string.IsNullOrWhiteSpace(name))
@@ -119,9 +119,9 @@ namespace osu.Game.API.Commands
                                     .Description("Select the next ruleset, or a ruleset by name.")
                                     .Aliases("mode")
                                     .Argument<string>("ruleset", argument => argument
-                                                                             .Description("The ruleset short name.")
-                                                                             .Optional()
-                                                                             .Suggest(suggestRulesets))
+                                                                                 .Description("The ruleset short name.")
+                                                                                 .Optional()
+                                                                                 .Suggest(suggestRulesets))
                                     .Handler<string?>(name =>
                                     {
                                         if (string.IsNullOrWhiteSpace(name))
@@ -147,12 +147,12 @@ namespace osu.Game.API.Commands
             registrations.Add(Registry.Add("profile")
                                     .Description("Open user profile overlay.")
                                     .Argument<string>("user", argument => argument
-                                                                                .Description("Username or ID of the user. If omitted, shows current user's profile.")
-                                                                                .Optional())
+                                                                                 .Description("Username or ID of the user. If omitted, shows current user's profile.")
+                                                                                 .Optional())
                                     .Argument<string>("ruleset", argument => argument
-                                                                                            .Description("Ruleset short name (e.g. osu, taiko, fruits, mania). If omitted, uses user's default playmode.")
-                                                                                            .Optional()
-                                                                                            .Suggest(suggestRulesets))
+                                                                                 .Description("Ruleset short name (e.g. osu, taiko, fruits, mania). If omitted, uses user's default playmode.")
+                                                                                 .Optional()
+                                                                                 .Suggest(suggestRulesets))
                                     .Handler<string?, string?>((user, ruleset) => game.ShowUserProfile(user, ruleset)));
         }
 
