@@ -6,9 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Screens;
 using osu.Game.API.Commands.Syntax;
+using osu.Game.Online.API;
+using osu.Game.Online.API.Requests;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select;
+using osu.Game.Users;
 using osu.Game.Utils;
 
 namespace osu.Game.API.Commands
@@ -55,8 +58,8 @@ namespace osu.Game.API.Commands
             registrations.Add(Registry.Add("mods")
                                     .Description("Set the active mods.")
                                     .Argument<string[]>("mods", argument => argument
-                                                                            .Description("Mod acronyms to enable.")
-                                                                            .SuggestElements(suggestMods))
+                                                                             .Description("Mod acronyms to enable.")
+                                                                             .SuggestElements(suggestMods))
                                     .Handler<string[]>(acronyms =>
                                     {
                                         if (game.TrySetModsByAcronyms(acronyms, out string? error))
@@ -140,6 +143,17 @@ namespace osu.Game.API.Commands
                                     .Description("Select a random beatmap.")
                                     .Aliases("randombeatmap", "random-map")
                                     .Handler(selectRandomBeatmap));
+
+            registrations.Add(Registry.Add("profile")
+                                    .Description("Open user profile overlay.")
+                                    .Argument<string>("user", argument => argument
+                                                                                .Description("Username or ID of the user. If omitted, shows current user's profile.")
+                                                                                .Optional())
+                                    .Argument<string>("ruleset", argument => argument
+                                                                                            .Description("Ruleset short name (e.g. osu, taiko, fruits, mania). If omitted, uses user's default playmode.")
+                                                                                            .Optional()
+                                                                                            .Suggest(suggestRulesets))
+                                    .Handler<string?, string?>((user, ruleset) => game.ShowUserProfile(user, ruleset)));
         }
 
         private IEnumerable<CommandSuggestion> suggestMods(ElementCompletionContext context)

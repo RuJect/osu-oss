@@ -52,6 +52,7 @@ using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
+using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Online.Rooms;
@@ -64,6 +65,7 @@ using osu.Game.Overlays.OSD;
 using osu.Game.Overlays.SkinEditor;
 using osu.Game.Overlays.Toolbar;
 using osu.Game.Overlays.Volume;
+using osu.Game.Rulesets;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using osu.Game.Scoring.Legacy;
@@ -78,12 +80,12 @@ using osu.Game.Screens.OnlinePlay.Playlists;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Screens.Ranking;
+using osu.Game.Users;
 using osu.Game.Screens.Select;
 using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Theming;
 using osu.Game.Updater;
-using osu.Game.Users;
 using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
@@ -645,6 +647,62 @@ namespace osu.Game
         /// </summary>
         /// <param name="user">The user to display.</param>
         public void ShowUser(IUser user) => waitForReady(() => userProfile, _ => userProfile.ShowUser(user));
+
+        /// <summary>
+        /// Show a user's profile as an overlay, looking up the user by ID or username if needed.
+        /// </summary>
+        /// <param name="userQuery">Username or ID of the user. If omitted, shows current user's profile.</param>
+        /// <param name="rulesetName">Ruleset short name (e.g. osu, taiko, fruits, mania). If omitted, uses user's default playmode.</param>
+        public void ShowUserProfile(string? userQuery = null, string? rulesetName = null)
+        {
+            IRulesetInfo? ruleset = null;
+
+            if (!string.IsNullOrWhiteSpace(rulesetName))
+            {
+                ruleset = AvailableRulesets.FirstOrDefault(r =>
+                    string.Equals(r.ShortName, rulesetName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(r.Name, rulesetName, StringComparison.OrdinalIgnoreCase));
+
+                if (ruleset == null)
+                {
+                    Notify(new SimpleNotification { Text = $"Unknown ruleset '{rulesetName}' (available: {string.Join(", ", AvailableRulesets.Select(r => r.ShortName))})" });
+                    return;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(userQuery))
+            {
+                if (!API.IsLoggedIn)
+                {
+                    Notify(new SimpleNotification { Text = "Not logged in" });
+                    return;
+                }
+
+                ShowUser(API.LocalUser.Value);
+                return;
+            }
+
+            // Fire the request ourselves so we can handle success/failure with user notifications
+            GetUserRequest request;
+            if (long.TryParse(userQuery, out var userId))
+            {
+                request = new GetUserRequest(userId, ruleset);
+            }
+            else
+            {
+                request = new GetUserRequest(userQuery, ruleset);
+            }
+
+            request.Success += user =>
+            {
+                ShowUser(user);
+            };
+            request.Failure += ex =>
+            {
+                Notify(new SimpleNotification { Text = $"User '{userQuery}' not found" });
+            };
+            API.Queue(request);
+        }
 
         /// <summary>
         /// Show a beatmap's set as an overlay, displaying the given beatmap.
