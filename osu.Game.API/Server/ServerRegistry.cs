@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using osu.Framework.Bindables;
 using osu.Game.Online.Server;
 
@@ -55,7 +56,7 @@ namespace osu.Game.API.Server
             bool replaced = servers.ContainsKey(server.Id);
             servers[server.Id] = server;
 
-            SyncBindableList();
+            syncBindableList();
             ServersChanged?.Invoke();
         }
 
@@ -69,7 +70,7 @@ namespace osu.Game.API.Server
 
             if (servers.Remove(serverId))
             {
-                SyncBindableList();
+                syncBindableList();
                 ServersChanged?.Invoke();
             }
         }
@@ -86,10 +87,10 @@ namespace osu.Game.API.Server
             return server;
         }
 
-        private void SyncBindableList()
+        private void syncBindableList()
         {
             availableServers.Clear();
-            foreach (var server in servers.Values)
+            foreach (var server in servers.Values.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
                 availableServers.Add(server);
         }
     }

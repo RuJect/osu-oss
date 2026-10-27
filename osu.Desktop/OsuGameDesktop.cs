@@ -72,12 +72,7 @@ namespace osu.Desktop
         protected override IServerRegistry? CreateServerRegistry() => ServerRegistry.CreateDefault();
 
         protected override IServerManager? CreateServerManager(IServerRegistry? registry)
-        {
-            if (registry is not IServerRegistry serverRegistry)
-                return null;
-
-            return new ServerManager(serverRegistry, LocalConfig);
-        }
+            => registry == null ? null : new ServerManager(registry, LocalConfig);
 
         private string? getStableInstallPath()
         {

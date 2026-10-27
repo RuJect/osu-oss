@@ -4,7 +4,6 @@
 using System;
 using osu.Framework.Bindables;
 using osu.Game.Online.API;
-using osu.Game.Online.Server;
 
 namespace osu.Game.Online.Server
 {
@@ -26,7 +25,9 @@ namespace osu.Game.Online.Server
 
         public IBindable<string> SelectedServerId => new Bindable<string>(string.Empty);
 
+#pragma warning disable CS0067 // This static implementation never changes servers.
         public event Action<IServer>? ActiveServerChanged;
+#pragma warning restore CS0067
 
         public void SelectServer(string serverId)
         {

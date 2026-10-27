@@ -2,9 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.Collections.Generic;
 using osu.Framework.Bindables;
-using osu.Game.Online.Server;
 
 namespace osu.Game.Online.Server
 {

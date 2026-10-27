@@ -3,7 +3,7 @@
 
 using System;
 using osu.Framework.Bindables;
-using osu.Game.Online.Server;
+using osu.Game.Configuration;
 
 namespace osu.Game.Online.Server
 {
