@@ -1,4 +1,4 @@
-{
+﻿{
   "solution": {
     "path": "osu.sln",
     "projects": [
@@ -6,7 +6,6 @@
       "osu.Game.API.UI\\osu.Game.API.UI.csproj",
       "osu.Game.API\\osu.Game.API.csproj",
       "osu.Game.Auth\\osu.Game.Auth.csproj",
-      "osu.Game.Auth.Isolation\\osu.Game.Auth.Isolation.csproj",
       "osu.Game.Auth.Supervisor\\osu.Game.Auth.Supervisor.csproj",
       "osu.Game.Benchmarks\\osu.Game.Benchmarks.csproj",
       "osu.Game.Rulesets.Catch.Tests\\osu.Game.Rulesets.Catch.Tests.csproj",

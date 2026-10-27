@@ -1,14 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Project">
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>osu-auth-supervisor</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CA1401</NoWarn>
     <StartupObject>osu.Game.Auth.Isolation.Supervisor.Program</StartupObject>
     <Description>Seccomp user-notification supervisor for the osu! auth isolation.</Description>
   </PropertyGroup>
 
-  <ItemGroup Label="Project References">
-    <ProjectReference Include="..\osu.Game.Auth.Isolation\osu.Game.Auth.Isolation.csproj"/>
+  <!-- Compile the shared isolation primitives directly: the supervisor must not depend on
+       osu.Game.Auth (and therefore on osu.Game/osu.Framework) at runtime. -->
+  <ItemGroup Label="Shared isolation sources">
+    <Compile Include="..\osu.Game.Auth\Isolation\ControlProtocol.cs" Link="Isolation\ControlProtocol.cs" />
+    <Compile Include="..\osu.Game.Auth\Isolation\IsolationPolicy.cs" Link="Isolation\IsolationPolicy.cs" />
+    <Compile Include="..\osu.Game.Auth\Isolation\Libc.cs" Link="Isolation\Libc.cs" />
+    <Compile Include="..\osu.Game.Auth\Isolation\Seccomp.cs" Link="Isolation\Seccomp.cs" />
   </ItemGroup>
 </Project>
