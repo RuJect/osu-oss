@@ -15,6 +15,7 @@ using osu.Framework.Testing;
 using osu.Game.Events;
 using osu.Game.API.Events;
 using osu.Game.API.Scripting;
+using osu.Game.API.Plugins;
 using osu.Game.API.Services;
 using osu.Game.Configuration;
 using osu.Game.Overlays;
@@ -40,7 +41,7 @@ namespace osu.Game.Tests.API.Scripting
             dataStorage = new TemporaryNativeStorage("data");
 
             eventBus = new OsuEventBus();
-            manager = new ScriptManager(null!, new OsuGame(), eventBus);
+            manager = new ScriptManager(createSystemContext(eventBus));
             manager.AttachStorage(new ScriptStorage(scriptStorage), dataStorage);
 
             inputManager = new TestInputManager();
@@ -604,6 +605,25 @@ namespace osu.Game.Tests.API.Scripting
             public IBindable<int> UnreadCount { get; } = new Bindable<int>();
 
             public IEnumerable<Notification> AllNotifications => Posted;
+        }
+
+        private static PluginContext createSystemContext(OsuEventBus bus)
+        {
+            var manifest = new PluginManifest
+            {
+                Id = "system",
+                Permissions = new PluginManifest.PluginPermissions { Trusted = true },
+            };
+
+            var services = new ApiServices(new OsuGame(), null!, new OutputLog());
+
+            return new PluginContext(
+                services,
+                new PluginEventService(bus, manifest),
+                new SchedulerService(),
+                null,
+                new PluginLogger("system", null),
+                manifest);
         }
     }
 }

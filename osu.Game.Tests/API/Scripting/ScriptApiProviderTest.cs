@@ -5,7 +5,7 @@ using Jint;
 using Jint.Native;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using osu.Game.Events;
+using osu.Game.API.Plugins;
 using osu.Game.API.Scripting;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Services;
@@ -25,7 +25,13 @@ namespace osu.Game.Tests.API.Scripting
 
             var output = new OutputLog();
             var repository = new ScriptRepository(output);
-            var events = new ScriptEventBus(new OsuEventBus());
+            var manifest = new PluginManifest
+            {
+                Id = "system",
+                Permissions = new PluginManifest.PluginPermissions { Trusted = true },
+            };
+
+            var events = new ScriptEventBus(new PluginEventService(new osu.Game.Events.OsuEventBus(), manifest));
             var services = new ScriptServices(new OsuGame(), null!, repository, output, events);
 
             context = new ScriptApiContext(engine, null!, services, null!, new JsObject(engine));
