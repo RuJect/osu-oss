@@ -44,7 +44,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "kv")]
         public JsValue Get(string? key)
         {
-            StorageService? data = Context.Services.Storage;
+            StorageService? data = Context.Plugin.Services.Storage;
 
             if (data == null || key == null)
                 return JsValue.Undefined;
@@ -56,7 +56,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "kv")]
         public void Set(string? key, JsValue value)
         {
-            StorageService? data = Context.Services.Storage;
+            StorageService? data = Context.Plugin.Services.Storage;
 
             if (data == null || key == null || value.IsUndefined())
                 return;
@@ -67,13 +67,13 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "kv")]
         public void Delete(string? key)
         {
-            StorageService? data = Context.Services.Storage;
+            StorageService? data = Context.Plugin.Services.Storage;
 
             if (data != null && key != null)
                 data.KvDelete(key);
         }
 
         [ScriptApi(Target = "kv")]
-        public string[] Keys() => Context.Services.Storage?.KvKeys() ?? Array.Empty<string>();
+        public string[] Keys() => Context.Plugin.Services.Storage?.KvKeys() ?? Array.Empty<string>();
     }
 }

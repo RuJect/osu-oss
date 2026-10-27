@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Jint;
 using Jint.Native;
+using osu.Game.API.Plugins;
 using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api
@@ -15,16 +16,16 @@ namespace osu.Game.API.Scripting.Api
     internal class ScriptApiBuilder
     {
         private readonly Engine engine;
-        private readonly ScriptServices services;
-        private readonly ScriptRunner runner;
+        private readonly PluginContext plugin;
+        private readonly ScriptManager manager;
         private readonly ScriptInstance instance;
         private readonly IReadOnlyList<IScriptApiProvider> providers;
 
-        public ScriptApiBuilder(Engine engine, ScriptServices services, ScriptRunner runner, ScriptInstance instance, IReadOnlyList<IScriptApiProvider> providers)
+        public ScriptApiBuilder(Engine engine, PluginContext plugin, ScriptManager manager, ScriptRunner runner, ScriptInstance instance, IReadOnlyList<IScriptApiProvider> providers)
         {
             this.engine = engine;
-            this.services = services;
-            this.runner = runner;
+            this.plugin = plugin;
+            this.manager = manager;
             this.instance = instance;
             this.providers = providers;
         }
@@ -32,7 +33,7 @@ namespace osu.Game.API.Scripting.Api
         public JsObject Build()
         {
             var api = new JsObject(engine);
-            var context = new ScriptApiContext(engine, instance, services, runner, api);
+            var context = new ScriptApiContext(engine, instance, plugin, manager, api);
 
             foreach (IScriptApiProvider provider in providers)
             {
@@ -42,7 +43,7 @@ namespace osu.Game.API.Scripting.Api
                 }
                 catch (Exception e)
                 {
-                    services.Output.Log(OutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
+                    manager.Output.Log(OutputLevel.Error, instance.Name, $"failed to register API provider {provider.GetType().Name}: {e.Message}");
                 }
             }
 

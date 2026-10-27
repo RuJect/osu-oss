@@ -22,11 +22,11 @@ namespace osu.Game.API.Scripting.Api.Providers
 
             try
             {
-                Context.Services.Notifications?.Post(message, level);
+                Context.Plugin.Services.Notifications?.Post(message, level);
             }
             catch (Exception e)
             {
-                Context.Services.Output.Log(OutputLevel.Warn, "osu", $"notify failed: {e.Message}");
+                Context.Plugin.Services.Output.Log(OutputLevel.Warn, "osu", $"notify failed: {e.Message}");
             }
         }
 
@@ -36,10 +36,10 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "notify")]
         public JsValue Progress(string? message)
         {
-            if (Context.Services.Notifications == null || message == null)
+            if (Context.Plugin.Services.Notifications == null || message == null)
                 return JsValue.Undefined;
 
-            ProgressNotificationHandle notification = Context.Services.Notifications.Progress(message);
+            ProgressNotificationHandle notification = Context.Plugin.Services.Notifications.Progress(message);
 
             JsObject handle = Context.CreateObject();
 

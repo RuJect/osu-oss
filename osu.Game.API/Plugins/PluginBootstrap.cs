@@ -3,42 +3,48 @@
 
 using System;
 using osu.Framework.Allocation;
+using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game.Events;
 using osu.Game.API.Services;
+using osu.Game.Configuration;
+using osu.Game.Events;
 using osu.Game.IO;
+using osu.Game.Online.Server;
+using osu.Game.Overlays;
 
 namespace osu.Game.API.Plugins
 {
     /// <summary>
     /// Composition root of the plugin subsystem. Constructed from <c>osu.Desktop/Program.cs</c> around
-    /// <c>host.Run(game)</c>; once the game has loaded, registers the built-in "system" plugin (which the
-    /// scripting subsystem runs against) and loads plugins from <c>osu-oss/plugins</c>.
+    /// <c>host.Run(game)</c>; once the game has loaded, resolves the game services, registers the built-in
+    /// "system" plugin (which the scripting subsystem runs against) and loads plugins from <c>osu-oss/plugins</c>.
     /// </summary>
     /// <remarks>
-    /// Must be constructed before <see cref="osu.Game.API.Scripting.ScriptingBootstrap"/>: both hook the
+    /// Must be constructed before <c>ScriptingBootstrap</c>: both hook the
     /// game's load complete and handlers fire in registration order, so the system plugin is in place by
     /// the time scripting initialises.
     /// </remarks>
     public class PluginBootstrap : IDisposable
     {
-        private readonly OsuGame game;
-        private readonly ApiServices services;
-        private readonly OsuEventBus events;
-        private readonly PluginHost pluginHost;
+        private static readonly Logger logger = Logger.GetLogger("plugins");
 
+        private readonly OsuGame game;
+        private readonly GameHost host;
+        private readonly OsuEventBus events;
+
+        private InputManagerProvider? input;
         private bool initialised;
         private bool disposed;
 
-        public PluginHost Host => pluginHost;
+        public PluginHost? Host { get; private set; }
 
-        public PluginBootstrap(OsuGame game, ApiServices services, OsuEventBus events)
+        public GameServices? Services { get; private set; }
+
+        public PluginBootstrap(OsuGame game, GameHost host, OsuEventBus events)
         {
             this.game = game;
-            this.services = services;
+            this.host = host;
             this.events = events;
-
-            pluginHost = new PluginHost(game, services, events);
 
             if (game.IsLoaded)
                 initialise();
@@ -53,58 +59,51 @@ namespace osu.Game.API.Plugins
 
             initialised = true;
 
-            game.Add(new PluginRuntimeComponent(pluginHost));
-
-            loadSystemPlugin();
-
             try
             {
                 Storage storage = game.Dependencies.Get<Storage>();
+                input = new InputManagerProvider();
+
+                Services = new GameServices(
+                    game, host, new OutputLog(),
+                    storage,
+                    SpecialStorage.GetScripts(storage),
+                    SpecialStorage.GetScriptData(storage),
+                    game.Dependencies.Get<MusicController>(),
+                    game.Dependencies.Get<OsuConfigManager>(),
+                    game.Dependencies.Get<INotificationOverlay>(),
+                    game.Dependencies.Get<IServerRegistry>(),
+                    game.Dependencies.Get<IServerManager>(),
+                    () => input.Value);
+
+                Host = new PluginHost(events, Services.CreatePluginServices);
+
+                game.Add(new PluginRuntimeComponent(Host, input));
+
+                loadSystemPlugin(storage);
 
                 var repository = new PluginRepository(SpecialStorage.GetPlugins(storage));
-                var loader = new PluginLoader(services.Output);
+                var loader = new PluginLoader(Services.Output);
 
                 foreach (PluginLoadResult result in loader.LoadFrom(repository))
-                    pluginHost.Load(result);
+                    Host.Load(result);
             }
             catch (Exception e)
             {
-                services.Output.Log(OutputLevel.Error, "plugins", $"failed to initialise plugins: {e.Message}");
+                logger.Add($"failed to initialise plugins: {e.Message}", LogLevel.Error);
             }
         }
 
-        private void loadSystemPlugin()
+        private void loadSystemPlugin(Storage storage)
         {
-            try
+            var manifest = new PluginManifest
             {
-                Storage storage = game.Dependencies.Get<Storage>();
+                Id = PluginManifest.SYSTEM_ID,
+                Permissions = new PluginManifest.PluginPermissions { Trusted = true },
+                DirectoryPath = SpecialStorage.GetScripts(storage).GetFullPath(string.Empty),
+            };
 
-                var manifest = new PluginManifest
-                {
-                    Id = "system",
-                    About = "Built-in plugin hosting the global JavaScript scripting environment.",
-                    Permissions = new PluginManifest.PluginPermissions { Trusted = true },
-                    DirectoryPath = SpecialStorage.GetScripts(storage).GetFullPath(string.Empty),
-                };
-
-                // The system plugin shares the scripts data directory: user scripts persist their files under
-                // osu-oss/scripts/data, and the scripting console operates on the same storage.
-                var systemStorage = new StorageService(new ScopedStorage(SpecialStorage.GetScriptData(storage)));
-
-                var context = new PluginContext(
-                    services,
-                    new PluginEventService(events, manifest),
-                    new SchedulerService(),
-                    systemStorage,
-                    new PluginLogger("system", systemStorage),
-                    manifest);
-
-                pluginHost.LoadSystemPlugin(manifest, context);
-            }
-            catch (Exception e)
-            {
-                services.Output.Log(OutputLevel.Error, "system", $"failed to load system plugin: {e.Message}");
-            }
+            Host!.LoadSystemPlugin(manifest);
         }
 
         public void Dispose()
@@ -113,7 +112,7 @@ namespace osu.Game.API.Plugins
                 return;
 
             disposed = true;
-            pluginHost.UnloadAll();
+            Host?.UnloadAll();
         }
     }
 }

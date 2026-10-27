@@ -3,12 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using osu.Framework.Allocation;
-using osu.Framework.Platform;
-using osu.Game.IO;
 using osu.Game.API.Events;
-using osu.Game.Events;
 using osu.Game.API.Services;
+using osu.Game.Events;
 
 namespace osu.Game.API.Plugins
 {
@@ -18,20 +15,18 @@ namespace osu.Game.API.Plugins
     /// </summary>
     public class PluginHost
     {
-        private readonly OsuGame game;
-        private readonly ApiServices services;
         private readonly OsuEventBus events;
+        private readonly Func<PluginManifest, ApiServices> servicesFactory;
         private readonly List<LoadedPlugin> loaded = new List<LoadedPlugin>();
 
         public event Action? LoadedPluginsChanged;
 
         public IReadOnlyList<LoadedPlugin> Loaded => loaded;
 
-        public PluginHost(OsuGame game, ApiServices services, OsuEventBus events)
+        public PluginHost(OsuEventBus events, Func<PluginManifest, ApiServices> servicesFactory)
         {
-            this.game = game;
-            this.services = services;
             this.events = events;
+            this.servicesFactory = servicesFactory;
         }
 
         /// <summary>Loads a discovered plugin and returns its entry. Load failures are logged.</summary>
@@ -39,17 +34,20 @@ namespace osu.Game.API.Plugins
         {
             var manifest = result.Manifest;
 
-            var pluginStorage = pluginDataStorage(manifest);
-            var logger = new PluginLogger(manifest.Id, pluginStorage);
-            var pluginEvents = new PluginEventService(events, manifest);
-            var context = new PluginContext(services, pluginEvents, new SchedulerService(), pluginStorage, logger, manifest);
+            ApiServices services = servicesFactory(manifest);
+            var context = new PluginContext(services, new PluginEventService(events, manifest), new SchedulerService(),
+                new PluginLogger(manifest.Id), manifest);
             var entry = new LoadedPlugin(result.CSharpPlugin, context, manifest);
 
             loaded.Add(entry);
 
             try
             {
-                pluginEvents.LoadPlugin(result.CSharpPlugin, context);
+                events.Publish(new PluginLoadingEvent(manifest));
+
+                result.CSharpPlugin.Load(context);
+
+                events.Publish(new PluginLoadedEvent(manifest));
 
                 entry.State = PluginState.Running;
                 services.Output.Log(OutputLevel.Info, entry.Name, "loaded");
@@ -64,20 +62,24 @@ namespace osu.Game.API.Plugins
         }
 
         /// <summary>
-        /// Registers the built-in "system" plugin written into the scripting subsystem. The caller builds
-        /// its context: no assembly is loaded, the entry only holds state and drives the scheduler.
+        /// Registers the built-in "system" plugin written into the scripting subsystem. No assembly is loaded;
+        /// the entry only holds state and drives the scheduler.
         /// </summary>
-        public LoadedPlugin LoadSystemPlugin(PluginManifest manifest, PluginContext context)
+        public LoadedPlugin LoadSystemPlugin(PluginManifest manifest)
         {
+            ApiServices services = servicesFactory(manifest);
+            var context = new PluginContext(services, new PluginEventService(events, manifest), new SchedulerService(),
+                new PluginLogger(manifest.Id), manifest);
             var entry = new LoadedPlugin(null, context, manifest);
 
-            context.Events.Publish(new PluginLoadingEvent(manifest));
+            events.Publish(new PluginLoadingEvent(manifest));
 
             loaded.Add(entry);
 
+            events.Publish(new PluginLoadedEvent(manifest));
+
             entry.State = PluginState.Running;
             services.Output.Log(OutputLevel.Info, entry.Name, "loaded (system)");
-            context.Events.Publish(new PluginLoadedEvent(manifest));
             LoadedPluginsChanged?.Invoke();
             return entry;
         }
@@ -88,28 +90,22 @@ namespace osu.Game.API.Plugins
             if (!loaded.Remove(entry))
                 return;
 
+            events.Publish(new PluginUnloadingEvent(entry.Manifest));
+
             try
             {
-                if (entry.Plugin != null)
-                {
-                    entry.Context.Events.UnloadPlugin(entry.Plugin);
-                }
-                else
-                {
-                    entry.Context.Events.Publish(new PluginUnloadingEvent(entry.Manifest));
-                    entry.Context.Events.Dispose();
-                    entry.Context.Events.Publish(new PluginUnloadedEvent(entry.Manifest));
-                }
+                entry.Plugin?.Unload();
             }
             catch (Exception e)
             {
                 entry.Logger.Error(e.Message);
-                services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
+                entry.Context.Services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
             }
 
-            entry.Context.Scheduler.Clear();
+            entry.Context.Dispose();
             entry.State = PluginState.Stopped;
-            services.Output.Log(OutputLevel.Info, entry.Name, "unloaded");
+            events.Publish(new PluginUnloadedEvent(entry.Manifest));
+            entry.Context.Services.Output.Log(OutputLevel.Info, entry.Name, "unloaded");
             LoadedPluginsChanged?.Invoke();
         }
 
@@ -135,25 +131,9 @@ namespace osu.Game.API.Plugins
         {
             entry.State = PluginState.Error;
             entry.Context.Events.Dispose();
+            events.Publish(new PluginLoadFailedEvent(entry.Manifest, e.Message));
             entry.Logger.Error(e.Message);
-            services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
-        }
-
-        private StorageService? pluginDataStorage(PluginManifest manifest)
-        {
-            if (!manifest.Permissions.HasPermission("data"))
-                return null;
-
-            try
-            {
-                var storage = game.Dependencies.Get<Storage>();
-                return new StorageService(new ScopedStorage(SpecialStorage.GetPluginData(storage, manifest.Id)));
-            }
-            catch (Exception e)
-            {
-                services.Output.Log(OutputLevel.Error, manifest.Id, $"failed to resolve plugin data storage: {e.Message}");
-                return null;
-            }
+            entry.Context.Services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
         }
     }
 }

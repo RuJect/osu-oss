@@ -12,9 +12,9 @@ namespace osu.Game.API.Scripting.Api.Providers
     public class InternalApiProvider : ScriptApiProvider
     {
         [ScriptApi(Target = "internal", Global = true)]
-        public OsuGame Game => Context.Services.Game;
+        public OsuGame Game => Context.Plugin.Services.Game;
 
         [ScriptApi(Target = "internal", Global = true)]
-        public GameHost Host => Context.Services.Host;
+        public GameHost Host => Context.Plugin.Services.Host;
     }
 }

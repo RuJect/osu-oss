@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using osu.Game.API.Events;
 using osu.Game.Events;
 
 namespace osu.Game.API.Plugins
@@ -25,44 +24,11 @@ namespace osu.Game.API.Plugins
             this.manifest = manifest;
         }
 
-        /// <summary>Signals the load lifecycle around <see cref="PluginBase.Load"/>.</summary>
-        public void LoadPlugin(PluginBase plugin, PluginContext context)
-        {
-            bus.Publish(new PluginLoadingEvent(manifest));
-
-            plugin.Load(context);
-
-            bus.Publish(new PluginLoadedEvent(manifest));
-        }
-
-        /// <summary>
-        /// Signals the unload lifecycle around <see cref="PluginBase.Unload"/>, then detaches every
-        /// subscription created through this service so unloaded plugins go silent.
-        /// </summary>
-        public void UnloadPlugin(PluginBase plugin)
-        {
-            bus.Publish(new PluginUnloadingEvent(manifest));
-
-            try
-            {
-                plugin.Unload();
-            }
-            finally
-            {
-                foreach (IDisposable subscription in subscriptions)
-                    subscription.Dispose();
-
-                subscriptions.Clear();
-
-                bus.Publish(new PluginUnloadedEvent(manifest));
-            }
-        }
-
         /// <summary>Subscribes to events of type <typeparamref name="TEvent"/>. Dispose the token to detach.</summary>
         public IDisposable Subscribe<TEvent>(Action<TEvent> handler)
             where TEvent : OsuApiEvent
         {
-            if (!manifest.Permissions.HasPermission("bus"))
+            if (!manifest.Permissions.CanUseBus)
                 return new DetachedSubscription();
 
             IDisposable token = bus.Subscribe(handler);
@@ -73,7 +39,7 @@ namespace osu.Game.API.Plugins
         /// <summary>Subscribes to every event published on the bus. Dispose the token to detach.</summary>
         public IDisposable SubscribeAll(Action<OsuApiEvent> handler)
         {
-            if (!manifest.Permissions.HasPermission("bus"))
+            if (!manifest.Permissions.CanUseBus)
                 return new DetachedSubscription();
 
             IDisposable token = bus.SubscribeAll(handler);
@@ -85,7 +51,7 @@ namespace osu.Game.API.Plugins
         public void Publish<TEvent>(TEvent @event)
             where TEvent : OsuApiEvent
         {
-            if (!manifest.Permissions.HasPermission("bus"))
+            if (!manifest.Permissions.CanUseBus)
                 return;
 
             bus.Publish(@event);

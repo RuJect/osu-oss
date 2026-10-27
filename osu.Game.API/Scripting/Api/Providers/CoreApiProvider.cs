@@ -12,7 +12,7 @@ namespace osu.Game.API.Scripting.Api.Providers
     public class CoreApiProvider : ScriptApiProvider
     {
         [ScriptApi]
-        public string Version => Context.Services.Version;
+        public string Version => Context.Plugin.Services.Version;
 
         [ScriptApi]
         public JsValue Run(string? name)
@@ -38,7 +38,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         public void StopAll() => Context.Runner.StopAll();
 
         [ScriptApi]
-        public string[] Scripts() => Context.Services.Repository.GetNames();
+        public string[] Scripts() => Context.Repository.GetNames();
 
         private JsObject createHandle(ScriptInstance instance)
         {

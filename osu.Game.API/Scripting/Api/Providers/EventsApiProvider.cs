@@ -17,21 +17,21 @@ namespace osu.Game.API.Scripting.Api.Providers
         public void On(string? eventName, JsValue handler)
         {
             if (eventName != null && handler.IsCallable())
-                Context.Services.Events.Subscribe(Context.Instance, eventName, handler);
+                Context.Events.Subscribe(Context.Instance, eventName, handler);
         }
 
         [ScriptApi]
         public void Off(string? eventName, JsValue handler)
         {
             if (eventName != null && handler.IsCallable())
-                Context.Services.Events.Unsubscribe(Context.Instance, eventName, handler);
+                Context.Events.Unsubscribe(Context.Instance, eventName, handler);
         }
 
         [ScriptApi]
         public void Once(string? eventName, JsValue handler)
         {
             if (eventName != null && handler.IsCallable())
-                Context.Services.Events.SubscribeOnce(Context.Instance, eventName, handler);
+                Context.Events.SubscribeOnce(Context.Instance, eventName, handler);
         }
 
         [ScriptApi]

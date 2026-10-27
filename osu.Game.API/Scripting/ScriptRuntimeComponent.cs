@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Input;
 
 namespace osu.Game.API.Scripting
 {
@@ -17,8 +16,6 @@ namespace osu.Game.API.Scripting
         {
             this.runner = runner;
         }
-
-        public InputManager? FindInputManager() => GetContainingInputManager();
 
         protected override void Update()
         {

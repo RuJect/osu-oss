@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Modules;
+using osu.Game.API.Plugins;
 using osu.Game.API.Scripting.Api;
 
 namespace osu.Game.API.Scripting
@@ -16,7 +17,8 @@ namespace osu.Game.API.Scripting
     /// </summary>
     public class ScriptEngineFactory
     {
-        private readonly ScriptServices services;
+        private readonly PluginContext plugin;
+        private readonly ScriptManager manager;
         private readonly Func<IReadOnlyList<IScriptApiProvider>> providerFactory;
 
         /// <summary>
@@ -24,9 +26,11 @@ namespace osu.Game.API.Scripting
         /// </summary>
         public bool AllowClr { get; set; } = true;
 
-        public ScriptEngineFactory(ScriptServices services, Func<IReadOnlyList<IScriptApiProvider>> providerFactory)
+        public ScriptEngineFactory(PluginContext plugin, ScriptManager manager,
+                                   Func<IReadOnlyList<IScriptApiProvider>> providerFactory)
         {
-            this.services = services;
+            this.plugin = plugin;
+            this.manager = manager;
             this.providerFactory = providerFactory;
         }
 
@@ -49,7 +53,7 @@ namespace osu.Game.API.Scripting
             var engine = new Engine(options);
             instance.Engine = engine;
 
-            JsObject api = new ScriptApiBuilder(engine, services, runner, instance, providerFactory()).Build();
+            JsObject api = new ScriptApiBuilder(engine, plugin, manager, runner, instance, providerFactory()).Build();
 
             engine.SetValue("osu", api);
 

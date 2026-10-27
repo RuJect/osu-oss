@@ -3,14 +3,12 @@
 
 using System;
 using System.Linq;
-using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Logging;
-using osu.Framework.Platform;
 using osu.Game.API.Plugins;
+using osu.Game.API.Services;
 using osu.Game.Configuration;
-using osu.Game.IO;
 
 namespace osu.Game.API.Scripting
 {
@@ -68,7 +66,7 @@ namespace osu.Game.API.Scripting
 
             initialised = true;
 
-            var systemPlugin = pluginBootstrap.Host.Loaded.FirstOrDefault(p => p.Manifest.Id == "system");
+            var systemPlugin = pluginBootstrap.Host?.Loaded.FirstOrDefault(p => p.Manifest.Id == PluginManifest.SYSTEM_ID);
 
             if (systemPlugin == null)
             {
@@ -81,18 +79,23 @@ namespace osu.Game.API.Scripting
             var runtime = new ScriptRuntimeComponent(Manager.Runner);
             game.Add(runtime);
 
-            Manager.Services.InputManager = runtime.FindInputManager();
-
             if (game.ScreenStack != null)
                 screenBridge = new ScreenEventBridge(Manager.Events, game.ScreenStack);
 
             try
             {
-                Storage storage = game.Dependencies.Get<Storage>();
-                var scriptStorage = new ScriptStorage(SpecialStorage.GetScripts(storage));
+                GameServices? gameServices = pluginBootstrap.Services;
+
+                if (gameServices == null)
+                {
+                    logger.Add("Game services are unavailable; JavaScript scripting is unavailable.");
+                    return;
+                }
+
+                var scriptStorage = new ScriptStorage(gameServices.ScriptsStorage);
                 scriptStorage.EnsureInitialised();
 
-                Manager.AttachStorage(scriptStorage, SpecialStorage.GetScriptData(storage));
+                Manager.AttachStorage(scriptStorage);
             }
             catch (Exception e)
             {

@@ -12,34 +12,34 @@ namespace osu.Game.API.Scripting.Api.Providers
     public class MusicApiProvider : ScriptApiProvider
     {
         [ScriptApi(Target = "music")]
-        public bool IsPlaying() => Context.Services.Music?.IsPlaying ?? false;
+        public bool IsPlaying() => Context.Plugin.Services.Music?.IsPlaying ?? false;
 
         [ScriptApi(Target = "music")]
-        public void Play() => Context.Services.Music?.Play();
+        public void Play() => Context.Plugin.Services.Music?.Play();
 
         [ScriptApi(Target = "music")]
-        public void Pause() => Context.Services.Music?.Pause();
+        public void Pause() => Context.Plugin.Services.Music?.Pause();
 
         [ScriptApi(Target = "music")]
-        public void TogglePause() => Context.Services.Music?.TogglePause();
+        public void TogglePause() => Context.Plugin.Services.Music?.TogglePause();
 
         [ScriptApi(Target = "music")]
-        public void Stop() => Context.Services.Music?.Stop();
+        public void Stop() => Context.Plugin.Services.Music?.Stop();
 
         [ScriptApi(Target = "music")]
-        public void Next() => Context.Services.Music?.Next();
+        public void Next() => Context.Plugin.Services.Music?.Next();
 
         [ScriptApi(Target = "music")]
-        public void Previous() => Context.Services.Music?.Previous();
+        public void Previous() => Context.Plugin.Services.Music?.Previous();
 
         [ScriptApi(Target = "music")]
-        public void Seek(double position) => Context.Services.Music?.Seek(position);
+        public void Seek(double position) => Context.Plugin.Services.Music?.Seek(position);
 
         /// <summary>Returns metadata for the currently loaded track, or <c>undefined</c> when none.</summary>
         [ScriptApi(Target = "music")]
         public JsValue CurrentTrack()
         {
-            MusicTrack? track = Context.Services.Music?.CurrentTrack();
+            MusicTrack? track = Context.Plugin.Services.Music?.CurrentTrack();
 
             if (track == null)
                 return JsValue.Undefined;

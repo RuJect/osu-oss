@@ -26,11 +26,11 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "ui")]
         public JsValue Overlay(string? title)
         {
-            GameHost? host = Context.Services.Host;
-            OsuGame game = Context.Services.Game;
+            GameHost? host = Context.Plugin.Services.Host;
+            OsuGame game = Context.Plugin.Services.Game;
             Engine engine = Context.Engine;
             ScriptInstance instance = Context.Instance;
-            OutputLog output = Context.Services.Output;
+            OutputLog output = Context.Plugin.Services.Output;
 
             if (host == null)
                 return JsValue.Undefined;

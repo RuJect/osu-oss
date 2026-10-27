@@ -80,12 +80,12 @@ namespace osu.Game.API.Scripting
             }
 
             if (once)
-                Unsubscribe(instance, handler);
+                unsubscribe(instance, handler);
         }
 
-        public void Unsubscribe(ScriptInstance instance, string eventName, JsValue handler) => Unsubscribe(instance, handler);
+        public void Unsubscribe(ScriptInstance instance, string eventName, JsValue handler) => unsubscribe(instance, handler);
 
-        private void Unsubscribe(ScriptInstance instance, JsValue handler)
+        private void unsubscribe(ScriptInstance instance, JsValue handler)
         {
             if (!subscriptions.TryGetValue(instance, out List<Subscription>? list))
                 return;

@@ -9,6 +9,7 @@ using osu.Game.API.Plugins;
 using osu.Game.API.Scripting;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Services;
+using osu.Game.Events;
 
 namespace osu.Game.Tests.API.Scripting
 {
@@ -24,17 +25,22 @@ namespace osu.Game.Tests.API.Scripting
             engine = new Engine();
 
             var output = new OutputLog();
-            var repository = new ScriptRepository(output);
             var manifest = new PluginManifest
             {
-                Id = "system",
+                Id = PluginManifest.SYSTEM_ID,
                 Permissions = new PluginManifest.PluginPermissions { Trusted = true },
             };
 
-            var events = new ScriptEventBus(new PluginEventService(new osu.Game.Events.OsuEventBus(), manifest));
-            var services = new ScriptServices(new OsuGame(), null!, repository, output, events);
+            var apiServices = new ApiServices(new OsuGame(), null!, output);
+            var plugin = new PluginContext(
+                apiServices,
+                new PluginEventService(new OsuEventBus(), manifest),
+                new SchedulerService(),
+                new PluginLogger(PluginManifest.SYSTEM_ID),
+                manifest);
+            var manager = new ScriptManager(plugin);
 
-            context = new ScriptApiContext(engine, null!, services, null!, new JsObject(engine));
+            context = new ScriptApiContext(engine, null!, plugin, manager, new JsObject(engine));
         }
 
         [Test]

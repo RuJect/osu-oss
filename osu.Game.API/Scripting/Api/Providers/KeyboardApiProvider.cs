@@ -18,19 +18,19 @@ namespace osu.Game.API.Scripting.Api.Providers
     {
         private KeyboardService? keyboard;
 
-        private KeyboardService Keyboard => keyboard ??= new KeyboardService(Context.Services, Context.Instance.Scheduler);
+        private KeyboardService keyboardService => keyboard ??= new KeyboardService(Context.Plugin.Services, Context.Instance.Scheduler);
 
         /// <summary>Whether every key in <paramref name="keys"/> is currently pressed.</summary>
         [ScriptApi(Target = "keyboard")]
-        public bool IsDown(JsValue keys) => Keyboard.IsDown(parseKeys(keys));
+        public bool IsDown(JsValue keys) => keyboardService.IsDown(parseKeys(keys));
 
         /// <summary>Holds the given key or key combination down until <c>osu.keyboard.up</c>.</summary>
         [ScriptApi(Target = "keyboard")]
-        public void Down(JsValue keys) => Keyboard.Down(parseKeys(keys));
+        public void Down(JsValue keys) => keyboardService.Down(parseKeys(keys));
 
         /// <summary>Releases the given key or key combination.</summary>
         [ScriptApi(Target = "keyboard")]
-        public void Up(JsValue keys) => Keyboard.Up(parseKeys(keys));
+        public void Up(JsValue keys) => keyboardService.Up(parseKeys(keys));
 
         /// <summary>
         /// Presses and releases the given key or combination after <paramref name="duration"/> milliseconds
@@ -39,14 +39,14 @@ namespace osu.Game.API.Scripting.Api.Providers
         /// </summary>
         [ScriptApi(Target = "keyboard")]
         public Task Press(JsValue keys, JsValue duration)
-            => Keyboard.Press(parseKeys(keys), duration.IsNumber() ? duration.AsNumber() : null);
+            => keyboardService.Press(parseKeys(keys), duration.IsNumber() ? duration.AsNumber() : null);
 
         /// <summary>Registers a callback invoked with the key name when a key is pressed.</summary>
         [ScriptApi(Target = "keyboard")]
         public void OnPress(JsValue handler)
         {
             if (handler.IsCallable())
-                Keyboard.OnPress(key => Context.Engine.Invoke(handler, key.ToString()));
+                keyboardService.OnPress(key => Context.Engine.Invoke(handler, key.ToString()));
         }
 
         /// <summary>Registers a callback invoked with the key name when a key is released.</summary>
@@ -54,7 +54,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         public void OnRelease(JsValue handler)
         {
             if (handler.IsCallable())
-                Keyboard.OnRelease(key => Context.Engine.Invoke(handler, key.ToString()));
+                keyboardService.OnRelease(key => Context.Engine.Invoke(handler, key.ToString()));
         }
 
         protected override void OnRegistered(ScriptApiContext context)

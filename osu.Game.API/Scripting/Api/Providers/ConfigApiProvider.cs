@@ -17,7 +17,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "config")]
         public JsValue Get(string? key)
         {
-            ConfigService? config = Context.Services.Config;
+            ConfigService? config = Context.Plugin.Services.Config;
             OsuSetting? setting = parse(key);
 
             if (config == null || setting == null)
@@ -30,7 +30,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         [ScriptApi(Target = "config")]
         public void Set(string? key, JsValue value)
         {
-            ConfigService? config = Context.Services.Config;
+            ConfigService? config = Context.Plugin.Services.Config;
             OsuSetting? setting = parse(key);
 
             if (config == null || setting == null)
@@ -40,7 +40,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         [ScriptApi(Target = "config")]
-        public string[] Keys() => Context.Services.Config?.Keys() ?? Array.Empty<string>();
+        public string[] Keys() => Context.Plugin.Services.Config?.Keys() ?? Array.Empty<string>();
 
         private static OsuSetting? parse(string? key)
             => key == null || !Enum.TryParse<OsuSetting>(key, true, out OsuSetting setting) ? null : setting;

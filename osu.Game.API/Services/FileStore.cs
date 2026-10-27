@@ -9,14 +9,14 @@ using osu.Framework.Platform;
 namespace osu.Game.API.Services
 {
     /// <summary>
-    /// Shared file operations over a scoped <see cref="Storage"/>. Used by both the script store and the
-    /// script data store so read/write/list logic lives in a single place.
+    /// File operations over a scoped <see cref="Storage"/>. Used by the script store and by per-plugin
+    /// storage so read/write/list logic lives in a single place.
     /// </summary>
-    public abstract class FileStore
+    public class FileStore
     {
         private readonly Storage storage;
 
-        protected FileStore(Storage storage)
+        public FileStore(Storage storage)
         {
             this.storage = storage;
         }

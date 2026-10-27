@@ -232,7 +232,7 @@ namespace osu.Desktop
                     // Game event API: shared typed event bus consumed by the scripting subsystem and plugins.
                     using (var events = new OsuEventBootstrap(host, game))
                     // C# plugin subsystem: loads plugins from osu-oss/plugins and hosts the built-in "system" plugin.
-                    using (var plugins = new PluginBootstrap(game, events.Services, events.Bus))
+                    using (var plugins = new PluginBootstrap(game, host, events.Bus))
                     // JavaScript scripting subsystem: runs in the system plugin context and hosts the Ctrl+F4 console overlay.
                     using (var scripting = new ScriptingBootstrap(game, plugins))
                     // Command API + Ctrl+Space command palette.

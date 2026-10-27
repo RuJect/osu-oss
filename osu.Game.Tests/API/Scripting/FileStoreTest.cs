@@ -7,7 +7,6 @@ using System.Linq;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using osu.Framework.Testing;
-using osu.Game.API.Scripting;
 using osu.Game.API.Services;
 
 namespace osu.Game.Tests.API.Scripting
@@ -16,7 +15,7 @@ namespace osu.Game.Tests.API.Scripting
     public class FileStoreTest
     {
         private TemporaryNativeStorage storage = null!;
-        private ScopedStorage store = null!;
+        private FileStore store = null!;
         private string outsideFile = null!;
         private string outsideDirectory = null!;
 
@@ -24,7 +23,7 @@ namespace osu.Game.Tests.API.Scripting
         public void SetUp()
         {
             storage = new TemporaryNativeStorage("script-file-store");
-            store = new ScopedStorage(storage);
+            store = new FileStore(storage);
 
             string parent = Path.Combine(storage.GetFullPath(string.Empty), "..");
             outsideFile = Path.Combine(parent, $"outside-{Guid.NewGuid():N}.txt");

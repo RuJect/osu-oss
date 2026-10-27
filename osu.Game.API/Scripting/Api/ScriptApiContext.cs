@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using Jint;
 using Jint.Native;
 using Jint.Runtime.Interop;
+using osu.Game.API.Plugins;
 using osu.Game.API.Services;
 
 namespace osu.Game.API.Scripting.Api
@@ -20,20 +21,32 @@ namespace osu.Game.API.Scripting.Api
 
         public Engine Engine { get; }
         public ScriptInstance Instance { get; }
-        public ScriptServices Services { get; }
+
+        /// <summary>The plugin context whose services are exposed to the script.</summary>
+        public PluginContext Plugin { get; }
+
+        /// <summary>The scripting manager owning this context.</summary>
+        public ScriptManager Manager { get; }
+
+        /// <summary>Compatibility view of the plugin's services plus scripting collaborators.</summary>
+        public ScriptServices Services => Manager.Services;
+
+        public ScriptRepository Repository => Manager.Repository;
+
+        public ScriptEventBus Events => Manager.Events;
 
         /// <summary>The runner owning <see cref="Instance"/>, used to trigger cross-script behaviour.</summary>
-        public ScriptRunner Runner { get; }
+        public ScriptRunner Runner => Manager.Runner;
 
         /// <summary>The root <c>osu</c> object exposed to the script.</summary>
         public JsObject Api { get; }
 
-        public ScriptApiContext(Engine engine, ScriptInstance instance, ScriptServices services, ScriptRunner runner, JsObject api)
+        public ScriptApiContext(Engine engine, ScriptInstance instance, PluginContext plugin, ScriptManager manager, JsObject api)
         {
             Engine = engine;
             Instance = instance;
-            Services = services;
-            Runner = runner;
+            Plugin = plugin;
+            Manager = manager;
             Api = api;
         }
 

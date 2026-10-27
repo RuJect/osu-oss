@@ -38,7 +38,7 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         private void write(OutputLevel level, JsValue[] args)
-            => Context.Services.Output.Log(level, Context.Instance.Name, string.Join(" ", args.Select(format)));
+            => Context.Plugin.Services.Output.Log(level, Context.Instance.Name, string.Join(" ", args.Select(format)));
 
         private JsValue stringify(JsValue value)
         {

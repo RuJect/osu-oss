@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using osu.Framework.Platform;
 using osu.Game.API.Plugins;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Scripting.Api.Providers;
@@ -40,15 +39,18 @@ namespace osu.Game.API.Scripting
 
         public ScriptServices Services { get; }
 
+        public PluginContext Plugin { get; }
+
         public ScriptManager(PluginContext pluginContext)
         {
-            Output = pluginContext.Output;
+            Plugin = pluginContext;
+            Output = pluginContext.Services.Output;
             Repository = new ScriptRepository(Output);
             Events = new ScriptEventBus(pluginContext.Events);
-            Services = new ScriptServices(pluginContext.Game, pluginContext.Host, Repository, Output, Events);
+            Services = new ScriptServices(pluginContext.Services, Repository, Events);
             Locator = new ScriptLocator(Repository);
 
-            engineFactory = new ScriptEngineFactory(Services, buildProviderList);
+            engineFactory = new ScriptEngineFactory(pluginContext, this, buildProviderList);
             Runner = new ScriptRunner(Services, engineFactory, Locator);
 
             RegisterApiProvider(() => new ConsoleApiProvider());
@@ -65,22 +67,14 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(() => new UiApiProvider());
             RegisterApiProvider(() => new CursorApiProvider());
             RegisterApiProvider(() => new KeyboardApiProvider());
-
-            Services.Storage = pluginContext.Storage;
-            Services.Music = pluginContext.Music;
-            Services.Config = pluginContext.Config;
-            Services.Notifications = pluginContext.Notifications;
-            Services.Servers = pluginContext.Servers;
-            Services.ServerManager = pluginContext.ServerManager;
         }
 
         /// <summary>
-        /// Binds the on-disk script and data stores once the game has finished loading.
+        /// Binds the on-disk script repository once the game has finished loading.
         /// </summary>
-        public void AttachStorage(ScriptStorage scriptStorage, Storage dataStorage)
+        public void AttachStorage(ScriptStorage scriptStorage)
         {
             Repository.Storage = scriptStorage;
-            Services.Storage = new StorageService(new ScopedStorage(dataStorage));
             Repository.Refresh();
         }
 

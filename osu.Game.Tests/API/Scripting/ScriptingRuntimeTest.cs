@@ -12,12 +12,12 @@ using osu.Framework.Bindables;
 using osu.Framework.Input;
 using osu.Framework.Input.Handlers;
 using osu.Framework.Testing;
-using osu.Game.Events;
 using osu.Game.API.Events;
-using osu.Game.API.Scripting;
 using osu.Game.API.Plugins;
+using osu.Game.API.Scripting;
 using osu.Game.API.Services;
 using osu.Game.Configuration;
+using osu.Game.Events;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 using osuTK;
@@ -32,6 +32,7 @@ namespace osu.Game.Tests.API.Scripting
         private TemporaryNativeStorage scriptStorage = null!;
         private TemporaryNativeStorage dataStorage = null!;
         private TestInputManager inputManager = null!;
+        private InputManagerProvider inputProvider = null!;
         private OsuEventBus eventBus = null!;
 
         [SetUp]
@@ -41,11 +42,11 @@ namespace osu.Game.Tests.API.Scripting
             dataStorage = new TemporaryNativeStorage("data");
 
             eventBus = new OsuEventBus();
-            manager = new ScriptManager(createSystemContext(eventBus));
-            manager.AttachStorage(new ScriptStorage(scriptStorage), dataStorage);
-
             inputManager = new TestInputManager();
-            manager.Services.InputManager = inputManager;
+            inputProvider = new InputManagerProvider { Value = inputManager };
+
+            manager = new ScriptManager(createSystemContext(eventBus, new StorageService(new FileStore(dataStorage)), inputProvider));
+            manager.AttachStorage(new ScriptStorage(scriptStorage));
         }
 
         [TearDown]
@@ -109,7 +110,7 @@ namespace osu.Game.Tests.API.Scripting
             ScriptInstance? instance = manager.RunByName("anonymous-1");
 
             ClassicAssert.IsNotNull(instance);
-            ClassicAssert.AreEqual(ScriptExecutionState.Stopped, instance.State);
+            ClassicAssert.AreEqual(ScriptExecutionState.Stopped, instance!.State);
             ClassicAssert.IsFalse(manager.Runner.Running.Any(i => i.Name == "anonymous-1"));
             ClassicAssert.IsFalse(logged("should not run"));
         }
@@ -253,7 +254,7 @@ namespace osu.Game.Tests.API.Scripting
         [Test]
         public void TestConfigGetAndSet()
         {
-            manager.Services.Config = new ConfigService(new OsuConfigManager(new TemporaryNativeStorage("config")));
+            useServices(config: new ConfigService(new OsuConfigManager(new TemporaryNativeStorage("config"))));
 
             run("osu.config.set('Username', 'player'); osu.log('name=' + osu.config.get('Username')); osu.config.set('ShowConvertedBeatmaps', false); osu.log('conv=' + osu.config.get('ShowConvertedBeatmaps'));");
 
@@ -265,7 +266,7 @@ namespace osu.Game.Tests.API.Scripting
         public void TestNotifyProgress()
         {
             var overlay = new TestNotificationOverlay();
-            manager.Services.Notifications = new NotificationService(overlay);
+            useServices(notifications: new NotificationService(overlay));
 
             run("let p = osu.notify.progress('Loading'); osu.log('type=' + typeof p.setProgress); p.setProgress(0.5); p.complete();");
 
@@ -384,7 +385,7 @@ namespace osu.Game.Tests.API.Scripting
         [Test]
         public void TestKeyboardNoOpWhenUnavailable()
         {
-            manager.Services.InputManager = null;
+            inputProvider.Value = null;
 
             run("osu.keyboard.down('a'); osu.log('down=' + osu.keyboard.isDown('a')); osu.log('pos=' + (osu.cursor.position() === undefined));");
 
@@ -536,7 +537,7 @@ namespace osu.Game.Tests.API.Scripting
         [Test]
         public void TestTopLevelAwaitNoInputCompletes()
         {
-            manager.Services.InputManager = null;
+            inputProvider.Value = null;
 
             ScriptInstance instance = run("await osu.cursor.moveTo(1, 1); await osu.keyboard.press('a'); osu.log('done');", "async");
 
@@ -587,6 +588,15 @@ namespace osu.Game.Tests.API.Scripting
 
         private bool logged(string text) => manager.Output.History.Any(o => o.Text == text);
 
+        private void useServices(ConfigService? config = null, NotificationService? notifications = null)
+        {
+            manager.Runner.StopAll();
+
+            var storage = new StorageService(new FileStore(dataStorage));
+            manager = new ScriptManager(createSystemContext(eventBus, storage, inputProvider, config, notifications));
+            manager.AttachStorage(new ScriptStorage(scriptStorage));
+        }
+
         private partial class TestInputManager : InputManager
         {
             protected override ImmutableArray<InputHandler> InputHandlers => ImmutableArray<InputHandler>.Empty;
@@ -607,22 +617,23 @@ namespace osu.Game.Tests.API.Scripting
             public IEnumerable<Notification> AllNotifications => Posted;
         }
 
-        private static PluginContext createSystemContext(OsuEventBus bus)
+        private static PluginContext createSystemContext(OsuEventBus bus, StorageService storage, InputManagerProvider input,
+                                                         ConfigService? config = null, NotificationService? notifications = null)
         {
             var manifest = new PluginManifest
             {
-                Id = "system",
+                Id = PluginManifest.SYSTEM_ID,
                 Permissions = new PluginManifest.PluginPermissions { Trusted = true },
             };
 
-            var services = new ApiServices(new OsuGame(), null!, new OutputLog());
+            var services = new ApiServices(new OsuGame(), null!, new OutputLog(), storage, null, config, notifications,
+                () => input.Value);
 
             return new PluginContext(
                 services,
                 new PluginEventService(bus, manifest),
                 new SchedulerService(),
-                null,
-                new PluginLogger("system", null),
+                new PluginLogger(PluginManifest.SYSTEM_ID),
                 manifest);
         }
     }

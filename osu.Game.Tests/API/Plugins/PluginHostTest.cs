@@ -26,8 +26,7 @@ namespace osu.Game.Tests.API.Plugins
             bus = new OsuEventBus();
 
             var game = new OsuGame();
-            var services = new ApiServices(game, null!, output);
-            host = new PluginHost(game, services, bus);
+            host = new PluginHost(bus, _ => new ApiServices(game, null!, output));
         }
 
         [Test]
@@ -51,9 +50,10 @@ namespace osu.Game.Tests.API.Plugins
             load(plugin);
 
             ClassicAssert.IsNotNull(plugin.Context);
-            ClassicAssert.IsNotNull(plugin.Context.Output);
+            ClassicAssert.IsNotNull(plugin.Context!.Services.Output);
             ClassicAssert.IsNotNull(plugin.Context.Events);
             ClassicAssert.IsNotNull(plugin.Context.Scheduler);
+            ClassicAssert.IsNotNull(plugin.Context.Logger);
             ClassicAssert.IsNotNull(plugin.Context.Manifest);
         }
 

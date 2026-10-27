@@ -11,8 +11,8 @@ using osu.Game.API.Services;
 namespace osu.Game.API.Plugins
 {
     /// <summary>
-    /// Instantiates <see cref="PluginBase"/>s from plugin manifests. Entry points are already resolved on
-    /// the manifest; each concrete, public, parameterless subclass found in the assembly yields one result.
+    /// Instantiates <see cref="PluginBase"/>s from plugin manifests. Entry points are resolved from the
+    /// manifest directory here; each manifest yields at most one result.
     /// </summary>
     public class PluginLoader
     {
@@ -32,6 +32,8 @@ namespace osu.Game.API.Plugins
         {
             var results = new List<PluginLoadResult>();
 
+            resolveEntryPoints(manifest);
+
             if (!string.IsNullOrEmpty(manifest.CSharpEntryPoint))
             {
                 var plugin = loadCSharpPlugin(manifest.CSharpEntryPoint, manifest.Id);
@@ -49,6 +51,28 @@ namespace osu.Game.API.Plugins
             return results;
         }
 
+        private static void resolveEntryPoints(PluginManifest manifest)
+        {
+            if (!string.IsNullOrEmpty(manifest.DirectoryPath))
+            {
+                if (string.IsNullOrEmpty(manifest.CSharpEntryPoint))
+                {
+                    string csharpPath = Path.Combine(manifest.DirectoryPath, "bin", $"{manifest.Id}.dll");
+
+                    if (File.Exists(csharpPath))
+                        manifest.CSharpEntryPoint = csharpPath;
+                }
+
+                if (string.IsNullOrEmpty(manifest.JavaScriptEntryPoint))
+                {
+                    string scriptPath = Path.Combine(manifest.DirectoryPath, "scripts", $"{manifest.Id}.js");
+
+                    if (File.Exists(scriptPath))
+                        manifest.JavaScriptEntryPoint = scriptPath;
+                }
+            }
+        }
+
         private PluginBase? loadCSharpPlugin(string path, string pluginId)
         {
             Assembly assembly;
@@ -63,9 +87,11 @@ namespace osu.Game.API.Plugins
                 return null;
             }
 
+            var candidates = new List<Type>();
+
             foreach (Type type in getLoadableTypes(assembly))
             {
-                if (!typeof(PluginBase).IsAssignableFrom(type) || type.IsAbstract || type.IsInterface)
+                if (!typeof(PluginBase).IsAssignableFrom(type) || type.IsAbstract || type.IsInterface || !type.IsPublic)
                     continue;
 
                 if (type.GetConstructor(Type.EmptyTypes) == null)
@@ -74,6 +100,17 @@ namespace osu.Game.API.Plugins
                     continue;
                 }
 
+                candidates.Add(type);
+            }
+
+            if (candidates.Count > 1)
+            {
+                string ignored = string.Join(", ", candidates.Skip(1).Select(t => t.FullName));
+                output.Log(OutputLevel.Warn, pluginId, $"multiple PluginBase subclasses found; loading {candidates[0].FullName} and ignoring: {ignored}");
+            }
+
+            foreach (Type type in candidates)
+            {
                 try
                 {
                     return (PluginBase)Activator.CreateInstance(type)!;

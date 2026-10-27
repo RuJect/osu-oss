@@ -16,13 +16,13 @@ namespace osu.Game.API.Scripting.Api.Providers
     {
         private CursorService? cursor;
 
-        private CursorService Cursor => cursor ??= new CursorService(Context.Services, Context.Instance.Scheduler);
+        private CursorService cursorService => cursor ??= new CursorService(Context.Plugin.Services, Context.Instance.Scheduler);
 
         /// <summary>Returns the cursor position as <c>{ x, y }</c>, or <c>undefined</c> when input is unavailable.</summary>
         [ScriptApi(Target = "cursor")]
         public JsValue Position()
         {
-            Vector2? position = Cursor.Position();
+            Vector2? position = cursorService.Position();
 
             if (position == null)
                 return JsValue.Undefined;
@@ -40,13 +40,13 @@ namespace osu.Game.API.Scripting.Api.Providers
         /// </summary>
         [ScriptApi(Target = "cursor")]
         public Task MoveTo(double x, double y, JsValue duration)
-            => Cursor.MoveTo(x, y, duration.IsNumber() ? duration.AsNumber() : null);
+            => cursorService.MoveTo(x, y, duration.IsNumber() ? duration.AsNumber() : null);
 
         /// <summary>
         /// Moves the cursor to <paramref name="x"/>, <paramref name="y"/> at <paramref name="speed"/> pixels per
         /// second. Awaitable; completes when the movement ends or is superseded.
         /// </summary>
         [ScriptApi(Target = "cursor")]
-        public Task MoveAtSpeed(double x, double y, double speed) => Cursor.MoveAtSpeed(x, y, speed);
+        public Task MoveAtSpeed(double x, double y, double speed) => cursorService.MoveAtSpeed(x, y, speed);
     }
 }

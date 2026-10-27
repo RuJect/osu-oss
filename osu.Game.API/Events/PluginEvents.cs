@@ -1,8 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using osu.Game.Events;
 using osu.Game.API.Plugins;
+using osu.Game.Events;
 
 namespace osu.Game.API.Events
 {
@@ -17,4 +17,7 @@ namespace osu.Game.API.Events
 
     /// <summary>A plugin was unloaded; its event subscriptions and scheduler are released.</summary>
     public sealed record PluginUnloadedEvent(PluginManifest Manifest) : OsuApiEvent;
+
+    /// <summary>A plugin failed to load or threw while running; its context has been released.</summary>
+    public sealed record PluginLoadFailedEvent(PluginManifest Manifest, string Message) : OsuApiEvent;
 }

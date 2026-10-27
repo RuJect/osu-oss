@@ -1,6 +1,8 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
+using System.Text.RegularExpressions;
 using osu.Framework.Platform;
 
 namespace osu.Game.IO
@@ -12,6 +14,8 @@ namespace osu.Game.IO
     /// </summary>
     public static class SpecialStorage
     {
+        private static readonly Regex plugin_id_regex = new Regex(@"^[a-z][a-z0-9_]*$", RegexOptions.Compiled);
+
         /// <summary>Name of the scoped directory inside the osu! storage.</summary>
         public const string ROOT_FOLDER = "osu-oss";
 
@@ -49,7 +53,14 @@ namespace osu.Game.IO
         public static Storage GetPlugins(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(PLUGINS_FOLDER);
 
         /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/data</c> directory, creating it if required.</summary>
-        public static Storage GetPluginData(Storage osuStorage, string pluginId) => GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(DATA_FOLDER);
+        /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
+        public static Storage GetPluginData(Storage osuStorage, string pluginId)
+        {
+            if (string.IsNullOrEmpty(pluginId) || !plugin_id_regex.IsMatch(pluginId))
+                throw new ArgumentException("Plugin id must match ^[a-z][a-z0-9_]*$.", nameof(pluginId));
+
+            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(DATA_FOLDER);
+        }
 
         /// <summary>Absolute path of the <c>osu-oss</c> directory.</summary>
         public static string GetRootPath(Storage osuStorage) => osuStorage.GetFullPath(ROOT_FOLDER);
