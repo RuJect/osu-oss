@@ -19,6 +19,15 @@ namespace osu.Game.API.Plugins
         /// <summary>The plugin's identifier. Also names the containing directory, its assembly and its script.</summary>
         public string Id { get; set; } = string.Empty;
 
+        /// <summary>The plugin's release version. Required; must be a valid semantic version.</summary>
+        public string Version { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The plugin API version the plugin targets. Optional; when present it must be a valid semantic
+        /// version whose major component matches <see cref="PluginApi.CurrentVersion"/>.
+        /// </summary>
+        public string? ApiVersion { get; set; }
+
         public PluginPermissions Permissions { get; set; } = new PluginPermissions();
 
         /// <summary>The resolved path of the C# plugin assembly, or <c>null</c> if none is present.</summary>
@@ -32,6 +41,46 @@ namespace osu.Game.API.Plugins
 
         public bool IsValidId => !string.IsNullOrEmpty(Id) && id_pattern.IsMatch(Id);
 
+        /// <summary>Validates the manifest, returning a human-readable reason on failure.</summary>
+        public bool TryValidate(out string? error)
+        {
+            if (!IsValidId)
+            {
+                error = $"invalid plugin id '{Id}' (expected ^[a-z][a-z0-9_]*$)";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(Version))
+            {
+                error = "missing plugin version";
+                return false;
+            }
+
+            if (!PluginApi.TryParseVersion(Version, out _))
+            {
+                error = $"invalid plugin version '{Version}'";
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(ApiVersion))
+            {
+                if (!PluginApi.TryParseVersion(ApiVersion, out var apiVersion))
+                {
+                    error = $"invalid plugin API version '{ApiVersion}'";
+                    return false;
+                }
+
+                if (apiVersion.Major != PluginApi.CurrentVersion.Major)
+                {
+                    error = $"incompatible plugin API version '{ApiVersion}' (expected major {PluginApi.CurrentVersion.Major})";
+                    return false;
+                }
+            }
+
+            error = null;
+            return true;
+        }
+
         public sealed class PluginPermissions
         {
             /// <summary>Grants everything; only meant for built-in (system) plugins.</summary>
@@ -43,19 +92,14 @@ namespace osu.Game.API.Plugins
             /// <summary>Persistent per-plugin data directory.</summary>
             public bool Data { get; set; }
 
-            /// <summary>Access to static CLR helpers from JavaScript.</summary>
-            public bool JsStatic { get; set; }
-
-            /// <summary>Access to runtime CLR helpers from JavaScript.</summary>
-            public bool JsRuntime { get; set; }
+            /// <summary>Access to the JavaScript runtime.</summary>
+            public bool Js { get; set; }
 
             public bool CanUseBus => Trusted || Bus;
 
             public bool CanUseData => Trusted || Data;
 
-            public bool CanUseJsStatic => Trusted || JsStatic;
-
-            public bool CanUseJsRuntime => Trusted || JsRuntime;
+            public bool CanUseJs => Trusted || Js;
         }
     }
 }

@@ -43,8 +43,7 @@ namespace osu.Game.Tests.API.Plugins
 
             ClassicAssert.IsFalse(permissions.CanUseBus);
             ClassicAssert.IsFalse(permissions.CanUseData);
-            ClassicAssert.IsFalse(permissions.CanUseJsStatic);
-            ClassicAssert.IsFalse(permissions.CanUseJsRuntime);
+            ClassicAssert.IsFalse(permissions.CanUseJs);
         }
 
         [Test]
@@ -54,8 +53,7 @@ namespace osu.Game.Tests.API.Plugins
 
             ClassicAssert.IsTrue(permissions.CanUseBus);
             ClassicAssert.IsFalse(permissions.CanUseData);
-            ClassicAssert.IsFalse(permissions.CanUseJsStatic);
-            ClassicAssert.IsFalse(permissions.CanUseJsRuntime);
+            ClassicAssert.IsFalse(permissions.CanUseJs);
         }
 
         [Test]
@@ -65,30 +63,17 @@ namespace osu.Game.Tests.API.Plugins
 
             ClassicAssert.IsFalse(permissions.CanUseBus);
             ClassicAssert.IsTrue(permissions.CanUseData);
-            ClassicAssert.IsFalse(permissions.CanUseJsStatic);
-            ClassicAssert.IsFalse(permissions.CanUseJsRuntime);
+            ClassicAssert.IsFalse(permissions.CanUseJs);
         }
 
         [Test]
-        public void TestJsStaticPermission()
+        public void TestJsPermission()
         {
-            var permissions = new PluginManifest.PluginPermissions { JsStatic = true };
+            var permissions = new PluginManifest.PluginPermissions { Js = true };
 
             ClassicAssert.IsFalse(permissions.CanUseBus);
             ClassicAssert.IsFalse(permissions.CanUseData);
-            ClassicAssert.IsTrue(permissions.CanUseJsStatic);
-            ClassicAssert.IsFalse(permissions.CanUseJsRuntime);
-        }
-
-        [Test]
-        public void TestJsRuntimePermission()
-        {
-            var permissions = new PluginManifest.PluginPermissions { JsRuntime = true };
-
-            ClassicAssert.IsFalse(permissions.CanUseBus);
-            ClassicAssert.IsFalse(permissions.CanUseData);
-            ClassicAssert.IsFalse(permissions.CanUseJsStatic);
-            ClassicAssert.IsTrue(permissions.CanUseJsRuntime);
+            ClassicAssert.IsTrue(permissions.CanUseJs);
         }
 
         [Test]
@@ -98,8 +83,59 @@ namespace osu.Game.Tests.API.Plugins
 
             ClassicAssert.IsTrue(permissions.CanUseBus);
             ClassicAssert.IsTrue(permissions.CanUseData);
-            ClassicAssert.IsTrue(permissions.CanUseJsStatic);
-            ClassicAssert.IsTrue(permissions.CanUseJsRuntime);
+            ClassicAssert.IsTrue(permissions.CanUseJs);
+        }
+
+        [Test]
+        public void TestValidVersion()
+        {
+            var manifest = new PluginManifest { Id = "test", Version = "1.2.3" };
+
+            ClassicAssert.IsTrue(manifest.TryValidate(out string? error));
+            ClassicAssert.IsNull(error);
+        }
+
+        [Test]
+        public void TestMissingVersionIsInvalid()
+        {
+            var manifest = new PluginManifest { Id = "test" };
+
+            ClassicAssert.IsFalse(manifest.TryValidate(out string? error));
+            ClassicAssert.IsNotNull(error);
+        }
+
+        [Test]
+        public void TestInvalidVersionIsInvalid()
+        {
+            var manifest = new PluginManifest { Id = "test", Version = "not-a-version" };
+
+            ClassicAssert.IsFalse(manifest.TryValidate(out string? error));
+            ClassicAssert.IsNotNull(error);
+        }
+
+        [Test]
+        public void TestMissingApiVersionIsAccepted()
+        {
+            var manifest = new PluginManifest { Id = "test", Version = "1.0.0" };
+
+            ClassicAssert.IsTrue(manifest.TryValidate(out _));
+        }
+
+        [Test]
+        public void TestMatchingApiMajorIsAccepted()
+        {
+            var manifest = new PluginManifest { Id = "test", Version = "1.0.0", ApiVersion = $"{PluginApi.CurrentVersion.Major}.0.0" };
+
+            ClassicAssert.IsTrue(manifest.TryValidate(out _));
+        }
+
+        [Test]
+        public void TestIncompatibleApiMajorIsInvalid()
+        {
+            var manifest = new PluginManifest { Id = "test", Version = "1.0.0", ApiVersion = $"{PluginApi.CurrentVersion.Major + 1}.0.0" };
+
+            ClassicAssert.IsFalse(manifest.TryValidate(out string? error));
+            ClassicAssert.IsNotNull(error);
         }
     }
 }

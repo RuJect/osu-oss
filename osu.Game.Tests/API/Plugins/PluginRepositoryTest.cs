@@ -34,8 +34,8 @@ namespace osu.Game.Tests.API.Plugins
         [Test]
         public void TestEnumerateDiscoversValidManifests()
         {
-            writeManifest("alpha", "{\"Id\":\"alpha\"}");
-            writeManifest("beta", "{\"Id\":\"beta\",\"Permissions\":{\"Bus\":true,\"Data\":true}}");
+            writeManifest("alpha", "{\"Id\":\"alpha\",\"Version\":\"1.0.0\"}");
+            writeManifest("beta", "{\"Id\":\"beta\",\"Version\":\"1.0.0\",\"Permissions\":{\"Bus\":true,\"Data\":true}}");
 
             PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
 
@@ -54,8 +54,8 @@ namespace osu.Game.Tests.API.Plugins
         [Test]
         public void TestInvalidIdIsSkipped()
         {
-            writeManifest("Invalid-Id", "{\"Id\":\"Invalid-Id\"}");
-            writeManifest("valid", "{\"Id\":\"valid\"}");
+            writeManifest("Invalid-Id", "{\"Id\":\"Invalid-Id\",\"Version\":\"1.0.0\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
 
             PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
 
@@ -67,18 +67,112 @@ namespace osu.Game.Tests.API.Plugins
         public void TestDirectoryWithoutManifestIsSkipped()
         {
             Directory.CreateDirectory(Path.Combine(root, "no-manifest"));
-            writeManifest("valid", "{\"Id\":\"valid\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
 
-            ClassicAssert.AreEqual(1, repository.EnumeratePlugins().Count());
+            ClassicAssert.AreEqual(1, repository.EnumeratePlugins().Count);
         }
 
         [Test]
         public void TestEmptyManifestIsSkipped()
         {
             writeManifest("empty", "   ");
-            writeManifest("valid", "{\"Id\":\"valid\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
 
-            ClassicAssert.AreEqual(1, repository.EnumeratePlugins().Count());
+            ClassicAssert.AreEqual(1, repository.EnumeratePlugins().Count);
+        }
+
+        [Test]
+        public void TestMalformedManifestDoesNotStopNextPlugin()
+        {
+            writeManifest("broken", "{ not valid json");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("valid", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestMissingVersionIsSkipped()
+        {
+            writeManifest("no_version", "{\"Id\":\"no_version\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("valid", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestInvalidApiVersionIsSkipped()
+        {
+            writeManifest("bad_api", "{\"Id\":\"bad_api\",\"Version\":\"1.0.0\",\"ApiVersion\":\"not-a-version\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("valid", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestIncompatibleApiMajorIsSkipped()
+        {
+            writeManifest("old_api", $"{{\"Id\":\"old_api\",\"Version\":\"1.0.0\",\"ApiVersion\":\"{PluginApi.CurrentVersion.Major + 1}.0.0\"}}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("valid", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestMatchingApiMajorIsAccepted()
+        {
+            writeManifest("matching_api", $"{{\"Id\":\"matching_api\",\"Version\":\"1.0.0\",\"ApiVersion\":\"{PluginApi.CurrentVersion.Major}.5.0\"}}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("matching_api", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestMissingApiVersionIsAccepted()
+        {
+            writeManifest("no_api", "{\"Id\":\"no_api\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("no_api", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestSystemIdIsSkipped()
+        {
+            writeManifest("system", "{\"Id\":\"system\",\"Version\":\"1.0.0\"}");
+            writeManifest("valid", "{\"Id\":\"valid\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("valid", manifests[0].Id);
+        }
+
+        [Test]
+        public void TestDuplicateIdIsSkipped()
+        {
+            writeManifest("alpha", "{\"Id\":\"alpha\",\"Version\":\"1.0.0\"}");
+            writeManifest("alpha_copy", "{\"Id\":\"alpha\",\"Version\":\"1.0.0\"}");
+
+            PluginManifest[] manifests = repository.EnumeratePlugins().ToArray();
+
+            ClassicAssert.AreEqual(1, manifests.Length);
+            ClassicAssert.AreEqual("alpha", manifests[0].Id);
         }
 
         private void writeManifest(string id, string json)

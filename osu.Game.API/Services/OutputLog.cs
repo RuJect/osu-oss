@@ -9,7 +9,7 @@ namespace osu.Game.API.Services
 {
     /// <summary>
     /// Accumulates the output history of every running script and plugin and raises an event for each
-    /// appended line.
+    /// appended line. Safe to call from any thread.
     /// </summary>
     public class OutputLog
     {
@@ -18,23 +18,34 @@ namespace osu.Game.API.Services
         private static readonly Logger logger = Logger.GetLogger("scripts");
 
         private readonly List<OutputEntry> history = new List<OutputEntry>();
+        private readonly object historyLock = new object();
 
         public event Action<OutputEntry>? OutputAppended;
 
-        public IReadOnlyList<OutputEntry> History => history;
+        public IReadOnlyList<OutputEntry> History
+        {
+            get
+            {
+                lock (historyLock)
+                    return history.ToArray();
+            }
+        }
 
         public void Log(OutputLevel level, string source, string text)
         {
             var entry = new OutputEntry(level, source, text);
 
-            history.Add(entry);
+            lock (historyLock)
+            {
+                history.Add(entry);
 
-            while (history.Count > max_history)
-                history.RemoveAt(0);
+                while (history.Count > max_history)
+                    history.RemoveAt(0);
 
-            OutputAppended?.Invoke(entry);
+                OutputAppended?.Invoke(entry);
 
-            logger.Add($"[{source}] {text}", level == OutputLevel.Error ? LogLevel.Error : LogLevel.Verbose);
+                logger.Add($"[{source}] {text}", level == OutputLevel.Error ? LogLevel.Error : LogLevel.Verbose);
+            }
         }
     }
 }

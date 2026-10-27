@@ -16,6 +16,7 @@ namespace osu.Game.Tests.API.Plugins
     public class PluginLoaderTest
     {
         private TemporaryNativeStorage storage = null!;
+        private TemporaryNativeStorage logsStorage = null!;
         private OutputLog output = null!;
         private PluginLoader loader = null!;
         private string root = null!;
@@ -24,8 +25,9 @@ namespace osu.Game.Tests.API.Plugins
         public void SetUp()
         {
             storage = new TemporaryNativeStorage("plugin-loader");
+            logsStorage = new TemporaryNativeStorage("plugin-loader-logs");
             output = new OutputLog();
-            loader = new PluginLoader(output);
+            loader = new PluginLoader(output, manifest => new PluginLogger(manifest.Id, logsStorage));
             root = storage.GetFullPath(string.Empty);
         }
 
@@ -33,10 +35,11 @@ namespace osu.Game.Tests.API.Plugins
         public void TearDown()
         {
             storage.Dispose();
+            logsStorage.Dispose();
         }
 
         [Test]
-        public void TestScriptOnlyPluginProducesNoResults()
+        public void TestScriptOnlyPluginProducesOneResult()
         {
             const string id = "script_only";
             string directory = createPluginDirectory(id);
@@ -48,10 +51,14 @@ namespace osu.Game.Tests.API.Plugins
 
             PluginLoadResult[] results = loader.LoadFromManifest(manifest).ToArray();
 
-            ClassicAssert.IsEmpty(results);
+            ClassicAssert.AreEqual(1, results.Length);
+            ClassicAssert.IsNull(results[0].CSharpPlugin);
+            ClassicAssert.IsFalse(results[0].HasCSharp);
+            ClassicAssert.IsTrue(results[0].HasJavaScript);
             ClassicAssert.IsNull(manifest.CSharpEntryPoint);
             ClassicAssert.AreEqual(Path.Combine(scripts, $"{id}.js"), manifest.JavaScriptEntryPoint);
-            ClassicAssert.IsTrue(output.History.Any(o => o.Level == OutputLevel.Warn && o.Text.Contains("JS plugins are not supported yet")));
+            ClassicAssert.AreEqual(Path.Combine(scripts, $"{id}.js"), results[0].JavaScriptEntryPoint);
+            ClassicAssert.IsFalse(output.History.Any(o => o.Text.Contains("JS plugins are not supported yet")));
         }
 
         [Test]
@@ -86,6 +93,7 @@ namespace osu.Game.Tests.API.Plugins
             ClassicAssert.IsEmpty(results);
             ClassicAssert.AreEqual(missing, manifest.CSharpEntryPoint);
             ClassicAssert.IsTrue(output.History.Any(o => o.Level == OutputLevel.Error && o.Text.Contains("failed to load assembly")));
+            ClassicAssert.IsTrue(File.ReadAllText(logsStorage.GetFullPath("plugin.log")).Contains("failed to load assembly"));
         }
 
         private string createPluginDirectory(string id)

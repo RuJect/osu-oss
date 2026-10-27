@@ -17,10 +17,12 @@ namespace osu.Game.API.Plugins
     public class PluginLoader
     {
         private readonly OutputLog output;
+        private readonly Func<PluginManifest, PluginLogger> loggerFactory;
 
-        public PluginLoader(OutputLog output)
+        public PluginLoader(OutputLog output, Func<PluginManifest, PluginLogger>? loggerFactory = null)
         {
             this.output = output;
+            this.loggerFactory = loggerFactory ?? (manifest => new PluginLogger(manifest.Id));
         }
 
         /// <summary>Loads every plugin from the given repository.</summary>
@@ -30,23 +32,30 @@ namespace osu.Game.API.Plugins
         /// <summary>Loads the entry points of <paramref name="manifest"/>. Failures are logged.</summary>
         public IEnumerable<PluginLoadResult> LoadFromManifest(PluginManifest manifest)
         {
+            PluginLogger logger = loggerFactory(manifest);
             var results = new List<PluginLoadResult>();
 
-            resolveEntryPoints(manifest);
-
-            if (!string.IsNullOrEmpty(manifest.CSharpEntryPoint))
+            try
             {
-                var plugin = loadCSharpPlugin(manifest.CSharpEntryPoint, manifest.Id);
+                resolveEntryPoints(manifest);
 
-                if (plugin != null)
-                    results.Add(new PluginLoadResult(manifest, plugin));
+                PluginBase? plugin = null;
+
+                if (!string.IsNullOrEmpty(manifest.CSharpEntryPoint))
+                    plugin = loadCSharpPlugin(manifest.CSharpEntryPoint, manifest.Id, logger);
+
+                bool hasScript = !string.IsNullOrEmpty(manifest.JavaScriptEntryPoint);
+
+                if (plugin != null || hasScript)
+                    results.Add(new PluginLoadResult(manifest, plugin, manifest.JavaScriptEntryPoint));
+
+                if (results.Count == 0)
+                    log(logger, OutputLevel.Warn, manifest.Id, "no entry point found (expected bin/<id>.dll or scripts/<id>.js)");
             }
-
-            if (!string.IsNullOrEmpty(manifest.JavaScriptEntryPoint))
-                output.Log(OutputLevel.Warn, manifest.Id, "javascript entry point ignored: JS plugins are not supported yet");
-
-            if (results.Count == 0)
-                output.Log(OutputLevel.Warn, manifest.Id, "no entry point found (expected bin/<id>.dll)");
+            catch (Exception e)
+            {
+                log(logger, OutputLevel.Error, manifest.Id, $"failed to load plugin: {e.Message}");
+            }
 
             return results;
         }
@@ -73,7 +82,7 @@ namespace osu.Game.API.Plugins
             }
         }
 
-        private PluginBase? loadCSharpPlugin(string path, string pluginId)
+        private PluginBase? loadCSharpPlugin(string path, string pluginId, PluginLogger logger)
         {
             Assembly assembly;
 
@@ -83,7 +92,7 @@ namespace osu.Game.API.Plugins
             }
             catch (Exception e)
             {
-                output.Log(OutputLevel.Error, pluginId, $"failed to load assembly: {e.Message}");
+                log(logger, OutputLevel.Error, pluginId, $"failed to load assembly: {e.Message}");
                 return null;
             }
 
@@ -96,7 +105,7 @@ namespace osu.Game.API.Plugins
 
                 if (type.GetConstructor(Type.EmptyTypes) == null)
                 {
-                    output.Log(OutputLevel.Warn, type.Name, "skipped: no public parameterless constructor");
+                    log(logger, OutputLevel.Warn, type.Name, "skipped: no public parameterless constructor");
                     continue;
                 }
 
@@ -106,7 +115,7 @@ namespace osu.Game.API.Plugins
             if (candidates.Count > 1)
             {
                 string ignored = string.Join(", ", candidates.Skip(1).Select(t => t.FullName));
-                output.Log(OutputLevel.Warn, pluginId, $"multiple PluginBase subclasses found; loading {candidates[0].FullName} and ignoring: {ignored}");
+                log(logger, OutputLevel.Warn, pluginId, $"multiple PluginBase subclasses found; loading {candidates[0].FullName} and ignoring: {ignored}");
             }
 
             foreach (Type type in candidates)
@@ -117,11 +126,11 @@ namespace osu.Game.API.Plugins
                 }
                 catch (Exception e)
                 {
-                    output.Log(OutputLevel.Error, type.Name, $"failed to instantiate: {e.Message}");
+                    log(logger, OutputLevel.Error, type.Name, $"failed to instantiate: {e.Message}");
                 }
             }
 
-            output.Log(OutputLevel.Warn, pluginId, "no PluginBase subclass found in assembly");
+            log(logger, OutputLevel.Warn, pluginId, "no PluginBase subclass found in assembly");
             return null;
         }
 
@@ -136,19 +145,46 @@ namespace osu.Game.API.Plugins
                 return e.Types.Where(t => t != null)!;
             }
         }
+
+        private void log(PluginLogger logger, OutputLevel level, string source, string message)
+        {
+            output.Log(level, source, message);
+
+            switch (level)
+            {
+                case OutputLevel.Error:
+                    logger.Error(message);
+                    break;
+
+                case OutputLevel.Warn:
+                    logger.Warn(message);
+                    break;
+
+                default:
+                    logger.Info(message);
+                    break;
+            }
+        }
     }
 
-    /// <summary>A ready-to-load plugin: its manifest plus instantiated C# entry point.</summary>
+    /// <summary>A ready-to-load plugin: its manifest plus any instantiated C# and JavaScript entry points.</summary>
     public sealed class PluginLoadResult
     {
         public PluginManifest Manifest { get; }
 
-        public PluginBase CSharpPlugin { get; }
+        public PluginBase? CSharpPlugin { get; }
 
-        public PluginLoadResult(PluginManifest manifest, PluginBase csharpPlugin)
+        public string? JavaScriptEntryPoint { get; }
+
+        public bool HasCSharp => CSharpPlugin != null;
+
+        public bool HasJavaScript => !string.IsNullOrEmpty(JavaScriptEntryPoint);
+
+        public PluginLoadResult(PluginManifest manifest, PluginBase? csharpPlugin, string? javascriptEntryPoint)
         {
             Manifest = manifest;
             CSharpPlugin = csharpPlugin;
+            JavaScriptEntryPoint = javascriptEntryPoint;
         }
     }
 }

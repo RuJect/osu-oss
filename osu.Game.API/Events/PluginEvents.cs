@@ -20,4 +20,7 @@ namespace osu.Game.API.Events
 
     /// <summary>A plugin failed to load or threw while running; its context has been released.</summary>
     public sealed record PluginLoadFailedEvent(PluginManifest Manifest, string Message) : OsuApiEvent;
+
+    /// <summary>A plugin's event handler threw while processing an event.</summary>
+    public sealed record PluginErrorEvent(PluginManifest Manifest, string Message) : OsuApiEvent;
 }

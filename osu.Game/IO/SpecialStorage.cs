@@ -34,6 +34,9 @@ namespace osu.Game.IO
         /// <summary>Where scripts may persist arbitrary data files (relative to <see cref="SCRIPTS_FOLDER"/>).</summary>
         public const string SCRIPT_DATA_FOLDER = "data";
 
+        /// <summary>Where logs live.</summary>
+        public const string LOGS_FOLDER = "logs";
+
         /// <summary>Config file name (relative to <see cref="ROOT_FOLDER"/>).</summary>
         public const string CONFIG_FILENAME = "config.ini";
 
@@ -56,13 +59,39 @@ namespace osu.Game.IO
         /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
         public static Storage GetPluginData(Storage osuStorage, string pluginId)
         {
-            if (string.IsNullOrEmpty(pluginId) || !plugin_id_regex.IsMatch(pluginId))
-                throw new ArgumentException("Plugin id must match ^[a-z][a-z0-9_]*$.", nameof(pluginId));
-
+            validatePluginId(pluginId);
             return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(DATA_FOLDER);
         }
 
+        /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/scripts</c> directory, creating it if required.</summary>
+        /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
+        public static Storage GetPluginScripts(Storage osuStorage, string pluginId)
+        {
+            validatePluginId(pluginId);
+            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(SCRIPTS_FOLDER);
+        }
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/logs</c> directory, creating it if required.</summary>
+        public static Storage GetLogs(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(LOGS_FOLDER);
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/logs</c> directory, creating it if required.</summary>
+        /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
+        public static Storage GetPluginLogs(Storage osuStorage, string pluginId)
+        {
+            validatePluginId(pluginId);
+            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(LOGS_FOLDER);
+        }
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/scripts/logs</c> directory, creating it if required.</summary>
+        public static Storage GetScriptLogs(Storage osuStorage) => GetScripts(osuStorage).GetStorageForDirectory(LOGS_FOLDER);
+
         /// <summary>Absolute path of the <c>osu-oss</c> directory.</summary>
         public static string GetRootPath(Storage osuStorage) => osuStorage.GetFullPath(ROOT_FOLDER);
+
+        private static void validatePluginId(string pluginId)
+        {
+            if (string.IsNullOrEmpty(pluginId) || !plugin_id_regex.IsMatch(pluginId))
+                throw new ArgumentException("Plugin id must match ^[a-z][a-z0-9_]*$.", nameof(pluginId));
+        }
     }
 }

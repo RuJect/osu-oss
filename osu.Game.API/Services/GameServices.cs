@@ -76,9 +76,24 @@ namespace osu.Game.API.Services
                     ? new StorageService(new FileStore(SpecialStorage.GetPluginData(Storage, manifest.Id)))
                     : null;
 
-            return new ApiServices(Game, Host, Output, storage,
+            OutputLog output = manifest.Id == PluginManifest.SYSTEM_ID ? Output : new OutputLog();
+
+            return new ApiServices(Game, Host, output, storage,
                 new MusicService(Music, Host), new ConfigService(Config), new NotificationService(Notifications),
                 InputManager, Servers, ServerManager);
         }
+
+        /// <summary>Creates a logger writing to the logs directory scoped to <paramref name="manifest"/>.</summary>
+        public PluginLogger CreatePluginLogger(PluginManifest manifest)
+        {
+            Storage logsStorage = manifest.Id == PluginManifest.SYSTEM_ID
+                ? SpecialStorage.GetScriptLogs(Storage)
+                : SpecialStorage.GetPluginLogs(Storage, manifest.Id);
+
+            return new PluginLogger(manifest.Id, logsStorage);
+        }
+
+        /// <summary>Creates a logger for errors that occur before a plugin logger can be scoped (e.g. repository scanning).</summary>
+        public PluginLogger CreateLogFallback() => new PluginLogger("plugins", SpecialStorage.GetLogs(Storage));
     }
 }
