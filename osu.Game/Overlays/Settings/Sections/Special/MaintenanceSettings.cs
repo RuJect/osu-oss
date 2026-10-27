@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -48,6 +48,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.AllowBreakSkip).Value = false;
                 config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
                 config.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = true;
+                config.GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = true;
                 config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;
                 config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
                 config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;

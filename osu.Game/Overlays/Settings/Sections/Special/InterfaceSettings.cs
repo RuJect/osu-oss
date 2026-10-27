@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -17,12 +17,6 @@ namespace osu.Game.Overlays.Settings.Sections.Special
         {
             AddRange(new Drawable[]
             {
-                new SettingsCheckbox
-                {
-                    LabelText = "Use skin cursor",
-                    TooltipText = "Replaces the menu cursor with the cursor from your skin.",
-                    Current = config.GetBindable<bool>(SpecialSetting.UseSkinCursor),
-                },
                 new SettingsEnumDropdown<ToolbarPosition>
                 {
                     LabelText = "Toolbar position",

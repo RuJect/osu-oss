@@ -83,6 +83,8 @@ namespace osu.Game.Rulesets.UI
 
         private bool UseSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
 
+        private IBindable<bool>? useSkinModIconsBindable;
+
         private Color4 backgroundColour;
 
         private Sprite extendedBackground = null!;
@@ -231,6 +233,13 @@ namespace osu.Game.Rulesets.UI
             Selected.BindValueChanged(_ => updateColour());
 
             skin.SourceChanged += onSkinChanged;
+
+            if (specialConfig != null)
+            {
+                useSkinModIconsBindable = specialConfig.GetBindable<bool>(SpecialSetting.UseSkinModIcons);
+                useSkinModIconsBindable.BindValueChanged(_ => onSkinChanged());
+            }
+
             updateMod(mod);
         }
 
@@ -322,6 +331,8 @@ namespace osu.Game.Rulesets.UI
 
             if (skin != null)
                 skin.SourceChanged -= onSkinChanged;
+
+            useSkinModIconsBindable?.UnbindAll();
         }
 
         public ITooltip<Mod> GetCustomTooltip() => new ModTooltip(colourProvider);

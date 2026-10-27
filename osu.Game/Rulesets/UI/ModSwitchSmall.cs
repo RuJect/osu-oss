@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -44,6 +44,8 @@ namespace osu.Game.Rulesets.UI
         private SpecialConfigManager? specialConfig { get; set; } = null!;
 
         private bool UseSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
+
+        private IBindable<bool>? useSkinModIconsBindable;
 
         public ModSwitchSmall(IMod mod)
         {
@@ -108,7 +110,8 @@ namespace osu.Game.Rulesets.UI
 
             if (specialConfig != null)
             {
-                specialConfig.GetBindable<bool>(SpecialSetting.UseSkinModIcons).BindValueChanged(_ => onSkinChanged());
+                useSkinModIconsBindable = specialConfig.GetBindable<bool>(SpecialSetting.UseSkinModIcons);
+                useSkinModIconsBindable.BindValueChanged(_ => onSkinChanged());
             }
 
             FinishTransforms(true);
@@ -172,6 +175,8 @@ namespace osu.Game.Rulesets.UI
 
             if (skin != null)
                 skin.SourceChanged -= onSkinChanged;
+
+            useSkinModIconsBindable?.UnbindAll();
         }
 
         private void updateState()
