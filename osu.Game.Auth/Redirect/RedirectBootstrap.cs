@@ -23,8 +23,7 @@ namespace osu.Game.Auth
     /// in the child environment so the re-exec happens at most once.
     /// <para>
     /// Set <c>OSU_AUTH_NO_REEXEC=1</c> to opt out (e.g. when attaching a debugger); the
-    /// shim may then be preloaded by hand. If the shim is unavailable, signing falls back
-    /// to the native (clean-room) implementation.
+    /// shim may then be preloaded by hand. If the shim is unavailable, signing is disabled.
     /// </para>
     /// </remarks>
     public static class RedirectBootstrap
@@ -43,16 +42,11 @@ namespace osu.Game.Auth
             if (Environment.GetEnvironmentVariable(RedirectShim.ACTIVE_ENV) == "1")
                 return;
 
-            if (!AuthMethod.IsTransplant())
-                return;
-
             string shim = RedirectShim.ResolvePath();
 
             if (!File.Exists(shim))
             {
-                // No shim -> transplant cannot produce valid measurements; the loader
-                // falls back to the native (clean-room) implementation.
-                Logger.Log($"Auth redirect shim not found at {shim}; falling back to native signing.", LoggingTarget.Runtime, LogLevel.Verbose);
+                Logger.Log($"Auth redirect shim not found at {shim}; signing disabled.", LoggingTarget.Runtime, LogLevel.Verbose);
                 return;
             }
 

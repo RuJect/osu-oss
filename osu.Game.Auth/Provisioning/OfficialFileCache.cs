@@ -77,6 +77,34 @@ namespace osu.Game.Auth
 
         private readonly Storage directory;
 
+        /// <summary>
+        /// Resolves the osu! user storage directory which owns the auth cache.
+        /// </summary>
+        internal static Storage ResolveStorage(GameHost host)
+        {
+            foreach (string path in host.UserStoragePaths)
+            {
+                Storage storage = host.GetStorage(path);
+
+                if (storage.ExistsDirectory("osu"))
+                    return storage.GetStorageForDirectory("osu");
+            }
+
+            foreach (string path in host.UserStoragePaths)
+            {
+                try
+                {
+                    return host.GetStorage(path).GetStorageForDirectory("osu");
+                }
+                catch
+                {
+                    // try next path.
+                }
+            }
+
+            throw new InvalidOperationException("No valid user storage path could be resolved.");
+        }
+
         public OfficialFileCache(Storage rootStorage, string gameVersion, bool isTachyon)
         {
             directory = SpecialStorage.GetAuthBlobs(rootStorage);

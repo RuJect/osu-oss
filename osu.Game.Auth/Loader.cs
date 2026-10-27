@@ -9,20 +9,13 @@ using osu.Game;
 namespace osu.Game.Auth
 {
     /// <summary>
-    /// Entry point of the auth module. Installs request signing and starts the native module.
-    /// Mirrors the proprietary loader surface (same type name/namespace for drop-in use).
+    /// Entry point of the auth module. Loads the proprietary managed auth module from the official
+    /// file cache (<see cref="TransplantSigner"/>) and installs request signing.
     /// </summary>
     /// <remarks>
-    /// Two signing methods are available, selected via the <c>OSU_AUTH_METHOD</c> environment
-    /// variable (see <see cref="AuthMethod"/>): <c>transplant</c> (default) delegates to the
-    /// proprietary managed module (<see cref="TransplantSigner"/>), while <c>native</c> uses the
-    /// open reimplementation (<see cref="NativeAuthSigner"/>).
-    /// <para>
-    /// The transplant method requires pristine official copies of the measured assemblies and the
-    /// managed auth module, which are fetched at runtime from the matching release
-    /// (<see cref="OfficialFileCache"/>, see <see cref="OfficialFilesDownloader"/>). Until those are
-    /// present, signing is disabled entirely.
-    /// </para>
+    /// Pristine official copies of the measured assemblies and the managed auth module are fetched at
+    /// runtime from the matching release (<see cref="OfficialFileCache"/>, see
+    /// <see cref="OfficialFilesDownloader"/>). Until they are present, signing is disabled entirely.
     /// </remarks>
     public class Loader : IDisposable
     {
@@ -36,29 +29,18 @@ namespace osu.Game.Auth
             implementation = CreateImplementation(host, game);
         }
 
-        private static IDisposable CreateImplementation(GameHost host, OsuGameBase game)
-        {
-            if (!AuthMethod.IsTransplant())
-            {
-                logger.Add("Using native (reimplemented) auth signing.");
-                return new NativeAuthSigner(host, game);
-            }
-
-            return createTransplant(host, game);
-        }
-
-        private static IDisposable createTransplant(GameHost host, OsuGameBase game)
+        private static IDisposable? CreateImplementation(GameHost host, OsuGameBase game)
         {
             OfficialFileCache files;
 
             try
             {
-                files = new OfficialFileCache(NativeModule.ResolveStorage(host), game.Version, isTachyon(game));
+                files = new OfficialFileCache(OfficialFileCache.ResolveStorage(host), game.Version, isTachyon(game));
             }
             catch (Exception e)
             {
-                logger.Add($"Could not resolve auth storage ({e.Message}); falling back to native signing.");
-                return new NativeAuthSigner(host, game);
+                logger.Add($"Could not resolve auth storage ({e.Message}); signing disabled.");
+                return null;
             }
 
             if (!files.IsReady)
@@ -73,8 +55,8 @@ namespace osu.Game.Auth
 
                 if (!RedirectShim.EnsureActive())
                 {
-                    logger.Add("Auth measurement redirect shim is not active; falling back to native signing.");
-                    return new NativeAuthSigner(host, game);
+                    logger.Add("Auth measurement redirect shim is not active; signing disabled.");
+                    return null;
                 }
 
                 var transplant = new TransplantSigner(host, game, files.Directory);
@@ -83,8 +65,8 @@ namespace osu.Game.Auth
             }
             catch (Exception e)
             {
-                logger.Add($"Managed auth transplant failed ({e.Message}); falling back to native signing.");
-                return new NativeAuthSigner(host, game);
+                logger.Add($"Managed auth transplant failed ({e.Message}); signing disabled.");
+                return null;
             }
         }
 

@@ -4,17 +4,14 @@
     <AssemblyName>osu.Game.Auth</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Description>Open reimplementation of the osu! authentication/token-signing module.</Description>
+    <Description>Transplanted osu! authentication/token-signing module loader and isolation.</Description>
   </PropertyGroup>
 
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\osu.Game\osu.Game.csproj" />
-    <ProjectReference Include="..\osu.Game.Rulesets.Osu\osu.Game.Rulesets.Osu.csproj" />
     <ProjectReference Include="..\osu.Game.Auth.Isolation\osu.Game.Auth.Isolation.csproj" />
   </ItemGroup>
   <ItemGroup Label="Package References">
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="ppy.osu.Framework" Version="2026.1019.0" />
   </ItemGroup>
 </Project>

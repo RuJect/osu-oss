@@ -22,7 +22,7 @@ As far as we know, this is the first public project to run a source-modified osu
 
 ## Status
 
-Early development. There are no installers or prebuilt packages yet; the client is built and run from source. The `transplant` authentication path works. The `native` path does not (see below).
+Early development. There are no installers or prebuilt packages yet; the client is built and run from source. Authentication uses the `transplant` path only.
 
 ## Current features
 
@@ -36,9 +36,9 @@ Early development. There are no installers or prebuilt packages yet; the client 
 
 ## Authentication (`osu.Game.Auth`)
 
-The module installs `APIRequest.Sign` and `HubClientConnector.Sign`, so requests and SignalR connections are signed in the same places as in the official client. The signing method is selected with `OSU_AUTH_METHOD`.
+The module installs `APIRequest.Sign` and `HubClientConnector.Sign`, so requests and SignalR connections are signed in the same places as in the official client.
 
-### `transplant` (default, working)
+### `transplant`
 
 - Fetches pristine, version-matched official assemblies and the managed auth module from the matching GitHub release: the AppImage on Linux, the app ZIP on macOS, and the Squirrel package on Windows. Neither the measured game assemblies nor the managed auth module are shipped in this repository.
 - Caches them under `<osu! storage>/osu-oss/auth-blobs` and disables signing until the set is complete. The first launch downloads them in the background; restart after it finishes.
@@ -54,12 +54,6 @@ Relevant environment variables:
 - `OSU_AUTH_NO_REEXEC=1` — do not re-execute with the shim on Linux/macOS (useful when debugging).
 - `OSU_AUTHREDIRECT` — override the shim path.
 - `OSU_AUTH_TRANSPLANT` — override the transplant assembly path.
-
-### `native` (not usable here)
-
-`OSU_AUTH_METHOD=native` (also `reimpl` or `cleanroom`) selects a simplified clean-room implementation. It is a scaffold, not a working signer, and cannot authenticate a client in this repository. Active work on the clean-room implementation happens in a private repository and will not be merged here while `transplant` is the supported mode.
-
-If transplant setup fails, the current code falls back to the native path, which does not currently authenticate. Check the log to see which path was used.
 
 ## Running from source
 
