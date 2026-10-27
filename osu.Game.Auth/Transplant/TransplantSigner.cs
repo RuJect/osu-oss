@@ -13,10 +13,10 @@ using osu.Game.Auth.Isolation;
 namespace osu.Game.Auth
 {
     /// <summary>
-    /// Signing method which transplants the proprietary managed
-    /// <c>osu.Game.Auth.dll</c> (shipped next to the executable) in an isolated
-    /// load context and delegates to its <see cref="Loader"/>, which installs the
-    /// real <c>APIRequest.Sign</c> / <c>HubClientConnector.Sign</c> delegates.
+    /// Signing method which transplants the proprietary managed auth module from the
+    /// provisioned official-file cache into an isolated load context and delegates to
+    /// its <see cref="Loader"/>, which installs the real <c>APIRequest.Sign</c> /
+    /// <c>HubClientConnector.Sign</c> delegates.
     /// </summary>
     /// <remarks>
     /// The proprietary native module measures the game assemblies, so the process must
@@ -32,14 +32,16 @@ namespace osu.Game.Auth
         /// <summary>Environment variable overriding the proprietary assembly path.</summary>
         private const string path_env = "OSU_AUTH_TRANSPLANT";
 
-        private const string default_file_name = "osu.Game.Auth.transplant.dll";
+        private readonly string authFilesDirectory;
 
         private readonly AssemblyLoadContext context;
         private readonly IDisposable loader;
         private readonly IDisposable? isolation;
 
-        public TransplantSigner(GameHost host, OsuGameBase game)
+        public TransplantSigner(GameHost host, OsuGameBase game, string authFilesDirectory)
         {
+            this.authFilesDirectory = authFilesDirectory;
+
             // Establish the syscall isolation before the proprietary module can execute anything.
             IDisposable? startedIsolation = IsolationController.Start(IsolationOptions.FromEnvironment());
 
@@ -66,14 +68,14 @@ namespace osu.Game.Auth
             isolation = startedIsolation;
         }
 
-        private static string ResolvePath()
+        private string ResolvePath()
         {
             string? overridePath = Environment.GetEnvironmentVariable(path_env);
 
             if (!string.IsNullOrEmpty(overridePath))
                 return Path.GetFullPath(overridePath);
 
-            string path = Path.Combine(AppContext.BaseDirectory, default_file_name);
+            string path = Path.Combine(authFilesDirectory, OfficialFileCache.AUTH_MODULE_CACHE_NAME);
 
             if (!File.Exists(path))
                 throw new FileNotFoundException($"Transplant auth module not found at {path}.", path);

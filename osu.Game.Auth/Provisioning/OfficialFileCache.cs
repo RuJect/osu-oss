@@ -51,8 +51,17 @@ namespace osu.Game.Auth
         /// <summary>Path (within the Windows Squirrel package) of the directory holding the app assemblies.</summary>
         private const string windows_source_dir = "lib/app";
 
+        /// <summary>The managed auth module, by its original file name in official release archives.</summary>
+        public const string AUTH_MODULE_FILE_NAME = "osu.Game.Auth.dll";
+
+        /// <summary>
+        /// The auth module's file name in the cache. Renamed to avoid clashing with this project's
+        /// identically-named assembly when loaded into its isolated load context.
+        /// </summary>
+        public const string AUTH_MODULE_CACHE_NAME = "osu.Game.Auth.transplant.dll";
+
         /// <summary>The assemblies measured by the native module, by original file name.</summary>
-        internal static readonly string[] FILE_NAMES =
+        private static readonly string[] measured_file_names =
         {
             "osu!.dll",
             "osu.Framework.dll",
@@ -62,6 +71,9 @@ namespace osu.Game.Auth
             "osu.Game.Rulesets.Osu.dll",
             "osu.Game.Rulesets.Taiko.dll",
         };
+
+        /// <summary>Every file required before the cache is considered ready.</summary>
+        private static readonly string[] cached_file_names = measured_file_names.Append(AUTH_MODULE_CACHE_NAME).ToArray();
 
         private readonly Storage directory;
 
@@ -105,7 +117,7 @@ namespace osu.Game.Auth
                             return false;
                     }
 
-                    return FILE_NAMES.All(directory.Exists);
+                    return cached_file_names.All(directory.Exists);
                 }
                 catch (Exception e)
                 {
@@ -161,13 +173,20 @@ namespace osu.Game.Auth
                 string extractRoot = Path.Combine(staging, "extract");
                 System.IO.Directory.CreateDirectory(extractRoot);
 
-                for (int i = 0; i < FILE_NAMES.Length; i++)
+                for (int i = 0; i < cached_file_names.Length; i++)
                 {
-                    await extractAppImageAsync(appImage, extractRoot, FILE_NAMES[i], token).ConfigureAwait(false);
-                    progress?.Report(0.9 + 0.1 * (i + 1) / FILE_NAMES.Length);
+                    await extractAppImageAsync(appImage, extractRoot, sourceFileName(cached_file_names[i]), token).ConfigureAwait(false);
+                    progress?.Report(0.9 + 0.1 * (i + 1) / cached_file_names.Length);
                 }
 
-                publish(Path.Combine(extractRoot, appimage_output_dir));
+                string sourceDirectory = Path.Combine(extractRoot, appimage_output_dir);
+                string authModulePath = Path.Combine(sourceDirectory, AUTH_MODULE_FILE_NAME);
+
+                if (!File.Exists(authModulePath))
+                    throw new FileNotFoundException($"Official auth module is missing from the release archive: {authModulePath}", authModulePath);
+
+                File.Move(authModulePath, Path.Combine(sourceDirectory, AUTH_MODULE_CACHE_NAME), true);
+                publish(sourceDirectory);
             }
             finally
             {
@@ -193,18 +212,18 @@ namespace osu.Game.Auth
 
                 using (ZipArchive zip = ZipFile.OpenRead(archive))
                 {
-                    for (int i = 0; i < FILE_NAMES.Length; i++)
+                    for (int i = 0; i < cached_file_names.Length; i++)
                     {
                         // The archive also contains AppleDouble (__MACOSX) entries; the exact
                         // bundle-relative path below selects the real assembly.
-                        string entryName = macos_source_dir + "/" + FILE_NAMES[i];
+                        string entryName = macos_source_dir + "/" + sourceFileName(cached_file_names[i]);
 
                         ZipArchiveEntry entry = zip.GetEntry(entryName)
                                                 ?? throw new FileNotFoundException($"Official file is missing from the release archive: {entryName}", entryName);
 
-                        entry.ExtractToFile(Path.Combine(extractRoot, FILE_NAMES[i]), true);
+                        entry.ExtractToFile(Path.Combine(extractRoot, cached_file_names[i]), true);
                         token.ThrowIfCancellationRequested();
-                        progress?.Report(0.9 + 0.1 * (i + 1) / FILE_NAMES.Length);
+                        progress?.Report(0.9 + 0.1 * (i + 1) / cached_file_names.Length);
                     }
                 }
 
@@ -234,16 +253,16 @@ namespace osu.Game.Auth
 
                 using (ZipArchive zip = ZipFile.OpenRead(package))
                 {
-                    for (int i = 0; i < FILE_NAMES.Length; i++)
+                    for (int i = 0; i < cached_file_names.Length; i++)
                     {
-                        string entryName = windows_source_dir + "/" + FILE_NAMES[i];
+                        string entryName = windows_source_dir + "/" + sourceFileName(cached_file_names[i]);
 
                         ZipArchiveEntry entry = zip.GetEntry(entryName)
                                                 ?? throw new FileNotFoundException($"Official file is missing from the release package: {entryName}", entryName);
 
-                        entry.ExtractToFile(Path.Combine(extractRoot, FILE_NAMES[i]), true);
+                        entry.ExtractToFile(Path.Combine(extractRoot, cached_file_names[i]), true);
                         token.ThrowIfCancellationRequested();
-                        progress?.Report(0.9 + 0.1 * (i + 1) / FILE_NAMES.Length);
+                        progress?.Report(0.9 + 0.1 * (i + 1) / cached_file_names.Length);
                     }
                 }
 
@@ -302,7 +321,7 @@ namespace osu.Game.Auth
             if (directory.Exists(marker_file_name))
                 directory.Delete(marker_file_name);
 
-            foreach (string name in FILE_NAMES)
+            foreach (string name in cached_file_names)
             {
                 string source = Path.Combine(sourceDirectory, name);
 
@@ -317,6 +336,9 @@ namespace osu.Game.Auth
             using var marker = new StreamWriter(directory.GetStream(marker_file_name, FileAccess.Write, FileMode.Create));
             marker.Write(ReleaseTag);
         }
+
+        private static string sourceFileName(string cachedFileName)
+            => cachedFileName == AUTH_MODULE_CACHE_NAME ? AUTH_MODULE_FILE_NAME : cachedFileName;
 
         private static string normalizeVersion(string gameVersion)
         {

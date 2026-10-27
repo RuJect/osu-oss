@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup Label="Project">
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>WinExe</OutputType>
@@ -39,16 +39,9 @@
          to the executable; the game spawns it from osu.Game.Auth.Isolation. -->
     <ProjectReference Include="..\osu.Game.Auth.Supervisor\osu.Game.Auth.Supervisor.csproj" ReferenceOutputAssembly="false"/>
   </ItemGroup>
-  <!-- Proprietary managed module used by the default "transplant" signing method
-       (see osu.Game.Auth/Transplant/TransplantSigner.cs). Renamed to avoid clashing with the
-       open reimplementation's identically-named output assembly.
-       The measured official assemblies are NOT shipped; they are fetched at runtime
-       from the matching release (see osu.Game.Auth/Provisioning/OfficialFileCache.cs). -->
-  <ItemGroup Label="Auth Blobs">
-    <Content Include="Auth\osu.Game.Auth.dll" Link="osu.Game.Auth.transplant.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <!-- The proprietary managed auth module is NOT shipped in this repository. It is downloaded
+       together with the measured official assemblies from the matching release
+       (see osu.Game.Auth/Provisioning/OfficialFileCache.cs). -->
   <!-- Measurement redirect shim (source: osu.Game.Auth/Redirect/native/authredirect.c).
        Linux/macOS: built from source into the output directory by the imported targets
        below and injected by re-executing the process (osu.Game.Auth.Redirect.RedirectBootstrap).

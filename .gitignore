@@ -353,3 +353,7 @@ artifacts/
 # osu.Game.Auth/Redirect/native/authredirect.c and is normally built at compile time)
 osu.Desktop/Auth/authredirect.so
 osu.Desktop/Auth/authredirect.dylib
+
+# Proprietary auth module is provisioned at runtime, never committed.
+osu.Desktop/Auth/osu.Game.Auth.dll
+osu.Desktop/Auth/osu.Game.Auth.transplant.dll

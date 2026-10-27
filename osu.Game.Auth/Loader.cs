@@ -18,9 +18,10 @@ namespace osu.Game.Auth
     /// proprietary managed module (<see cref="TransplantSigner"/>), while <c>native</c> uses the
     /// open reimplementation (<see cref="NativeAuthSigner"/>).
     /// <para>
-    /// The transplant method requires pristine official copies of the measured assemblies, which
-    /// are fetched at runtime from the matching release (<see cref="OfficialFileCache"/>, see
-    /// <see cref="OfficialFilesDownloader"/>). Until those are present, signing is disabled entirely.
+    /// The transplant method requires pristine official copies of the measured assemblies and the
+    /// managed auth module, which are fetched at runtime from the matching release
+    /// (<see cref="OfficialFileCache"/>, see <see cref="OfficialFilesDownloader"/>). Until those are
+    /// present, signing is disabled entirely.
     /// </para>
     /// </remarks>
     public class Loader : IDisposable
@@ -76,7 +77,7 @@ namespace osu.Game.Auth
                     return new NativeAuthSigner(host, game);
                 }
 
-                var transplant = new TransplantSigner(host, game);
+                var transplant = new TransplantSigner(host, game, files.Directory);
                 logger.Add("Using transplanted (proprietary) auth signing.");
                 return transplant;
             }

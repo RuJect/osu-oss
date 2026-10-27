@@ -40,9 +40,9 @@ The module installs `APIRequest.Sign` and `HubClientConnector.Sign`, so requests
 
 ### `transplant` (default, working)
 
-- Fetches pristine, version-matched official assemblies from the matching GitHub release: the AppImage on Linux, the app ZIP on macOS, and the Squirrel package on Windows. The measured game assemblies are not shipped in this repository.
+- Fetches pristine, version-matched official assemblies and the managed auth module from the matching GitHub release: the AppImage on Linux, the app ZIP on macOS, and the Squirrel package on Windows. Neither the measured game assemblies nor the managed auth module are shipped in this repository.
 - Caches them under `<osu! storage>/osu-oss/auth-blobs` and disables signing until the set is complete. The first launch downloads them in the background; restart after it finishes.
-- Loads the managed auth module shipped next to the executable as `osu.Game.Auth.transplant.dll` and delegates signing to it.
+- Loads the managed auth module from the cache as `osu.Game.Auth.transplant.dll` and delegates signing to it.
 - Redirects the module's measurements to the pristine files with the `authredirect` shim. On Linux and macOS the game re-executes itself with `LD_PRELOAD`/`DYLD_INSERT_LIBRARIES`; on Windows the shim is loaded into the process.
 - On Linux, the module runs under a seccomp user-notification filter with a separate supervisor process. Process creation, tracing, namespaces, mounts, kernel-module operations, and network access are denied by default. Windows and macOS only have the redirect shim; there is no seccomp equivalent there.
 
