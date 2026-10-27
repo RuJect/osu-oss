@@ -47,6 +47,47 @@ namespace osu.Game.API.Services
             writer.Write(content);
         }
 
+        /// <summary>Reads the file as raw bytes, or <c>null</c> when the path is invalid or the file is missing.</summary>
+        public byte[]? ReadBytes(string path)
+        {
+            if (!tryResolve(path, out string safe) || !storage.Exists(safe))
+                return null;
+
+            using Stream stream = storage.GetStream(safe, FileAccess.Read, FileMode.Open);
+            using var memory = new MemoryStream();
+            stream.CopyTo(memory);
+            return memory.ToArray();
+        }
+
+        /// <summary>Writes raw bytes to the file, creating any missing parent directories.</summary>
+        public void WriteBytes(string path, byte[] content)
+        {
+            if (!tryResolve(path, out string safe))
+                return;
+
+            using Stream stream = storage.CreateFileSafely(safe);
+            stream.Write(content, 0, content.Length);
+        }
+
+        /// <summary>Opens the file for reading, or returns <c>null</c> when the path is invalid or the file is missing.</summary>
+        public Stream? OpenRead(string path)
+        {
+            if (!tryResolve(path, out string safe) || !storage.Exists(safe))
+                return null;
+
+            return storage.GetStream(safe, FileAccess.Read, FileMode.Open);
+        }
+
+        /// <summary>Opens the file for writing, creating or truncating it and any missing parent directories.</summary>
+        public Stream? OpenWrite(string path)
+        {
+            if (!tryResolve(path, out string safe))
+                return null;
+
+            storage.GetFullPath(safe, true);
+            return storage.GetStream(safe, FileAccess.Write, FileMode.Create);
+        }
+
         public void Append(string path, string content)
         {
             if (!tryResolve(path, out string safe))

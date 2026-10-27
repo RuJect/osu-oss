@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace osu.Game.API.Services
@@ -29,6 +30,14 @@ namespace osu.Game.API.Services
         public string? Read(string path) => storage.Read(path);
 
         public void Write(string path, string content) => storage.Write(path, content);
+
+        public byte[]? ReadBytes(string path) => storage.ReadBytes(path);
+
+        public void WriteBytes(string path, byte[] content) => storage.WriteBytes(path, content);
+
+        public Stream? OpenRead(string path) => storage.OpenRead(path);
+
+        public Stream? OpenWrite(string path) => storage.OpenWrite(path);
 
         public void Append(string path, string content) => storage.Append(path, content);
 

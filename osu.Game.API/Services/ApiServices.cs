@@ -28,6 +28,12 @@ namespace osu.Game.API.Services
         /// <summary>Storage scoped to this plugin's data directory, or <c>null</c> without the "data" permission.</summary>
         public StorageService? Storage { get; }
 
+        /// <summary>Alias for <see cref="Storage"/>.</summary>
+        public StorageService? Data => Storage;
+
+        /// <summary>Read-only access to this plugin's resources directory.</summary>
+        public ResourceStore? Resources { get; }
+
         /// <summary>The global music controller.</summary>
         public MusicService? Music { get; }
 
@@ -50,7 +56,8 @@ namespace osu.Game.API.Services
         public ApiServices(OsuGame game, GameHost host, OutputLog output, StorageService? storage = null,
                            MusicService? music = null, ConfigService? config = null,
                            NotificationService? notifications = null, Func<InputManager?>? inputManager = null,
-                           IServerRegistry? servers = null, IServerManager? serverManager = null)
+                           IServerRegistry? servers = null, IServerManager? serverManager = null,
+                           ResourceStore? resources = null)
         {
             Game = game;
             Host = host;
@@ -62,6 +69,7 @@ namespace osu.Game.API.Services
             this.inputManager = inputManager;
             Servers = servers;
             ServerManager = serverManager;
+            Resources = resources;
         }
 
         /// <summary>
@@ -80,6 +88,7 @@ namespace osu.Game.API.Services
             inputManager = other.inputManager;
             Servers = other.Servers;
             ServerManager = other.ServerManager;
+            Resources = other.Resources;
         }
     }
 }

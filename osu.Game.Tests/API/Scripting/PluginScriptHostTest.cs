@@ -104,7 +104,7 @@ namespace osu.Game.Tests.API.Scripting
         [Test]
         public void TestExternalPluginOutputIsScoped()
         {
-            var services = new GameServices(new OsuGame(), null!, output, scriptRoot, scriptRoot, scriptRoot,
+            var services = new GameServices(new OsuGame(), null!, output, scriptRoot, scriptRoot,
                 null!, null!, null!, null!, null!, () => null);
 
             ApiServices system = services.CreatePluginServices(createManifest(PluginManifest.SYSTEM_ID, true));

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using osu.Framework.Platform;
 using osu.Game.API.Events;
 using osu.Game.API.Scripting;
 using osu.Game.API.Services;
@@ -20,6 +21,7 @@ namespace osu.Game.API.Plugins
         private readonly Func<PluginManifest, ApiServices> servicesFactory;
         private readonly Func<PluginManifest, PluginLogger> loggerFactory;
         private readonly Func<PluginManifest, string?, PluginContext, PluginScriptHost?>? scriptFactory;
+        private readonly Func<PluginManifest, Storage>? configStorageFactory;
         private readonly List<LoadedPlugin> loaded = new List<LoadedPlugin>();
 
         public event Action? LoadedPluginsChanged;
@@ -28,12 +30,14 @@ namespace osu.Game.API.Plugins
 
         public PluginHost(OsuEventBus events, Func<PluginManifest, ApiServices> servicesFactory,
                           Func<PluginManifest, PluginLogger>? loggerFactory = null,
-                          Func<PluginManifest, string?, PluginContext, PluginScriptHost?>? scriptFactory = null)
+                          Func<PluginManifest, string?, PluginContext, PluginScriptHost?>? scriptFactory = null,
+                          Func<PluginManifest, Storage>? configStorageFactory = null)
         {
             this.events = events;
             this.servicesFactory = servicesFactory;
             this.loggerFactory = loggerFactory ?? (manifest => new PluginLogger(manifest.Id));
             this.scriptFactory = scriptFactory;
+            this.configStorageFactory = configStorageFactory;
         }
 
         /// <summary>Loads a discovered plugin and returns its entry, or <c>null</c> if its context could not be created.</summary>
@@ -48,7 +52,8 @@ namespace osu.Game.API.Plugins
             try
             {
                 services = servicesFactory(manifest);
-                var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest);
+                var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest,
+                    configStorageFactory?.Invoke(manifest));
                 entry = new LoadedPlugin(result.CSharpPlugin, context, manifest);
             }
             catch (Exception e)
@@ -103,8 +108,21 @@ namespace osu.Game.API.Plugins
         {
             PluginLogger logger = loggerFactory(manifest);
             ApiServices services = servicesFactory(manifest);
-            var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest);
+            Storage? configStorage = configStorageFactory?.Invoke(manifest);
+            var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest, configStorage);
             var entry = new LoadedPlugin(null, context, manifest);
+
+            if (configStorage != null)
+            {
+                try
+                {
+                    context.CreateConfig<SystemPluginSetting>();
+                }
+                catch (Exception e)
+                {
+                    logger.Error($"failed to create system plugin config: {e.Message}");
+                }
+            }
 
             events.Publish(new PluginLoadingEvent(manifest));
 

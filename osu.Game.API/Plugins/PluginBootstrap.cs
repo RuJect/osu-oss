@@ -104,7 +104,6 @@ namespace osu.Game.API.Plugins
                     game, host, new OutputLog(),
                     storage,
                     SpecialStorage.GetScripts(storage),
-                    SpecialStorage.GetScriptData(storage),
                     game.Dependencies.Get<MusicController>(),
                     game.Dependencies.Get<OsuConfigManager>(),
                     game.Dependencies.Get<INotificationOverlay>(),
@@ -123,7 +122,7 @@ namespace osu.Game.API.Plugins
                 scriptingEnabledBindable.BindValueChanged(_ => updateScriptingSettings());
                 allowClrAccessBindable.BindValueChanged(_ => updateScriptingSettings());
 
-                Host = new PluginHost(events, Services.CreatePluginServices, Services.CreatePluginLogger, createScriptHost);
+                Host = new PluginHost(events, Services.CreatePluginServices, Services.CreatePluginLogger, createScriptHost, Services.CreatePluginConfigStorage);
 
                 game.Add(new PluginRuntimeComponent(Host, input, activateNextPlugin));
 
@@ -183,7 +182,7 @@ namespace osu.Game.API.Plugins
                 Version = PluginApi.VERSION,
                 ApiVersion = PluginApi.VERSION,
                 Permissions = new PluginManifest.PluginPermissions { Trusted = true },
-                DirectoryPath = SpecialStorage.GetScripts(storage).GetFullPath(string.Empty),
+                DirectoryPath = SpecialStorage.GetPluginRoot(storage, PluginManifest.SYSTEM_ID).GetFullPath(string.Empty),
             };
 
             LoadedPlugin entry;

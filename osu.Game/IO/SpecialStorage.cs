@@ -31,8 +31,8 @@ namespace osu.Game.IO
         /// <summary>Where plugin-side persistent data lives (inside a plugin's scoped directory).</summary>
         public const string DATA_FOLDER = "data";
 
-        /// <summary>Where scripts may persist arbitrary data files (relative to <see cref="SCRIPTS_FOLDER"/>).</summary>
-        public const string SCRIPT_DATA_FOLDER = "data";
+        /// <summary>Where plugin-side read-only resources live (inside a plugin's scoped directory).</summary>
+        public const string RESOURCES_FOLDER = "res";
 
         /// <summary>Where logs live.</summary>
         public const string LOGS_FOLDER = "logs";
@@ -49,27 +49,31 @@ namespace osu.Game.IO
         /// <summary>Returns the storage scoped to the <c>osu-oss/scripts</c> directory, creating it if required.</summary>
         public static Storage GetScripts(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(SCRIPTS_FOLDER);
 
-        /// <summary>Returns the storage scoped to the <c>osu-oss/scripts/data</c> directory, creating it if required.</summary>
-        public static Storage GetScriptData(Storage osuStorage) => GetScripts(osuStorage).GetStorageForDirectory(SCRIPT_DATA_FOLDER);
-
         /// <summary>Returns the storage scoped to the <c>osu-oss/plugins</c> directory, creating it if required.</summary>
         public static Storage GetPlugins(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(PLUGINS_FOLDER);
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;</c> directory, creating it if required.</summary>
+        /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
+        public static Storage GetPluginRoot(Storage osuStorage, string pluginId)
+        {
+            validatePluginId(pluginId);
+            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId);
+        }
 
         /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/data</c> directory, creating it if required.</summary>
         /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
         public static Storage GetPluginData(Storage osuStorage, string pluginId)
-        {
-            validatePluginId(pluginId);
-            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(DATA_FOLDER);
-        }
+            => GetPluginRoot(osuStorage, pluginId).GetStorageForDirectory(DATA_FOLDER);
+
+        /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/res</c> directory, creating it if required.</summary>
+        /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
+        public static Storage GetPluginResources(Storage osuStorage, string pluginId)
+            => GetPluginRoot(osuStorage, pluginId).GetStorageForDirectory(RESOURCES_FOLDER);
 
         /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/scripts</c> directory, creating it if required.</summary>
         /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
         public static Storage GetPluginScripts(Storage osuStorage, string pluginId)
-        {
-            validatePluginId(pluginId);
-            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(SCRIPTS_FOLDER);
-        }
+            => GetPluginRoot(osuStorage, pluginId).GetStorageForDirectory(SCRIPTS_FOLDER);
 
         /// <summary>Returns the storage scoped to the <c>osu-oss/logs</c> directory, creating it if required.</summary>
         public static Storage GetLogs(Storage osuStorage) => GetRoot(osuStorage).GetStorageForDirectory(LOGS_FOLDER);
@@ -77,13 +81,7 @@ namespace osu.Game.IO
         /// <summary>Returns the storage scoped to the <c>osu-oss/plugins/&lt;pluginId&gt;/logs</c> directory, creating it if required.</summary>
         /// <exception cref="ArgumentException">The plugin id is empty or not a safe directory name.</exception>
         public static Storage GetPluginLogs(Storage osuStorage, string pluginId)
-        {
-            validatePluginId(pluginId);
-            return GetPlugins(osuStorage).GetStorageForDirectory(pluginId).GetStorageForDirectory(LOGS_FOLDER);
-        }
-
-        /// <summary>Returns the storage scoped to the <c>osu-oss/scripts/logs</c> directory, creating it if required.</summary>
-        public static Storage GetScriptLogs(Storage osuStorage) => GetScripts(osuStorage).GetStorageForDirectory(LOGS_FOLDER);
+            => GetPluginRoot(osuStorage, pluginId).GetStorageForDirectory(LOGS_FOLDER);
 
         /// <summary>Absolute path of the <c>osu-oss</c> directory.</summary>
         public static string GetRootPath(Storage osuStorage) => osuStorage.GetFullPath(ROOT_FOLDER);

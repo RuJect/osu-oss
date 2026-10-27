@@ -10,7 +10,7 @@ namespace osu.Game.API.Plugins
     public static class PluginApi
     {
         /// <summary>The current plugin API version.</summary>
-        public const string VERSION = "1.0.0";
+        public const string VERSION = "1.1.0";
 
         /// <summary>The current plugin API version as a parsed <see cref="SemanticVersion"/>.</summary>
         public static SemanticVersion CurrentVersion { get; } = SemanticVersion.Parse(VERSION);

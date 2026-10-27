@@ -30,9 +30,6 @@ namespace osu.Game.API.Services
         /// <summary>Storage scoped to the <c>osu-oss/scripts</c> directory.</summary>
         public Storage ScriptsStorage { get; }
 
-        /// <summary>Storage scoped to the <c>osu-oss/scripts/data</c> directory.</summary>
-        public Storage ScriptDataStorage { get; }
-
         public MusicController Music { get; }
 
         public OsuConfigManager Config { get; }
@@ -46,16 +43,14 @@ namespace osu.Game.API.Services
         public Func<InputManager?> InputManager { get; }
 
         public GameServices(OsuGame game, GameHost host, OutputLog output, Storage storage, Storage scriptsStorage,
-                            Storage scriptDataStorage, MusicController music, OsuConfigManager config,
-                            INotificationOverlay notifications, IServerRegistry servers, IServerManager serverManager,
-                            Func<InputManager?> inputManager)
+                            MusicController music, OsuConfigManager config, INotificationOverlay notifications,
+                            IServerRegistry servers, IServerManager serverManager, Func<InputManager?> inputManager)
         {
             Game = game;
             Host = host;
             Output = output;
             Storage = storage;
             ScriptsStorage = scriptsStorage;
-            ScriptDataStorage = scriptDataStorage;
             Music = music;
             Config = config;
             Notifications = notifications;
@@ -70,28 +65,26 @@ namespace osu.Game.API.Services
             if (!manifest.IsValidId)
                 throw new ArgumentException("Plugin id must match ^[a-z][a-z0-9_]*$.", nameof(manifest));
 
-            StorageService? storage = manifest.Id == PluginManifest.SYSTEM_ID
-                ? new StorageService(new FileStore(ScriptDataStorage))
-                : manifest.Permissions.CanUseData
-                    ? new StorageService(new FileStore(SpecialStorage.GetPluginData(Storage, manifest.Id)))
-                    : null;
+            StorageService? storage = manifest.Permissions.CanUseData
+                ? new StorageService(new FileStore(SpecialStorage.GetPluginData(Storage, manifest.Id)))
+                : null;
+
+            var resources = new ResourceStore(new FileStore(SpecialStorage.GetPluginResources(Storage, manifest.Id)));
 
             OutputLog output = manifest.Id == PluginManifest.SYSTEM_ID ? Output : new OutputLog();
 
             return new ApiServices(Game, Host, output, storage,
                 new MusicService(Music, Host), new ConfigService(Config), new NotificationService(Notifications),
-                InputManager, Servers, ServerManager);
+                InputManager, Servers, ServerManager, resources);
         }
 
         /// <summary>Creates a logger writing to the logs directory scoped to <paramref name="manifest"/>.</summary>
         public PluginLogger CreatePluginLogger(PluginManifest manifest)
-        {
-            Storage logsStorage = manifest.Id == PluginManifest.SYSTEM_ID
-                ? SpecialStorage.GetScriptLogs(Storage)
-                : SpecialStorage.GetPluginLogs(Storage, manifest.Id);
+            => new PluginLogger(manifest.Id, SpecialStorage.GetPluginLogs(Storage, manifest.Id));
 
-            return new PluginLogger(manifest.Id, logsStorage);
-        }
+        /// <summary>Returns the storage used to load and save <paramref name="manifest"/>'s configuration.</summary>
+        public Storage CreatePluginConfigStorage(PluginManifest manifest)
+            => SpecialStorage.GetPluginRoot(Storage, manifest.Id);
 
         /// <summary>Creates a logger for errors that occur before a plugin logger can be scoped (e.g. repository scanning).</summary>
         public PluginLogger CreateLogFallback() => new PluginLogger("plugins", SpecialStorage.GetLogs(Storage));

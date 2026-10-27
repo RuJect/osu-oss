@@ -146,5 +146,28 @@ namespace osu.Game.Tests.API.Scripting
             ClassicAssert.IsTrue(store.List("nested").Contains("nested/file.txt"));
             ClassicAssert.AreEqual("hello world", File.ReadAllText(Path.Combine(store.Directory, "nested", "file.txt")));
         }
+
+        [Test]
+        public void TestBinaryReadWrite()
+        {
+            byte[] content = { 1, 2, 3, 4 };
+
+            store.WriteBytes("nested/bytes.bin", content);
+
+            ClassicAssert.IsTrue(store.Exists("nested/bytes.bin"));
+            CollectionAssert.AreEqual(content, store.ReadBytes("nested/bytes.bin")!);
+
+            using (Stream stream = store.OpenWrite("nested/other.bin")!)
+                stream.Write(new byte[] { 9, 8 }, 0, 2);
+
+            CollectionAssert.AreEqual(new byte[] { 9, 8 }, store.ReadBytes("nested/other.bin")!);
+
+            ClassicAssert.IsNull(store.ReadBytes("missing.bin"));
+            ClassicAssert.IsNull(store.OpenRead("missing.bin"));
+            ClassicAssert.IsNull(store.OpenRead("../escape.bin"));
+
+            store.WriteBytes("../" + Path.GetFileName(outsideFile), content);
+            ClassicAssert.AreEqual("secret", File.ReadAllText(outsideFile));
+        }
     }
 }
