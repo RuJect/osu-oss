@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -231,10 +231,10 @@ namespace osu.Desktop
                     using (noNetwork ? null : new Loader(host, game))
                     // Game event API: shared typed event bus consumed by the scripting subsystem and plugins.
                     using (var events = new OsuEventBootstrap(host, game))
-                    // JavaScript scripting subsystem: hosts the runtime and the Ctrl+F4 console overlay.
-                    using (var scripting = new ScriptingBootstrap(host, game, events.Bus))
-                    // C# plugin subsystem: loads plugins from osu-oss/plugins, sharing the scripting services.
-                    using (new PluginBootstrap(game, scripting.Manager.Services, events.Bus))
+                    // C# plugin subsystem: loads plugins from osu-oss/plugins and hosts the built-in "system" plugin.
+                    using (var plugins = new PluginBootstrap(game, events.Services, events.Bus))
+                    // JavaScript scripting subsystem: runs in the system plugin context and hosts the Ctrl+F4 console overlay.
+                    using (var scripting = new ScriptingBootstrap(game, plugins))
                     // Command API + Ctrl+Space command palette.
                     using (var commands = new CommandBootstrap(game))
                     using (new CommandPaletteBootstrap(game, commands))
