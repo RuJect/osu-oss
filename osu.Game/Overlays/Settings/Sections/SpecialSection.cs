@@ -28,6 +28,7 @@ namespace osu.Game.Overlays.Settings.Sections
                 new GeneralSettings(),
                 new InterfaceSettings(),
                 new SkinningSettings(),
+                new SongSelectSettings(),
                 new NotificationSettings(),
                 new ThemeSettingsSubsection(),
                 new ScoreSubmissionSettings(),

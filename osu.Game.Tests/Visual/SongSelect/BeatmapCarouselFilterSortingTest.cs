@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -205,9 +205,51 @@ namespace osu.Game.Tests.Visual.SongSelect
             Assert.That(results.Select(b => b.BeatmapSet!.DateAdded), Is.Ordered.Descending);
         }
 
-        private static async Task<IEnumerable<BeatmapInfo>> runSorting(SortMode sort, List<BeatmapSetInfo> beatmapSets)
+        [Test]
+        public async Task TestAdjustedStarRatingsWithinSet()
         {
-            var sorter = new BeatmapCarouselFilterSorting(() => new FilterCriteria { Sort = sort });
+            var set = TestResources.CreateTestBeatmapSetInfo(3);
+            BeatmapInfo[] beatmaps = set.Beatmaps.ToArray();
+
+            var adjusted = new Dictionary<BeatmapInfo, double>
+            {
+                [beatmaps[0]] = 3,
+                [beatmaps[1]] = 1,
+                [beatmaps[2]] = 2,
+            };
+
+            BeatmapInfo[] results = (await runSorting(SortMode.Title, [set], adjusted)).ToArray();
+
+            Assert.That(results, Is.EqualTo(new[] { beatmaps[1], beatmaps[2], beatmaps[0] }));
+        }
+
+        [Test]
+        public async Task TestAdjustedStarRatingsFallBackToBaseForUnsetBeatmaps()
+        {
+            var set = TestResources.CreateTestBeatmapSetInfo(2);
+            BeatmapInfo[] beatmaps = set.Beatmaps.ToArray();
+
+            beatmaps[0].StarRating = 1;
+            beatmaps[1].StarRating = 2;
+
+            var adjusted = new Dictionary<BeatmapInfo, double>
+            {
+                [beatmaps[0]] = 3,
+            };
+
+            BeatmapInfo[] results = (await runSorting(SortMode.Title, [set], adjusted)).ToArray();
+
+            Assert.That(results, Is.EqualTo(new[] { beatmaps[1], beatmaps[0] }));
+        }
+
+        private static async Task<IEnumerable<BeatmapInfo>> runSorting(SortMode sort, List<BeatmapSetInfo> beatmapSets,
+                                                                      IReadOnlyDictionary<BeatmapInfo, double>? adjustedStarRatings = null)
+        {
+            var sorter = new BeatmapCarouselFilterSorting(() => new FilterCriteria { Sort = sort })
+            {
+                AdjustedStarRatings = adjustedStarRatings
+            };
+
             var carouselItems = await sorter.Run(beatmapSets.SelectMany(s => s.Beatmaps.Select(b => new CarouselItem(b))), CancellationToken.None);
             return carouselItems.Select(ci => ci.Model).OfType<BeatmapInfo>();
         }

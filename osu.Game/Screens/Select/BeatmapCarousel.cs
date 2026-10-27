@@ -30,6 +30,8 @@ using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
 using osu.Game.Rulesets;
+using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Mods;
 using osu.Game.Scoring;
 using Realms;
 
@@ -57,6 +59,24 @@ namespace osu.Game.Screens.Select
         private readonly LoadingLayer loading;
 
         private readonly BeatmapCarouselFilterGrouping grouping;
+        private readonly BeatmapCarouselFilterSorting sorting;
+
+        [Resolved(canBeNull: true)]
+        private BeatmapDifficultyCache? difficultyCache { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        [Resolved]
+        private IBindable<RulesetInfo> currentRuleset { get; set; } = null!;
+
+        [Resolved]
+        private IBindable<IReadOnlyList<Mod>> currentMods { get; set; } = null!;
+
+        private IBindable<bool>? useAdjustedStarRatingBindable;
+        private CancellationTokenSource? adjustedStarRatingCancellation;
+        private Dictionary<BeatmapInfo, double>? adjustedStarRatings;
+        private (Guid SetId, FilterCriteria Criteria)? adjustedStarRatingKey;
 
         /// <summary>
         /// Total number of beatmap difficulties displayed with the filter.
@@ -100,10 +120,12 @@ namespace osu.Game.Screens.Select
             // Account for the osu! logo being in the way.
             Scroll.ScrollbarPaddingBottom = 70;
 
+            sorting = new BeatmapCarouselFilterSorting(() => Criteria!);
+
             Filters = new ICarouselFilter[]
             {
                 new BeatmapCarouselFilterMatching(() => Criteria!),
-                new BeatmapCarouselFilterSorting(() => Criteria!),
+                sorting,
                 grouping = new BeatmapCarouselFilterGrouping
                 {
                     GetCriteria = () => Criteria!,
@@ -124,6 +146,15 @@ namespace osu.Game.Screens.Select
             loadSamples(audio);
 
             config.BindWith(OsuSetting.RandomSelectAlgorithm, randomAlgorithm);
+
+            if (specialConfig != null)
+            {
+                useAdjustedStarRatingBindable = specialConfig.GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting);
+                useAdjustedStarRatingBindable.BindValueChanged(_ => onSortingContextChanged());
+            }
+
+            currentRuleset.BindValueChanged(_ => onSortingContextChanged());
+            currentMods.BindValueChanged(_ => onSortingContextChanged());
         }
 
         protected override void LoadComplete()
@@ -668,6 +699,134 @@ namespace osu.Game.Screens.Select
 
             setExpansionStateOfSetItems(lastExpandedSet, false);
             setExpansionStateOfSetItems(ExpandedBeatmapSet, true);
+
+            updateAdjustedStarRatings(set);
+        }
+
+        private bool useAdjustedStarRating => specialConfig?.Get<bool>(SpecialSetting.UseAdjustedStarRatingForSorting) == true;
+
+        private void onSortingContextChanged()
+        {
+            clearAdjustedStarRatings();
+
+            if (Criteria != null)
+                Scheduler.AddOnce(() => Filter(Criteria));
+        }
+
+        private void updateAdjustedStarRatings(GroupedBeatmapSet set)
+        {
+            if (Criteria == null || difficultyCache == null || !useAdjustedStarRating || !grouping.BeatmapSetsGroupedTogether)
+            {
+                clearAdjustedStarRatings();
+                return;
+            }
+
+            BeatmapInfo[] beatmaps = grouping.SetItems.TryGetValue(set, out var setItems)
+                ? setItems.Select(i => (i.Model as GroupedBeatmap)?.Beatmap).OfType<BeatmapInfo>().Distinct().ToArray()
+                : set.BeatmapSet.Beatmaps.ToArray();
+
+            if (beatmaps.Length < 2)
+            {
+                clearAdjustedStarRatings();
+                return;
+            }
+
+            RulesetInfo? ruleset = currentRuleset.Value;
+            IReadOnlyList<Mod> mods = currentMods.Value;
+
+            if (!areModsApplicable(ruleset, mods))
+            {
+                clearAdjustedStarRatings();
+                return;
+            }
+
+            bool hasMods = mods.Count > 0;
+            bool hasConvertedBeatmaps = Criteria.AllowConvertedBeatmaps
+                                        && ruleset != null
+                                        && beatmaps.Any(b => !b.Ruleset.Equals(ruleset));
+
+            if (!hasMods && !hasConvertedBeatmaps)
+            {
+                clearAdjustedStarRatings();
+                return;
+            }
+
+            var key = (set.BeatmapSet.ID, Criteria);
+
+            if (adjustedStarRatingKey == key && adjustedStarRatings != null)
+                return;
+
+            clearAdjustedStarRatings();
+
+            var cancellation = new CancellationTokenSource();
+            adjustedStarRatingCancellation = cancellation;
+            adjustedStarRatingKey = key;
+
+            _ = loadAdjustedStarRatingsAsync(beatmaps, ruleset, mods, key, cancellation.Token);
+        }
+
+        private static bool areModsApplicable(RulesetInfo? ruleset, IReadOnlyList<Mod> mods)
+        {
+            if (mods.Count == 0)
+                return true;
+
+            Ruleset? rulesetInstance = ruleset?.CreateInstance();
+
+            if (rulesetInstance == null)
+                return false;
+
+            HashSet<Type> availableModTypes = rulesetInstance.CreateAllMods().Select(m => m.GetType()).ToHashSet();
+            return mods.All(m => availableModTypes.Contains(m.GetType()));
+        }
+
+        private async Task loadAdjustedStarRatingsAsync(BeatmapInfo[] beatmaps, RulesetInfo? ruleset, IReadOnlyList<Mod> mods,
+                                                        (Guid SetId, FilterCriteria Criteria) key, CancellationToken token)
+        {
+            try
+            {
+                Task<StarDifficulty?>[] tasks = beatmaps
+                                                .Select(b => difficultyCache!.GetDifficultyAsync(b, ruleset, mods, token))
+                                                .ToArray();
+
+                StarDifficulty?[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
+
+                if (token.IsCancellationRequested)
+                    return;
+
+                Schedule(() =>
+                {
+                    if (token.IsCancellationRequested || adjustedStarRatingKey != key)
+                        return;
+
+                    var values = new Dictionary<BeatmapInfo, double>(beatmaps.Length);
+
+                    for (int i = 0; i < beatmaps.Length; i++)
+                        values[beatmaps[i]] = results[i]?.Stars ?? beatmaps[i].StarRating;
+
+                    adjustedStarRatings = values;
+                    sorting.AdjustedStarRatings = values;
+
+                    if (Criteria != null)
+                        Filter(Criteria);
+                });
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch
+            {
+                // Difficulty calculation failed; keep the base star rating ordering.
+            }
+        }
+
+        private void clearAdjustedStarRatings()
+        {
+            adjustedStarRatingCancellation?.Cancel();
+            adjustedStarRatingCancellation?.Dispose();
+            adjustedStarRatingCancellation = null;
+            adjustedStarRatings = null;
+            adjustedStarRatingKey = null;
+            sorting.AdjustedStarRatings = null;
         }
 
         private void setExpansionStateOfSetItems(GroupedBeatmapSet? set, bool expanded)
@@ -787,6 +946,9 @@ namespace osu.Game.Screens.Select
 
         public void Filter(FilterCriteria criteria, bool showLoadingImmediately = false)
         {
+            if (!ReferenceEquals(criteria, Criteria))
+                clearAdjustedStarRatings();
+
             bool resetDisplay = grouping.BeatmapSetsGroupedTogether != BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(criteria);
 
             Criteria = criteria;

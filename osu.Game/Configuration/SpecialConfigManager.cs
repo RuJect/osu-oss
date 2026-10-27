@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Configuration;
@@ -46,6 +46,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.ScriptingEnabled, true);
             SetDefault(SpecialSetting.AllowClrAccess, true);
             SetDefault(SpecialSetting.UseSkinModIcons, true);
+            SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, true);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
             SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, true);
             SetDefault(SpecialSetting.BlockUnsuccessfulScoreSubmission, false);
@@ -126,5 +127,11 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether mod icons should be resolved from the current skin.</summary>
         UseSkinModIcons,
+
+        /// <summary>
+        /// Whether difficulties within an expanded beatmap set should be ordered using the star rating
+        /// for the current ruleset and mods rather than the beatmap's stored star rating.
+        /// </summary>
+        UseAdjustedStarRatingForSorting,
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -17,6 +17,12 @@ namespace osu.Game.Screens.Select
     {
         public int BeatmapItemsCount { get; private set; }
 
+        /// <summary>
+        /// Adjusted star ratings for the currently expanded beatmap set. When present, difficulties
+        /// in this set are ordered by these values rather than <see cref="BeatmapInfo.StarRating"/>.
+        /// </summary>
+        public IReadOnlyDictionary<BeatmapInfo, double>? AdjustedStarRatings { get; set; }
+
         private readonly Func<FilterCriteria> getCriteria;
 
         public BeatmapCarouselFilterSorting(Func<FilterCriteria> getCriteria)
@@ -27,6 +33,7 @@ namespace osu.Game.Screens.Select
         public async Task<List<CarouselItem>> Run(IEnumerable<CarouselItem> items, CancellationToken cancellationToken) => await Task.Run(() =>
         {
             var criteria = getCriteria();
+            IReadOnlyDictionary<BeatmapInfo, double>? adjustedStarRatings = AdjustedStarRatings;
 
             bool groupedSets = BeatmapCarouselFilterGrouping.ShouldGroupBeatmapsTogether(criteria);
 
@@ -40,17 +47,17 @@ namespace osu.Game.Screens.Select
                 if (groupedSets)
                 {
                     if (ab.BeatmapSet!.Equals(bb.BeatmapSet))
-                        return compareDifficulty(ab, bb, criteria.Sort);
+                        return compareDifficulty(ab, bb, criteria.Sort, adjustedStarRatings);
 
                     // If we're grouping by sets, all fallback sorts need to be aggregates for the set.
-                    return compare(ab, bb, criteria.Sort, aggregate: true);
+                    return compare(ab, bb, criteria.Sort, aggregate: true, adjustedStarRatings);
                 }
 
-                return compare(ab, bb, criteria.Sort, aggregate: false);
+                return compare(ab, bb, criteria.Sort, aggregate: false, adjustedStarRatings);
             })).ToList();
         }, cancellationToken).ConfigureAwait(false);
 
-        private static int compare(BeatmapInfo a, BeatmapInfo b, SortMode sort, bool aggregate)
+        private static int compare(BeatmapInfo a, BeatmapInfo b, SortMode sort, bool aggregate, IReadOnlyDictionary<BeatmapInfo, double>? adjustedStarRatings)
         {
             int comparison;
 
@@ -75,7 +82,7 @@ namespace osu.Game.Screens.Select
                     break;
 
                 case SortMode.Difficulty:
-                    comparison = a.StarRating.CompareTo(b.StarRating);
+                    comparison = getStarRating(a, adjustedStarRatings).CompareTo(getStarRating(b, adjustedStarRatings));
                     break;
 
                 case SortMode.DateAdded:
@@ -131,15 +138,28 @@ namespace osu.Game.Screens.Select
             return comparison;
         }
 
-        private static int compareDifficulty(BeatmapInfo a, BeatmapInfo b, SortMode sort)
+        private static int compareDifficulty(BeatmapInfo a, BeatmapInfo b, SortMode sort, IReadOnlyDictionary<BeatmapInfo, double>? adjustedStarRatings)
         {
-            int comparison = a.Ruleset.CompareTo(b.Ruleset);
+            if (adjustedStarRatings != null)
+            {
+                int comparison = getStarRating(a, adjustedStarRatings).CompareTo(getStarRating(b, adjustedStarRatings));
 
-            if (comparison == 0)
-                comparison = a.StarRating.CompareTo(b.StarRating);
+                if (comparison != 0)
+                    return comparison;
 
-            return comparison;
+                return a.Ruleset.CompareTo(b.Ruleset);
+            }
+
+            int rulesetComparison = a.Ruleset.CompareTo(b.Ruleset);
+
+            if (rulesetComparison == 0)
+                rulesetComparison = a.StarRating.CompareTo(b.StarRating);
+
+            return rulesetComparison;
         }
+
+        private static double getStarRating(BeatmapInfo beatmap, IReadOnlyDictionary<BeatmapInfo, double>? adjustedStarRatings)
+            => adjustedStarRatings != null && adjustedStarRatings.TryGetValue(beatmap, out double starRating) ? starRating : beatmap.StarRating;
 
         private static int compareUsingAggregateMax(BeatmapInfo a, BeatmapInfo b, Func<BeatmapInfo, double> func)
         {
