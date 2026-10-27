@@ -9,8 +9,7 @@
     <Title>osu!</Title>
     <Product>osu!(lazer)</Product>
     <ApplicationIcon>lazer.ico</ApplicationIcon>
-    <Version>2026.1005.0</Version>
-    <FileVersion>2026.1005.0.0</FileVersion>
+    <Version>$(OsuGameVersion)</Version>
   </PropertyGroup>
 
   <!-- Required for deployment. -->

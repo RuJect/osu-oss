@@ -3,10 +3,9 @@
     <TargetFramework>net10.0-ios</TargetFramework>
     <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
     <OutputType>Exe</OutputType>
-    <Version>0.1.0</Version>
+    <Version>$(OsuGameVersion)</Version>
 
-    <!-- Incoming version string will be e.g. 2025.723.0-tachyon -->
-    <VersionNoSuffix>$([System.String]::Copy('$(Version)').Split('-')[0])</VersionNoSuffix>
+    <VersionNoSuffix>$(OsuGameVersionNoSuffix)</VersionNoSuffix>
 
     <ApplicationVersion Condition=" '$(ApplicationVersion)' == '' ">$(VersionNoSuffix)</ApplicationVersion>
     <ApplicationDisplayVersion Condition=" '$(ApplicationDisplayVersion)' == '' ">$(VersionNoSuffix)</ApplicationDisplayVersion>

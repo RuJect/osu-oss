@@ -1,5 +1,9 @@
 ﻿<!-- Contains required properties for osu!framework projects. -->
 <Project>
+  <PropertyGroup Label="Versioning">
+    <OsuGameVersion>2026.1005.0-lazer</OsuGameVersion>
+    <OsuGameVersionNoSuffix>$([System.String]::Copy('$(OsuGameVersion)').Split('-')[0])</OsuGameVersionNoSuffix>
+  </PropertyGroup>
   <PropertyGroup Label="C#">
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>

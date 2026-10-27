@@ -5,7 +5,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>osu.Android</RootNamespace>
     <AssemblyName>osu.Android</AssemblyName>
-    <Version>0.0.0</Version>
+    <Version>$(OsuGameVersion)</Version>
     <ApplicationVersion Condition=" '$(ApplicationVersion)' == '' ">1</ApplicationVersion>
     <ApplicationDisplayVersion Condition=" '$(ApplicationDisplayVersion)' == '' ">$(Version)</ApplicationDisplayVersion>
   </PropertyGroup>
