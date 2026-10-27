@@ -39,6 +39,11 @@ namespace osu.Game.Screens.Backgrounds
         [Resolved]
         private GameHost gameHost { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        private IBindable<bool>? unlockLocalSupporterFeatures;
+
         protected virtual bool AllowStoryboardBackground => true;
 
         [BackgroundDependencyLoader]
@@ -62,6 +67,12 @@ namespace osu.Game.Screens.Backgrounds
             beatmap.ValueChanged += _ => Scheduler.AddOnce(next);
             introSequence.ValueChanged += _ => Scheduler.AddOnce(next);
             seasonalBackgroundLoader.SeasonalBackgroundChanged += () => Scheduler.AddOnce(next);
+
+            if (specialConfig != null)
+            {
+                unlockLocalSupporterFeatures = specialConfig.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures);
+                unlockLocalSupporterFeatures.BindValueChanged(_ => Scheduler.AddOnce(next));
+            }
 
             currentDisplay = RNG.Next(0, background_count);
             Next();
@@ -139,7 +150,7 @@ namespace osu.Game.Screens.Backgrounds
             // seasonal background loading gets highest priority.
             Background newBackground = seasonalBackgroundLoader.LoadNextBackground();
 
-            if (newBackground == null && user.Value?.IsSupporter == true)
+            if (newBackground == null && SupporterAccess.IsSupporter(user.Value, specialConfig))
             {
                 switch (source.Value)
                 {

@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -13,6 +13,7 @@ using osu.Framework.Graphics.Colour;
 using osu.Framework.Graphics.Shapes;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Online.API;
@@ -46,6 +47,11 @@ namespace osu.Game.Screens.Menu
 
         [Resolved]
         private OsuColour colours { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
+        private IBindable<bool>? unlockLocalSupporterFeatures;
 
         public MenuSideFlashes()
         {
@@ -96,6 +102,12 @@ namespace osu.Game.Screens.Menu
                 user.ValueChanged += _ => updateColour();
                 skin.BindValueChanged(_ => updateColour(), true);
             }
+
+            if (specialConfig != null)
+            {
+                unlockLocalSupporterFeatures = specialConfig.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures);
+                unlockLocalSupporterFeatures.BindValueChanged(_ => updateColour());
+            }
         }
 
         protected override void OnNewBeat(int beatIndex, TimingControlPoint timingPoint, EffectControlPoint effectPoint, ChannelAmplitudes amplitudes)
@@ -124,7 +136,7 @@ namespace osu.Game.Screens.Menu
         {
             Color4 baseColour = colours.Blue;
 
-            if (user.Value?.IsSupporter ?? false)
+            if (SupporterAccess.IsSupporter(user.Value, specialConfig))
                 baseColour = skin.Value.GetConfig<GlobalSkinColours, Color4>(GlobalSkinColours.MenuGlow)?.Value ?? baseColour;
 
             return baseColour;

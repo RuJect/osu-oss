@@ -47,6 +47,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.AllowClrAccess, true);
             SetDefault(SpecialSetting.UseSkinModIcons, true);
             SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, true);
+            SetDefault(SpecialSetting.UnlockLocalSupporterFeatures, false);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
             SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, true);
             SetDefault(SpecialSetting.BlockUnsuccessfulScoreSubmission, false);
@@ -133,5 +134,11 @@ namespace osu.Game.Configuration
         /// for the current ruleset and mods rather than the beatmap's stored star rating.
         /// </summary>
         UseAdjustedStarRatingForSorting,
+
+        /// <summary>
+        /// Whether client-side cosmetic features normally requiring osu!supporter should be unlocked.
+        /// Server-side supporter features are unaffected.
+        /// </summary>
+        UnlockLocalSupporterFeatures,
     }
 }

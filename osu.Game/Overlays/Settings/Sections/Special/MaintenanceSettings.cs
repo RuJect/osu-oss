@@ -50,6 +50,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = true;
                 config.GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = true;
                 config.GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting).Value = true;
+                config.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures).Value = false;
                 config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;
                 config.GetBindable<bool>(SpecialSetting.InvertToolbar).Value = false;
                 config.GetBindable<NotificationPanelPosition>(SpecialSetting.NotificationPanelPosition).Value = NotificationPanelPosition.Right;

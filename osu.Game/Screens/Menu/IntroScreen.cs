@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 #nullable disable
@@ -86,6 +86,9 @@ namespace osu.Game.Screens.Menu
         [Resolved]
         private RulesetStore rulesets { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
         /// <summary>
         /// Whether the <see cref="Track"/> is provided by osu! resources, rather than a user beatmap.
         /// Only valid during or after <see cref="LogoArriving"/>.
@@ -116,7 +119,7 @@ namespace osu.Game.Screens.Menu
             MenuVoice = config.GetBindable<bool>(OsuSetting.MenuVoice);
             MenuMusic = config.GetBindable<bool>(OsuSetting.MenuMusic);
 
-            if (api.LocalUser.Value.IsSupporter)
+            if (SupporterAccess.IsSupporter(api.LocalUser.Value, specialConfig))
                 AddInternal(skinnableSeeya = new SkinnableSound(new SampleInfo(SeeyaSampleName)));
             else
                 seeya = audio.Samples.Get(SeeyaSampleName);

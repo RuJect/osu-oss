@@ -14,6 +14,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.Textures;
 using osu.Game.Audio;
+using osu.Game.Configuration;
 using osu.Game.Online.API;
 using osu.Game.Skinning;
 using osuTK;
@@ -33,6 +34,9 @@ namespace osu.Game.Screens.Menu
         private ISample pianoReverb;
         protected override string SeeyaSampleName => "Intro/Welcome/seeya";
 
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
+
         public IntroWelcome([CanBeNull] Func<MainMenu> createNextScreen = null)
             : base(createNextScreen)
         {
@@ -43,7 +47,7 @@ namespace osu.Game.Screens.Menu
         {
             if (MenuVoice.Value)
             {
-                if (api.LocalUser.Value.IsSupporter)
+                if (SupporterAccess.IsSupporter(api.LocalUser.Value, specialConfig))
                     AddInternal(skinnableWelcome = new SkinnableSound(new SampleInfo(@"Intro/Welcome/welcome")));
                 else
                     welcome = audio.Samples.Get(@"Intro/Welcome/welcome");
@@ -110,6 +114,9 @@ namespace osu.Game.Screens.Menu
 
             public LogoVisualisation LogoVisualisation { get; private set; }
 
+            [Resolved(canBeNull: true)]
+            private SpecialConfigManager? specialConfig { get; set; }
+
             [BackgroundDependencyLoader]
             private void load(TextureStore textures, IAPIProvider api)
             {
@@ -144,7 +151,7 @@ namespace osu.Game.Screens.Menu
                     },
                 };
 
-                if (api.LocalUser.Value.IsSupporter)
+                if (SupporterAccess.IsSupporter(api.LocalUser.Value, specialConfig))
                     scaleContainer.Add(welcomeText = new SkinnableSprite(@"Intro/Welcome/welcome_text"));
                 else
                     scaleContainer.Add(welcomeText = new Sprite { Texture = textures.Get(@"Intro/Welcome/welcome_text") });

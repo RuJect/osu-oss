@@ -1,4 +1,4 @@
-// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using osu.Framework.Allocation;
@@ -22,6 +22,12 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 {
                     LabelText = "Show developer build banner",
                     Current = config.GetBindable<bool>(SpecialSetting.ShowDevBuildBanner),
+                },
+                new SettingsCheckbox
+                {
+                    LabelText = "Unlock local supporter features",
+                    TooltipText = "Unlocks client-side cosmetic features normally requiring osu!supporter. Server-side supporter features remain unavailable.",
+                    Current = config.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures),
                 },
                 new SettingsCheckbox
                 {

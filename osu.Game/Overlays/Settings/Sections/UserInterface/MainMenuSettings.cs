@@ -18,6 +18,10 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
         protected override LocalisableString Header => UserInterfaceStrings.MainMenuHeader;
 
         private IBindable<APIUser> user = null!;
+        private IBindable<bool>? unlockLocalSupporterFeatures;
+
+        [Resolved(canBeNull: true)]
+        private SpecialConfigManager? specialConfig { get; set; }
 
         private readonly Bindable<SettingsNote.Data?> backgroundSourceNote = new Bindable<SettingsNote.Data?>();
 
@@ -74,13 +78,20 @@ namespace osu.Game.Overlays.Settings.Sections.UserInterface
         {
             base.LoadComplete();
 
-            user.BindValueChanged(u =>
+            user.BindValueChanged(_ => updateBackgroundSourceNote(), true);
+
+            if (specialConfig != null)
             {
-                if (u.NewValue?.IsSupporter != true)
-                    backgroundSourceNote.Value = new SettingsNote.Data(UserInterfaceStrings.NotSupporterNote, SettingsNote.Type.Informational);
-                else
-                    backgroundSourceNote.Value = null;
-            }, true);
+                unlockLocalSupporterFeatures = specialConfig.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures);
+                unlockLocalSupporterFeatures.BindValueChanged(_ => updateBackgroundSourceNote());
+            }
+        }
+
+        private void updateBackgroundSourceNote()
+        {
+            backgroundSourceNote.Value = SupporterAccess.IsSupporter(user.Value, specialConfig)
+                ? null
+                : new SettingsNote.Data(UserInterfaceStrings.NotSupporterNote, SettingsNote.Type.Informational);
         }
     }
 }
