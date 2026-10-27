@@ -1,6 +1,8 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using osu.Game.API.Scripting;
+
 namespace osu.Game.API.Plugins
 {
     /// <summary>A loaded plugin entry: its optional C# instance, context described by the manifest, and current state.</summary>
@@ -18,6 +20,9 @@ namespace osu.Game.API.Plugins
         public PluginLogger Logger => Context.Logger;
 
         public PluginState State { get; internal set; } = PluginState.Stopped;
+
+        /// <summary>This plugin's scripting runtime, or <c>null</c> if it has no JavaScript entry point.</summary>
+        public PluginScriptHost? Scripts { get; internal set; }
 
         internal LoadedPlugin(PluginBase? plugin, PluginContext context, PluginManifest manifest)
         {

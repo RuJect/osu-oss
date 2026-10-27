@@ -24,19 +24,25 @@ namespace osu.Game.API.UI.Scripting
         public ScriptManager? Manager => loader.Manager;
 
         /// <summary>
-        /// Must be constructed after the <see cref="PluginBootstrap"/> which provides the system plugin
-        /// context the scripting runtime executes in.
+        /// Constructed around the same <see cref="PluginBootstrap"/> that owns the system plugin. The
+        /// two may be constructed in either order; the loader observes the bootstrap's lifecycle events.
         /// </summary>
         public ScriptingBootstrap(OsuGame game, PluginBootstrap pluginBootstrap)
         {
             this.game = game;
 
-            loader = new ScriptingLoader(game, pluginBootstrap);
+            loader = new ScriptingLoader(pluginBootstrap);
             loader.Initialised += onInitialised;
+
+            if (loader.Manager != null)
+                onInitialised(loader.Manager);
         }
 
         private void onInitialised(ScriptManager manager)
         {
+            if (overlay != null)
+                return;
+
             overlay = new ScriptingConsoleOverlay(manager);
             overlayRegistration = game.RegisterExternalOverlay(overlay);
             game.ToggleScriptingConsole = toggle;

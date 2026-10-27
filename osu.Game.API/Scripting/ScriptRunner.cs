@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using Jint.Runtime.Modules;
+using osu.Game.API.Plugins;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Services;
 
@@ -16,6 +17,7 @@ namespace osu.Game.API.Scripting
     public class ScriptRunner
     {
         private readonly ScriptServices services;
+        private readonly PluginLogger logger;
         private readonly ScriptEngineFactory engineFactory;
         private readonly ScriptLocator locator;
         private readonly List<ScriptInstance> running = new List<ScriptInstance>();
@@ -29,9 +31,10 @@ namespace osu.Game.API.Scripting
 
         public IReadOnlyList<ScriptInstance> Running => running;
 
-        public ScriptRunner(ScriptServices services, ScriptEngineFactory engineFactory, ScriptLocator locator)
+        public ScriptRunner(ScriptServices services, PluginLogger logger, ScriptEngineFactory engineFactory, ScriptLocator locator)
         {
             this.services = services;
+            this.logger = logger;
             this.engineFactory = engineFactory;
             this.locator = locator;
 
@@ -42,7 +45,7 @@ namespace osu.Game.API.Scripting
         {
             if (!Enabled)
             {
-                services.Output.Log(OutputLevel.Warn, definition.Name, "not run: scripting is disabled");
+                report(OutputLevel.Warn, definition.Name, "not run: scripting is disabled");
                 return new ScriptInstance(definition) { State = ScriptExecutionState.Stopped };
             }
 
@@ -77,7 +80,7 @@ namespace osu.Game.API.Scripting
             }
 
             running.Add(instance);
-            services.Output.Log(OutputLevel.Info, definition.Name, "started");
+            report(OutputLevel.Info, definition.Name, "started");
             RunningScriptsChanged?.Invoke();
             services.Events.PublishScriptStarted(instance.Name);
             return instance;
@@ -140,6 +143,26 @@ namespace osu.Game.API.Scripting
 
         public void Emit(string eventName, object?[] args) => services.Events.Emit(eventName, args);
 
+        private void report(OutputLevel level, string source, string message)
+        {
+            services.Output.Log(level, source, message);
+
+            switch (level)
+            {
+                case OutputLevel.Error:
+                    logger.Error(message);
+                    break;
+
+                case OutputLevel.Warn:
+                    logger.Warn(message);
+                    break;
+
+                default:
+                    logger.Info(message);
+                    break;
+            }
+        }
+
         private void stop(ScriptInstance instance, ScriptExecutionState state)
         {
             if (!running.Remove(instance))
@@ -147,14 +170,14 @@ namespace osu.Game.API.Scripting
 
             instance.State = state;
             teardown(instance);
-            services.Output.Log(OutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
+            report(OutputLevel.Info, instance.Name, state == ScriptExecutionState.Error ? "stopped after error" : "stopped");
             RunningScriptsChanged?.Invoke();
             services.Events.PublishScriptStopped(instance.Name);
         }
 
         private void fail(ScriptInstance instance, Exception e)
         {
-            services.Output.Log(OutputLevel.Error, instance.Name, e.Message);
+            report(OutputLevel.Error, instance.Name, e.Message);
             stop(instance, ScriptExecutionState.Error);
             services.Events.PublishScriptError(instance.Name, e.Message);
         }
@@ -162,7 +185,7 @@ namespace osu.Game.API.Scripting
         private ScriptInstance failStartup(ScriptInstance instance, Exception e)
         {
             instance.State = ScriptExecutionState.Error;
-            services.Output.Log(OutputLevel.Error, instance.Name, e.Message);
+            report(OutputLevel.Error, instance.Name, e.Message);
             teardown(instance);
             running.Add(instance);
             RunningScriptsChanged?.Invoke();
@@ -173,7 +196,7 @@ namespace osu.Game.API.Scripting
         private void complete(ScriptInstance instance)
         {
             instance.State = ScriptExecutionState.Completed;
-            services.Output.Log(OutputLevel.Info, instance.Name, "completed");
+            report(OutputLevel.Info, instance.Name, "completed");
             teardown(instance);
             running.Remove(instance);
             RunningScriptsChanged?.Invoke();

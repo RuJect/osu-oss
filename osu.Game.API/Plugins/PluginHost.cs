@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using osu.Game.API.Events;
+using osu.Game.API.Scripting;
 using osu.Game.API.Services;
 using osu.Game.Events;
 
@@ -17,27 +18,44 @@ namespace osu.Game.API.Plugins
     {
         private readonly OsuEventBus events;
         private readonly Func<PluginManifest, ApiServices> servicesFactory;
+        private readonly Func<PluginManifest, PluginLogger> loggerFactory;
+        private readonly Func<PluginManifest, string?, PluginContext, PluginScriptHost?>? scriptFactory;
         private readonly List<LoadedPlugin> loaded = new List<LoadedPlugin>();
 
         public event Action? LoadedPluginsChanged;
 
         public IReadOnlyList<LoadedPlugin> Loaded => loaded;
 
-        public PluginHost(OsuEventBus events, Func<PluginManifest, ApiServices> servicesFactory)
+        public PluginHost(OsuEventBus events, Func<PluginManifest, ApiServices> servicesFactory,
+                          Func<PluginManifest, PluginLogger>? loggerFactory = null,
+                          Func<PluginManifest, string?, PluginContext, PluginScriptHost?>? scriptFactory = null)
         {
             this.events = events;
             this.servicesFactory = servicesFactory;
+            this.loggerFactory = loggerFactory ?? (manifest => new PluginLogger(manifest.Id));
+            this.scriptFactory = scriptFactory;
         }
 
-        /// <summary>Loads a discovered plugin and returns its entry. Load failures are logged.</summary>
-        public LoadedPlugin Load(PluginLoadResult result)
+        /// <summary>Loads a discovered plugin and returns its entry, or <c>null</c> if its context could not be created.</summary>
+        public LoadedPlugin? Load(PluginLoadResult result)
         {
             var manifest = result.Manifest;
+            PluginLogger logger = loggerFactory(manifest);
 
-            ApiServices services = servicesFactory(manifest);
-            var context = new PluginContext(services, new PluginEventService(events, manifest), new SchedulerService(),
-                new PluginLogger(manifest.Id), manifest);
-            var entry = new LoadedPlugin(result.CSharpPlugin, context, manifest);
+            ApiServices services;
+            LoadedPlugin entry;
+
+            try
+            {
+                services = servicesFactory(manifest);
+                var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest);
+                entry = new LoadedPlugin(result.CSharpPlugin, context, manifest);
+            }
+            catch (Exception e)
+            {
+                logger.Error($"failed to create plugin context: {e.Message}");
+                return null;
+            }
 
             loaded.Add(entry);
 
@@ -45,17 +63,33 @@ namespace osu.Game.API.Plugins
             {
                 events.Publish(new PluginLoadingEvent(manifest));
 
-                result.CSharpPlugin.Load(context);
+                if (result.CSharpPlugin == null)
+                {
+                    if (result.HasJavaScript)
+                        logger.Info("javascript entry registered");
 
-                events.Publish(new PluginLoadedEvent(manifest));
+                    events.Publish(new PluginLoadedEvent(manifest));
 
-                entry.State = PluginState.Running;
-                services.Output.Log(OutputLevel.Info, entry.Name, "loaded");
+                    entry.State = PluginState.Running;
+                    services.Output.Log(OutputLevel.Info, entry.Name, "loaded");
+                }
+                else
+                {
+                    result.CSharpPlugin.Load(entry.Context);
+
+                    events.Publish(new PluginLoadedEvent(manifest));
+
+                    entry.State = PluginState.Running;
+                    services.Output.Log(OutputLevel.Info, entry.Name, "loaded");
+                }
             }
             catch (Exception e)
             {
                 fail(entry, e);
             }
+
+            if (entry.State == PluginState.Running)
+                attachScripts(entry, result.JavaScriptEntryPoint);
 
             LoadedPluginsChanged?.Invoke();
             return entry;
@@ -67,9 +101,9 @@ namespace osu.Game.API.Plugins
         /// </summary>
         public LoadedPlugin LoadSystemPlugin(PluginManifest manifest)
         {
+            PluginLogger logger = loggerFactory(manifest);
             ApiServices services = servicesFactory(manifest);
-            var context = new PluginContext(services, new PluginEventService(events, manifest), new SchedulerService(),
-                new PluginLogger(manifest.Id), manifest);
+            var context = new PluginContext(services, new PluginEventService(events, manifest, logger), new SchedulerService(), logger, manifest);
             var entry = new LoadedPlugin(null, context, manifest);
 
             events.Publish(new PluginLoadingEvent(manifest));
@@ -80,6 +114,9 @@ namespace osu.Game.API.Plugins
 
             entry.State = PluginState.Running;
             services.Output.Log(OutputLevel.Info, entry.Name, "loaded (system)");
+
+            attachScripts(entry, null);
+
             LoadedPluginsChanged?.Invoke();
             return entry;
         }
@@ -91,6 +128,16 @@ namespace osu.Game.API.Plugins
                 return;
 
             events.Publish(new PluginUnloadingEvent(entry.Manifest));
+
+            try
+            {
+                entry.Scripts?.Shutdown();
+            }
+            catch (Exception e)
+            {
+                entry.Logger.Error(e.Message);
+                entry.Context.Services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
+            }
 
             try
             {
@@ -109,11 +156,16 @@ namespace osu.Game.API.Plugins
             LoadedPluginsChanged?.Invoke();
         }
 
-        public void UnloadAll()
+        /// <summary>Unloads every loaded plugin, external plugins first and the built-in system plugin last.</summary>
+        public void Shutdown()
         {
-            foreach (LoadedPlugin entry in loaded.ToArray())
-                Unload(entry);
+            LoadedPlugin[] snapshot = loaded.ToArray();
+
+            for (int i = snapshot.Length - 1; i >= 0; i--)
+                Unload(snapshot[i]);
         }
+
+        public void UnloadAll() => Shutdown();
 
         /// <summary>Advances every running plugin's frame callbacks and timers. Called on the update thread.</summary>
         public void Tick(double currentTime)
@@ -124,6 +176,38 @@ namespace osu.Game.API.Plugins
                     continue;
 
                 entry.Context.Scheduler.Tick(currentTime, e => fail(entry, e));
+
+                if (entry.State != PluginState.Running)
+                    continue;
+
+                entry.Scripts?.Tick(currentTime);
+            }
+        }
+
+        /// <summary>Applies updated global scripting preferences to every loaded plugin.</summary>
+        public void ApplyScriptingSettings(ScriptingSettings settings)
+        {
+            foreach (LoadedPlugin entry in loaded.ToArray())
+                entry.Scripts?.ApplySettings(settings);
+        }
+
+        private void attachScripts(LoadedPlugin entry, string? jsEntryPoint)
+        {
+            if (scriptFactory == null)
+                return;
+
+            try
+            {
+                PluginScriptHost? scripts = scriptFactory(entry.Manifest, jsEntryPoint, entry.Context);
+                entry.Scripts = scripts;
+                scripts?.Start();
+            }
+            catch (Exception e)
+            {
+                string message = $"failed to initialise plugin scripts: {e.Message}";
+                entry.Logger.Error(message);
+                entry.Context.Services.Output.Log(OutputLevel.Error, entry.Name, message);
+                events.Publish(new PluginErrorEvent(entry.Manifest, message));
             }
         }
 

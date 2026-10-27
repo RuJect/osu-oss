@@ -51,7 +51,7 @@ namespace osu.Game.API.Scripting
             Locator = new ScriptLocator(Repository);
 
             engineFactory = new ScriptEngineFactory(pluginContext, this, buildProviderList);
-            Runner = new ScriptRunner(Services, engineFactory, Locator);
+            Runner = new ScriptRunner(Services, pluginContext.Logger, engineFactory, Locator);
 
             RegisterApiProvider(() => new ConsoleApiProvider());
             RegisterApiProvider(() => new CoreApiProvider());
