@@ -7,11 +7,13 @@ using System.Linq;
 using Jint.Native;
 using osu.Game.Events;
 using osu.Game.API.Events;
+using osu.Game.API.Plugins;
 
 namespace osu.Game.API.Scripting
 {
     /// <summary>
-    /// Adapter that exposes the shared <see cref="OsuEventBus"/> to scripts as string-named subscriptions.
+    /// Adapter that exposes the shared event bus (through the plugin's <see cref="PluginEventService"/>) to
+    /// scripts as string-named subscriptions.
     /// Well-known names map to typed events published on the bus; unknown names resolve to custom
     /// <see cref="ScriptEvent"/>s emitted via <c>osu.emit</c>.
     /// </summary>
@@ -38,15 +40,15 @@ namespace osu.Game.API.Scripting
             ["gameplayFailed"] = new EventMapping(typeof(GameplayFailedEvent), e => new object?[] { ((GameplayFailedEvent)e).Player, ((GameplayFailedEvent)e).Score }),
         };
 
-        private readonly OsuEventBus bus;
+        private readonly PluginEventService eventService;
         private readonly Dictionary<ScriptInstance, List<Subscription>> subscriptions = new Dictionary<ScriptInstance, List<Subscription>>();
 
         /// <summary>Invoked when a script handler throws; set by <see cref="ScriptRunner"/>.</summary>
         public Action<ScriptInstance, Exception>? OnHandlerError { get; set; }
 
-        public ScriptEventBus(OsuEventBus bus)
+        public ScriptEventBus(PluginEventService eventService)
         {
-            this.bus = bus;
+            this.eventService = eventService;
         }
 
         public void Subscribe(ScriptInstance instance, string eventName, JsValue handler) => subscribe(instance, eventName, handler, false);
@@ -57,9 +59,9 @@ namespace osu.Game.API.Scripting
         private void subscribe(ScriptInstance instance, string eventName, JsValue handler, bool once)
         {
             if (mappings.TryGetValue(eventName, out EventMapping? mapping))
-                track(instance, handler, bus.SubscribeAll(e => dispatch(instance, handler, e.GetType() == mapping.Type ? mapping.Project(e) : null, once)));
+                track(instance, handler, eventService.SubscribeAll(e => dispatch(instance, handler, e.GetType() == mapping.Type ? mapping.Project(e) : null, once)));
             else
-                track(instance, handler, bus.Subscribe<ScriptEvent>(e => dispatch(instance, handler, e.Name == eventName ? e.Args : null, once)));
+                track(instance, handler, eventService.Subscribe<ScriptEvent>(e => dispatch(instance, handler, e.Name == eventName ? e.Args : null, once)));
         }
 
         private void dispatch(ScriptInstance instance, JsValue handler, object?[]? args, bool once)
@@ -115,15 +117,15 @@ namespace osu.Game.API.Scripting
             => subscriptions.TryGetValue(instance, out List<Subscription>? list) && list.Count > 0;
 
         /// <summary>Publishes a custom script event (from <c>osu.emit</c>).</summary>
-        public void Emit(string eventName, object?[] args) => bus.Publish(new ScriptEvent(eventName, args));
+        public void Emit(string eventName, object?[] args) => eventService.Publish(new ScriptEvent(eventName, args));
 
-        public void PublishScreen(string name) => bus.Publish(new ScreenChangedEvent(name));
+        public void PublishScreen(string name) => eventService.Publish(new ScreenChangedEvent(name));
 
-        public void PublishScriptStarted(string name) => bus.Publish(new ScriptStartedEvent(name));
+        public void PublishScriptStarted(string name) => eventService.Publish(new ScriptStartedEvent(name));
 
-        public void PublishScriptStopped(string name) => bus.Publish(new ScriptStoppedEvent(name));
+        public void PublishScriptStopped(string name) => eventService.Publish(new ScriptStoppedEvent(name));
 
-        public void PublishScriptError(string name, string message) => bus.Publish(new ScriptErrorEvent(name, message));
+        public void PublishScriptError(string name, string message) => eventService.Publish(new ScriptErrorEvent(name, message));
 
         private void track(ScriptInstance instance, JsValue handler, IDisposable token)
         {

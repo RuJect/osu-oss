@@ -2,33 +2,34 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Linq;
 using osu.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Bindables;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game.Events;
-using osu.Game.API.Services;
+using osu.Game.API.Plugins;
 using osu.Game.Configuration;
 using osu.Game.IO;
-using osu.Game.Online.Server;
-using osu.Game.Overlays;
 
 namespace osu.Game.API.Scripting
 {
     /// <summary>
-    /// Entry point of the scripting subsystem. Owns the <see cref="ScriptManager"/>, resolves the scripts
-    /// storage after the game loads and runs the magic <c>on_launch.js</c>/<c>on_exit.js</c> scripts.
+    /// Entry point of the scripting subsystem. Runs the <see cref="ScriptManager"/> in the context of the
+    /// built-in "system" plugin, resolves the scripts storage after the game loads and runs the magic
+    /// <c>on_launch.js</c>/<c>on_exit.js</c> scripts.
     /// </summary>
     /// <remarks>
-    /// Constructed from <c>osu.Desktop/Program.cs</c> around <c>host.Run(game)</c>, mirroring the auth module's
-    /// <c>Loader</c>. Disposal runs after the update thread has stopped, so <c>on_exit.js</c> must not touch drawables.
+    /// Constructed from <c>osu.Desktop/Program.cs</c> around <c>host.Run(game)</c>, after the
+    /// <see cref="PluginBootstrap"/> which loads the system plugin on game load. Disposal runs after the
+    /// update thread has stopped, so <c>on_exit.js</c> must not touch drawables.
     /// </remarks>
     public class ScriptingLoader : IDisposable
     {
         private static readonly Logger logger = Logger.GetLogger("scripts");
 
         private readonly OsuGame game;
+        private readonly PluginBootstrap pluginBootstrap;
         private ScreenEventBridge? screenBridge;
         private bool initialised;
         private bool disposed;
@@ -37,7 +38,8 @@ namespace osu.Game.API.Scripting
         private Bindable<bool>? scriptingEnabledBindable;
         private Bindable<bool>? allowClrAccessBindable;
 
-        public ScriptManager Manager { get; }
+        /// <summary>The scripting manager, or <c>null</c> if scripting could not be initialised.</summary>
+        public ScriptManager? Manager { get; private set; }
 
         /// <summary>
         /// Raised (on the update thread) once storage has been resolved and definitions loaded, before
@@ -45,11 +47,10 @@ namespace osu.Game.API.Scripting
         /// </summary>
         public event Action<ScriptManager>? Initialised;
 
-        public ScriptingLoader(GameHost host, OsuGame game, OsuEventBus eventBus)
+        public ScriptingLoader(OsuGame game, PluginBootstrap pluginBootstrap)
         {
             this.game = game;
-
-            Manager = new ScriptManager(host, game, eventBus);
+            this.pluginBootstrap = pluginBootstrap;
 
             // Deferred until the game has finished loading: adding drawables to (or resolving
             // dependencies from) a not-yet-loaded OsuGame is not valid, and the game's scheduler
@@ -62,10 +63,20 @@ namespace osu.Game.API.Scripting
 
         private void initialise()
         {
-            if (initialised)
+            if (initialised || disposed)
                 return;
 
             initialised = true;
+
+            var systemPlugin = pluginBootstrap.Host.Loaded.FirstOrDefault(p => p.Manifest.Id == "system");
+
+            if (systemPlugin == null)
+            {
+                logger.Add("System plugin is not loaded; JavaScript scripting is unavailable.");
+                return;
+            }
+
+            Manager = new ScriptManager(systemPlugin.Context);
 
             var runtime = new ScriptRuntimeComponent(Manager.Runner);
             game.Add(runtime);
@@ -102,16 +113,6 @@ namespace osu.Game.API.Scripting
             allowClrAccessBindable = specialConfig.GetBindable<bool>(SpecialSetting.AllowClrAccess);
             allowClrAccessBindable.BindValueChanged(e => Manager.AllowClrAccess = e.NewValue, true);
 
-            Manager.Services.Music = new MusicService(game.Dependencies.Get<MusicController>(), Manager.Services.Host);
-            Manager.Services.Config = new ConfigService(game.Dependencies.Get<OsuConfigManager>());
-            Manager.Services.Notifications = new NotificationService(game.Dependencies.Get<INotificationOverlay>());
-
-            // Server subsystem: expose the runtime registry and manager so plugins/scripts can
-            // register custom servers. They are never persisted to the user's configuration file;
-            // only the selected server's ID is persisted.
-            Manager.Services.Servers = game.Dependencies.Get<IServerRegistry>();
-            Manager.Services.ServerManager = game.Dependencies.Get<IServerManager>();
-
             Initialised?.Invoke(Manager);
 
             runLaunchScript();
@@ -119,7 +120,7 @@ namespace osu.Game.API.Scripting
 
         private void runLaunchScript()
         {
-            if (!Manager.Runner.Enabled)
+            if (Manager == null || !Manager.Runner.Enabled)
                 return;
 
             try
@@ -134,7 +135,7 @@ namespace osu.Game.API.Scripting
 
         private void runExitScript()
         {
-            if (!Manager.Runner.Enabled)
+            if (Manager == null || !Manager.Runner.Enabled)
                 return;
 
             try
@@ -155,7 +156,7 @@ namespace osu.Game.API.Scripting
             disposed = true;
 
             runExitScript();
-            Manager.Runner.StopAll();
+            Manager?.Runner.StopAll();
             screenBridge?.Dispose();
             screenBridge = null;
         }

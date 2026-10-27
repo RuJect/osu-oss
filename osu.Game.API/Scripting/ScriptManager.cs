@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Platform;
-using osu.Game.Events;
+using osu.Game.API.Plugins;
 using osu.Game.API.Scripting.Api;
 using osu.Game.API.Scripting.Api.Providers;
 using osu.Game.API.Services;
@@ -40,12 +40,12 @@ namespace osu.Game.API.Scripting
 
         public ScriptServices Services { get; }
 
-        public ScriptManager(GameHost host, OsuGame game, OsuEventBus eventBus)
+        public ScriptManager(PluginContext pluginContext)
         {
-            Output = new OutputLog();
+            Output = pluginContext.Output;
             Repository = new ScriptRepository(Output);
-            Events = new ScriptEventBus(eventBus);
-            Services = new ScriptServices(game, host, Repository, Output, Events);
+            Events = new ScriptEventBus(pluginContext.Events);
+            Services = new ScriptServices(pluginContext.Game, pluginContext.Host, Repository, Output, Events);
             Locator = new ScriptLocator(Repository);
 
             engineFactory = new ScriptEngineFactory(Services, buildProviderList);
@@ -65,6 +65,13 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(() => new UiApiProvider());
             RegisterApiProvider(() => new CursorApiProvider());
             RegisterApiProvider(() => new KeyboardApiProvider());
+
+            Services.Storage = pluginContext.Storage;
+            Services.Music = pluginContext.Music;
+            Services.Config = pluginContext.Config;
+            Services.Notifications = pluginContext.Notifications;
+            Services.Servers = pluginContext.Servers;
+            Services.ServerManager = pluginContext.ServerManager;
         }
 
         /// <summary>

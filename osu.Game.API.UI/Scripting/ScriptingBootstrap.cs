@@ -2,9 +2,8 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Framework.Platform;
 using osu.Game;
-using osu.Game.Events;
+using osu.Game.API.Plugins;
 using osu.Game.API.Scripting;
 
 namespace osu.Game.API.UI.Scripting
@@ -22,13 +21,17 @@ namespace osu.Game.API.UI.Scripting
         private ScriptingConsoleOverlay? overlay;
         private IDisposable? overlayRegistration;
 
-        public ScriptManager Manager => loader.Manager;
+        public ScriptManager? Manager => loader.Manager;
 
-        public ScriptingBootstrap(GameHost host, OsuGame game, OsuEventBus eventBus)
+        /// <summary>
+        /// Must be constructed after the <see cref="PluginBootstrap"/> which provides the system plugin
+        /// context the scripting runtime executes in.
+        /// </summary>
+        public ScriptingBootstrap(OsuGame game, PluginBootstrap pluginBootstrap)
         {
             this.game = game;
 
-            loader = new ScriptingLoader(host, game, eventBus);
+            loader = new ScriptingLoader(game, pluginBootstrap);
             loader.Initialised += onInitialised;
         }
 
