@@ -41,6 +41,32 @@ namespace osu.Game.API.Scripting.Api.Providers
         }
 
         [ScriptApi(Target = "storage")]
+        public JsValue ReadBytes(string? path)
+        {
+            StorageService? data = Context.Plugin.Services.Storage;
+
+            if (data == null || path == null || !data.Exists(path))
+                return JsValue.Undefined;
+
+            byte[]? bytes = data.ReadBytes(path);
+            return bytes == null ? JsValue.Undefined : ScriptBinary.ToJs(Context.Engine, bytes);
+        }
+
+        [ScriptApi(Target = "storage")]
+        public void WriteBytes(string? path, JsValue value)
+        {
+            StorageService? data = Context.Plugin.Services.Storage;
+
+            if (data == null || path == null)
+                return;
+
+            byte[]? bytes = ScriptBinary.FromJs(value);
+
+            if (bytes != null)
+                data.WriteBytes(path, bytes);
+        }
+
+        [ScriptApi(Target = "storage")]
         public bool Exists(string? path)
         {
             StorageService? data = Context.Plugin.Services.Storage;

@@ -58,11 +58,13 @@ namespace osu.Game.API.Scripting
             RegisterApiProvider(() => new SchedulerApiProvider());
             RegisterApiProvider(() => new EventsApiProvider());
             RegisterApiProvider(() => new StorageApiProvider());
+            RegisterApiProvider(() => new ResourceApiProvider());
             RegisterApiProvider(() => new TypeApiProvider());
             RegisterApiProvider(() => new NotificationApiProvider());
             RegisterApiProvider(() => new InternalApiProvider());
             RegisterApiProvider(() => new UtilityApiProvider());
             RegisterApiProvider(() => new ConfigApiProvider());
+            RegisterApiProvider(() => new PluginConfigApiProvider());
             RegisterApiProvider(() => new MusicApiProvider());
             RegisterApiProvider(() => new UiApiProvider());
             RegisterApiProvider(() => new CursorApiProvider());
