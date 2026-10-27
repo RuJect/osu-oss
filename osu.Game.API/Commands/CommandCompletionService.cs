@@ -75,8 +75,8 @@ namespace osu.Game.API.Commands
                 location = CommandCompletionScanner.LocateWhole(valueText, offset);
             else
             {
-                bool unwrappedArray = CommandBinder.isArrayLike(type) && !valueText.TrimStart().StartsWith('[');
-                bool unwrappedObject = CommandBinder.isObjectLike(type) && !valueText.TrimStart().StartsWith('{');
+                bool unwrappedArray = CommandBinder.IsArrayLike(type) && !valueText.TrimStart().StartsWith('[');
+                bool unwrappedObject = CommandBinder.IsObjectLike(type) && !valueText.TrimStart().StartsWith('{');
 
                 location = CommandCompletionScanner.Locate(valueText, offset, unwrappedArray, unwrappedObject);
             }

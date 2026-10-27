@@ -5,18 +5,6 @@ using System;
 
 namespace osu.Game.API.Commands
 {
-    /// <summary>Provides a human readable description for a command argument type.</summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum)]
-    public sealed class CommandDescriptionAttribute : Attribute
-    {
-        public string Description { get; }
-
-        public CommandDescriptionAttribute(string description)
-        {
-            Description = description;
-        }
-    }
-
     /// <summary>Provides a human readable description for an enum value offered as a suggestion.</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public sealed class CommandEnumMemberAttribute : Attribute

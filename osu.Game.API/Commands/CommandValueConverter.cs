@@ -388,7 +388,7 @@ namespace osu.Game.API.Commands
         /// <summary>Returns the fields of an object argument type which can be suggested as keys.</summary>
         internal static IReadOnlyList<CommandSuggestion> GetObjectFieldSuggestions(Type type)
         {
-            if (!CommandBinder.isObjectLike(type) || tryGetDictionaryValueType(type, out _, out _))
+            if (!CommandBinder.IsObjectLike(type) || tryGetDictionaryValueType(type, out _, out _))
                 return Array.Empty<CommandSuggestion>();
 
             return object_members.GetOrAdd(type, buildMembers)

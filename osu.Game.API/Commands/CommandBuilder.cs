@@ -37,12 +37,6 @@ namespace osu.Game.API.Commands
             return this;
         }
 
-        public CommandBuilder Alias(string alias)
-        {
-            aliases.Add(alias);
-            return this;
-        }
-
         public CommandBuilder Argument<T>(string name, Action<CommandArgumentBuilder<T>>? configure = null)
         {
             var builder = new CommandArgumentBuilder<T>(name);

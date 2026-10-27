@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using osu.Game.API.Commands.Syntax;
 
 namespace osu.Game.API.Commands
@@ -208,14 +207,14 @@ namespace osu.Game.API.Commands
                     true, Array.Empty<CommandParseError>());
             }
 
-            if (isArrayLike(type))
+            if (IsArrayLike(type))
             {
                 return trimmed.StartsWith('[')
                            ? CommandValueParser.Parse(trimmed, trimOffset)
                            : CommandValueParser.ParseSequence(trimmed, trimOffset);
             }
 
-            if (isObjectLike(type))
+            if (IsObjectLike(type))
             {
                 return trimmed.StartsWith('{')
                            ? CommandValueParser.Parse(trimmed, trimOffset)
@@ -271,7 +270,7 @@ namespace osu.Game.API.Commands
             return true;
         }
 
-        internal static bool isArrayLike(Type type)
+        internal static bool IsArrayLike(Type type)
         {
             if (type.IsArray)
                 return true;
@@ -292,7 +291,7 @@ namespace osu.Game.API.Commands
                    || definition == typeof(IReadOnlySet<>);
         }
 
-        internal static bool isObjectLike(Type type)
+        internal static bool IsObjectLike(Type type)
         {
             if (type == typeof(string) || type == typeof(object) || type.IsEnum || type.IsPrimitive)
                 return false;

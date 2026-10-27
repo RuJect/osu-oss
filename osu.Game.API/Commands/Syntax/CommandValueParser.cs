@@ -195,7 +195,7 @@ namespace osu.Game.API.Commands.Syntax
                 }
 
                 int fieldStart = position;
-                var key = parseKey(out CommandTextSpan keySpan);
+                string? key = parseKey(out CommandTextSpan keySpan);
 
                 if (key == null)
                 {

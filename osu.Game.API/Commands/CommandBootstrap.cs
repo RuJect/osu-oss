@@ -6,12 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using osu.Framework.Screens;
 using osu.Game.API.Commands.Syntax;
-using osu.Game.Online.API;
-using osu.Game.Online.API.Requests;
 using osu.Game.Overlays.Notifications;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Screens.Select;
-using osu.Game.Users;
 using osu.Game.Utils;
 
 namespace osu.Game.API.Commands

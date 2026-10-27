@@ -41,17 +41,5 @@ namespace osu.Game.API.Commands
 
             throw new InvalidCastException($"Argument '{name}' is a {value.GetType().Name}, not a {typeof(T).Name}.");
         }
-
-        public bool TryGet<T>(string name, out T value)
-        {
-            if (Arguments.TryGetValue(name, out object? raw) && raw is T typed)
-            {
-                value = typed;
-                return true;
-            }
-
-            value = default!;
-            return false;
-        }
     }
 }
