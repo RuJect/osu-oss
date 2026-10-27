@@ -13,7 +13,7 @@ namespace osu.Game.API.Plugins
     public class PluginLogger
     {
         private const string log_file = "logs/plugin.log";
-        private const long max_log_bytes = 1_000_000;
+        private const int max_log_length = 1_000_000;
         private const int max_backups = 3;
 
         private readonly string pluginId;
@@ -45,12 +45,12 @@ namespace osu.Game.API.Plugins
             storage.Append(log_file, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{pluginId}] [{level}] {line}\n");
         }
 
-        /// <summary>Shifts the log aside (plugin.1.log ... plugin.3.log) once it outgrows <see cref="max_log_bytes"/>.</summary>
+        /// <summary>Shifts the log aside (plugin.1.log ... plugin.3.log) once it outgrows <see cref="max_log_length"/> characters.</summary>
         private void rotate()
         {
             string? current = storage!.Read(log_file);
 
-            if (current == null || current.Length <= max_log_bytes)
+            if (current == null || current.Length <= max_log_length)
                 return;
 
             for (int i = max_backups; i >= 2; i--)

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using osu.Framework.Allocation;
 using osu.Framework.Platform;
 using osu.Game.IO;
+using osu.Game.API.Events;
 using osu.Game.Events;
 using osu.Game.API.Services;
 
@@ -70,10 +71,13 @@ namespace osu.Game.API.Plugins
         {
             var entry = new LoadedPlugin(null, context, manifest);
 
+            context.Events.Publish(new PluginLoadingEvent(manifest));
+
             loaded.Add(entry);
 
             entry.State = PluginState.Running;
             services.Output.Log(OutputLevel.Info, entry.Name, "loaded (system)");
+            context.Events.Publish(new PluginLoadedEvent(manifest));
             LoadedPluginsChanged?.Invoke();
             return entry;
         }
@@ -87,7 +91,15 @@ namespace osu.Game.API.Plugins
             try
             {
                 if (entry.Plugin != null)
+                {
                     entry.Context.Events.UnloadPlugin(entry.Plugin);
+                }
+                else
+                {
+                    entry.Context.Events.Publish(new PluginUnloadingEvent(entry.Manifest));
+                    entry.Context.Events.Dispose();
+                    entry.Context.Events.Publish(new PluginUnloadedEvent(entry.Manifest));
+                }
             }
             catch (Exception e)
             {
@@ -122,6 +134,7 @@ namespace osu.Game.API.Plugins
         private void fail(LoadedPlugin entry, Exception e)
         {
             entry.State = PluginState.Error;
+            entry.Context.Events.Dispose();
             entry.Logger.Error(e.Message);
             services.Output.Log(OutputLevel.Error, entry.Name, e.Message);
         }
