@@ -39,6 +39,9 @@ namespace osu.Desktop
 
         public bool EnableWebSocketServer { get; init; }
 
+        /// <summary>Raised on the update thread before the game exits, once exit is no longer blocked.</summary>
+        public event Action? ShutdownRequested;
+
         public OsuGameDesktop(string[]? args = null)
             : base(args)
         {
@@ -189,6 +192,16 @@ namespace osu.Desktop
             }
 
             host.Window.Title = Name;
+        }
+
+        protected override bool OnExiting()
+        {
+            bool blocked = base.OnExiting();
+
+            if (!blocked)
+                ShutdownRequested?.Invoke();
+
+            return blocked;
         }
 
         protected override BatteryInfo CreateBatteryInfo() => FrameworkEnvironment.UseSDL3 ? new SDL3BatteryInfo() : new SDL2BatteryInfo();

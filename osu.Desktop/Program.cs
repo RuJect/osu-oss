@@ -239,7 +239,16 @@ namespace osu.Desktop
                     using (var commands = new CommandBootstrap(game))
                     using (new CommandPaletteBootstrap(game, commands))
                     {
-                        host.Run(game);
+                        game.ShutdownRequested += plugins.Shutdown;
+
+                        try
+                        {
+                            host.Run(game);
+                        }
+                        finally
+                        {
+                            game.ShutdownRequested -= plugins.Shutdown;
+                        }
                     }
                 }
             }
