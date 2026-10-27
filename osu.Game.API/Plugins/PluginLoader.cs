@@ -11,8 +11,8 @@ using osu.Game.API.Services;
 namespace osu.Game.API.Plugins
 {
     /// <summary>
-    /// Instantiates <see cref="IPlugin"/>s from assemblies on disk. Each concrete, public, parameterless
-    /// type implementing <see cref="IPlugin"/> in an assembly yields one instance.
+    /// Instantiates <see cref="PluginBase"/>s from plugin manifests. Entry points are already resolved on
+    /// the manifest; each concrete, public, parameterless subclass found in the assembly yields one result.
     /// </summary>
     public class PluginLoader
     {
@@ -23,12 +23,33 @@ namespace osu.Game.API.Plugins
             this.output = output;
         }
 
-        /// <summary>Loads every plugin type from the given repository.</summary>
-        public IEnumerable<IPlugin> LoadFrom(PluginRepository repository)
-            => repository.EnumeratePlugins().SelectMany(definition => LoadFromFile(definition.Path));
+        /// <summary>Loads every plugin from the given repository.</summary>
+        public IEnumerable<PluginLoadResult> LoadFrom(PluginRepository repository)
+            => repository.EnumeratePlugins().SelectMany(LoadFromManifest);
 
-        /// <summary>Loads every plugin type in the assembly at <paramref name="path"/>. Failures are logged.</summary>
-        public IEnumerable<IPlugin> LoadFromFile(string path)
+        /// <summary>Loads the entry points of <paramref name="manifest"/>. Failures are logged.</summary>
+        public IEnumerable<PluginLoadResult> LoadFromManifest(PluginManifest manifest)
+        {
+            var results = new List<PluginLoadResult>();
+
+            if (!string.IsNullOrEmpty(manifest.CSharpEntryPoint))
+            {
+                var plugin = loadCSharpPlugin(manifest.CSharpEntryPoint, manifest.Id);
+
+                if (plugin != null)
+                    results.Add(new PluginLoadResult(manifest, plugin));
+            }
+
+            if (!string.IsNullOrEmpty(manifest.JavaScriptEntryPoint))
+                output.Log(OutputLevel.Warn, manifest.Id, "javascript entry point ignored: JS plugins are not supported yet");
+
+            if (results.Count == 0)
+                output.Log(OutputLevel.Warn, manifest.Id, "no entry point found (expected bin/<id>.dll)");
+
+            return results;
+        }
+
+        private PluginBase? loadCSharpPlugin(string path, string pluginId)
         {
             Assembly assembly;
 
@@ -38,15 +59,13 @@ namespace osu.Game.API.Plugins
             }
             catch (Exception e)
             {
-                output.Log(OutputLevel.Error, Path.GetFileName(path), $"failed to load assembly: {e.Message}");
-                return Array.Empty<IPlugin>();
+                output.Log(OutputLevel.Error, pluginId, $"failed to load assembly: {e.Message}");
+                return null;
             }
-
-            var plugins = new List<IPlugin>();
 
             foreach (Type type in getLoadableTypes(assembly))
             {
-                if (!typeof(IPlugin).IsAssignableFrom(type) || type.IsAbstract || type.IsInterface)
+                if (!typeof(PluginBase).IsAssignableFrom(type) || type.IsAbstract || type.IsInterface)
                     continue;
 
                 if (type.GetConstructor(Type.EmptyTypes) == null)
@@ -57,7 +76,7 @@ namespace osu.Game.API.Plugins
 
                 try
                 {
-                    plugins.Add((IPlugin)Activator.CreateInstance(type)!);
+                    return (PluginBase)Activator.CreateInstance(type)!;
                 }
                 catch (Exception e)
                 {
@@ -65,7 +84,8 @@ namespace osu.Game.API.Plugins
                 }
             }
 
-            return plugins;
+            output.Log(OutputLevel.Warn, pluginId, "no PluginBase subclass found in assembly");
+            return null;
         }
 
         private static IEnumerable<Type> getLoadableTypes(Assembly assembly)
@@ -78,6 +98,20 @@ namespace osu.Game.API.Plugins
             {
                 return e.Types.Where(t => t != null)!;
             }
+        }
+    }
+
+    /// <summary>A ready-to-load plugin: its manifest plus instantiated C# entry point.</summary>
+    public sealed class PluginLoadResult
+    {
+        public PluginManifest Manifest { get; }
+
+        public PluginBase CSharpPlugin { get; }
+
+        public PluginLoadResult(PluginManifest manifest, PluginBase csharpPlugin)
+        {
+            Manifest = manifest;
+            CSharpPlugin = csharpPlugin;
         }
     }
 }

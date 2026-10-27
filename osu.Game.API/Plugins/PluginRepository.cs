@@ -3,12 +3,14 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using osu.Framework.Platform;
 
 namespace osu.Game.API.Plugins
 {
-    /// <summary>Discovers plugin assemblies under a scoped <see cref="Storage"/> directory.</summary>
+    /// <summary>
+    /// Discovers plugins under a scoped <see cref="Storage"/> directory: one sub-directory per plugin,
+    /// each containing a <c>manifest.json</c> (see <see cref="PluginManifest"/>).
+    /// </summary>
     public class PluginRepository
     {
         private readonly Storage storage;
@@ -18,9 +20,32 @@ namespace osu.Game.API.Plugins
             this.storage = storage;
         }
 
-        /// <summary>Lists every plugin assembly directly under the plugins directory.</summary>
-        public IEnumerable<PluginDefinition> EnumeratePlugins()
-            => storage.GetFiles(string.Empty, "*.dll")
-                      .Select(file => new PluginDefinition(Path.GetFileNameWithoutExtension(file), storage.GetFullPath(file)));
+        /// <summary>Enumerates the manifests of every valid plugin directory. Invalid ones are skipped.</summary>
+        public IEnumerable<PluginManifest> EnumeratePlugins()
+        {
+            foreach (string dir in storage.GetDirectories(string.Empty))
+            {
+                string manifestPath = Path.Combine(dir, "manifest.json");
+
+                if (!storage.Exists(manifestPath))
+                    continue;
+
+                string json;
+
+                using (Stream stream = storage.GetStream(manifestPath, FileAccess.Read, FileMode.Open))
+                using (var reader = new StreamReader(stream))
+                    json = reader.ReadToEnd();
+
+                if (string.IsNullOrWhiteSpace(json))
+                    continue;
+
+                var manifest = PluginManifestJson.Deserialize(json, storage.GetFullPath(dir));
+
+                if (manifest == null || !manifest.IsValidId)
+                    continue;
+
+                yield return manifest;
+            }
+        }
     }
 }

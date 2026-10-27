@@ -3,21 +3,27 @@
 
 namespace osu.Game.API.Plugins
 {
-    /// <summary>A plugin instance together with its context and current state.</summary>
+    /// <summary>A loaded plugin entry: its optional C# instance, context described by the manifest, and current state.</summary>
     public class LoadedPlugin
     {
-        public IPlugin Plugin { get; }
+        /// <summary>The C# plugin instance, or <c>null</c> for the system plugin.</summary>
+        public PluginBase? Plugin { get; }
 
-        public IPluginContext Context { get; }
+        public PluginContext Context { get; }
 
-        public string Name => Plugin.GetType().Name;
+        public PluginManifest Manifest { get; }
+
+        public string Name => Manifest.Id;
+
+        public PluginLogger Logger => Context.Logger;
 
         public PluginState State { get; internal set; } = PluginState.Stopped;
 
-        internal LoadedPlugin(IPlugin plugin, IPluginContext context)
+        internal LoadedPlugin(PluginBase? plugin, PluginContext context, PluginManifest manifest)
         {
             Plugin = plugin;
             Context = context;
+            Manifest = manifest;
         }
     }
 }

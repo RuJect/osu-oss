@@ -4,19 +4,18 @@
 namespace osu.Game.API.Plugins
 {
     /// <summary>
-    /// A C# plugin loaded in-process. Plugins run with full trust and consume the same services as scripts
-    /// via <see cref="IPluginContext"/>.
+    /// Base class for C# plugins. Override <see cref="Load"/> and <see cref="Unload"/> to implement plugin logic.
     /// </summary>
-    public interface IPlugin
+    public abstract class PluginBase
     {
         /// <summary>
         /// Invoked once when the plugin is loaded. Use <paramref name="context"/> to reach game services.
         /// </summary>
-        void Load(IPluginContext context);
+        public virtual void Load(PluginContext context) { }
 
         /// <summary>
         /// Invoked once when the plugin is unloaded. Release any resources registered on the context here.
         /// </summary>
-        void Unload();
+        public virtual void Unload() { }
     }
 }
