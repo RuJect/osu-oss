@@ -14,6 +14,7 @@ using osu.Game.Graphics.Containers;
 using osu.Framework.Graphics.Shapes;
 using osuTK.Graphics;
 using osu.Game.Graphics.Sprites;
+using osu.Game.Theming;
 
 namespace osu.Game.Tests.Visual.UserInterface
 {
@@ -31,6 +32,8 @@ namespace osu.Game.Tests.Visual.UserInterface
 
         public TestSceneButtonsInput()
         {
+            ThemeManager.UseVanillaForTesting();
+
             Add(new FillFlowContainer
             {
                 AutoSizeAxes = Axes.Y,

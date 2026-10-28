@@ -116,6 +116,7 @@ namespace osu.Game.Tests.Visual.Online
             AddAssert("1 notification fired", () => testContainer.NotificationOverlay.UnreadCount.Value == 1);
 
             AddStep("open notification overlay", () => testContainer.NotificationOverlay.Show());
+            AddUntilStep("wait for notification overlay", () => testContainer.NotificationOverlay.X == 0);
             AddStep("click notification", clickNotification<MessageNotifier.MentionNotification>);
 
             AddAssert("chat overlay is open", () => testContainer.ChatOverlay.State.Value == Visibility.Visible);
@@ -131,6 +132,7 @@ namespace osu.Game.Tests.Visual.Online
             AddAssert("1 notification fired", () => testContainer.NotificationOverlay.UnreadCount.Value == 1);
 
             AddStep("open notification overlay", () => testContainer.NotificationOverlay.Show());
+            AddUntilStep("wait for notification overlay", () => testContainer.NotificationOverlay.X == 0);
             AddStep("click notification", clickNotification<MessageNotifier.PrivateMessageNotification>);
 
             AddAssert("chat overlay is open", () => testContainer.ChatOverlay.State.Value == Visibility.Visible);
