@@ -1036,14 +1036,13 @@ namespace osu.Game.Tests.Database
 
                     string background = Directory.GetFiles(extractedFolder, "*.jpg").First();
 
-                    using (var zip = ZipArchive.CreateArchive())
-                    {
-                        zip.AddAllFromDirectory(extractedFolder);
+                    File.Delete(temp);
+                    System.IO.Compression.ZipFile.CreateFromDirectory(extractedFolder, temp);
 
-                        zip.AddEntry(Path.GetFileName(background).ToUpperInvariant(), background);
-
-                        zip.SaveTo(temp, new ZipWriterOptions(CompressionType.Deflate));
-                    }
+                    using (var zip = System.IO.Compression.ZipFile.Open(temp, System.IO.Compression.ZipArchiveMode.Update))
+                    using (var entry = zip.CreateEntry(Path.GetFileName(background).ToUpperInvariant()).Open())
+                    using (var source = File.OpenRead(background))
+                        source.CopyTo(entry);
                 }
                 finally
                 {
