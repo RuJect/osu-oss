@@ -10,21 +10,34 @@ p12_password="osuoss-debug"
 mkdir -p "$out_dir"
 rm -f "$keychain"
 
+openssl_config="$out_dir/openssl.cnf"
+
+cat > "$openssl_config" <<EOF
+[req]
+distinguished_name = dn
+x509_extensions = code_signing
+prompt = no
+
+[dn]
+CN = $identity
+
+[code_signing]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature
+extendedKeyUsage = codeSigning
+EOF
+
 openssl req -x509 -newkey rsa:2048 -nodes \
     -keyout "$out_dir/key.pem" \
     -out "$out_dir/cert.pem" \
     -days 730 \
-    -subj "/CN=$identity" \
-    -addext "basicConstraints=critical,CA:FALSE" \
-    -addext "keyUsage=critical,digitalSignature" \
-    -addext "extendedKeyUsage=codeSigning"
+    -config "$openssl_config"
 
 openssl pkcs12 -export \
     -inkey "$out_dir/key.pem" \
     -in "$out_dir/cert.pem" \
     -out "$out_dir/osuoss-debug.p12" \
-    -passout "pass:$p12_password" \
-    -legacy
+    -passout "pass:$p12_password"
 
 security create-keychain -p "$keychain_password" "$keychain"
 security set-keychain-settings -lut 21600 "$keychain"

@@ -114,9 +114,14 @@ jobs:
           "OSU_DEPLOY_WINDOWS_SIGN_PARAMS=/fd sha256 /td sha256 /f `"$pfx`" /p osuoss-debug" >> $env:GITHUB_ENV
 
       - name: Create macOS debug certificate
+        id: macos-cert
         if: runner.os == 'macOS'
+        continue-on-error: true
+        run: tools/osu-deploy/scripts/create-macos-debug-cert.sh "osu!oss Debug" "$RUNNER_TEMP/osuoss-debug-signing"
+
+      - name: Enable macOS debug signing
+        if: runner.os == 'macOS' && steps.macos-cert.outcome == 'success'
         run: |
-          tools/osu-deploy/scripts/create-macos-debug-cert.sh "osu!oss Debug" "$RUNNER_TEMP/osuoss-debug-signing"
           echo "OSU_DEPLOY_AppleCodeSignCertName=osu!oss Debug" >> "$GITHUB_ENV"
           echo "OSU_DEPLOY_AppleKeyChainPath=$RUNNER_TEMP/osuoss-debug-signing/osuoss-debug.keychain-db" >> "$GITHUB_ENV"
 
