@@ -453,7 +453,7 @@ namespace osu.Game.Tests.Chat
             ClassicAssert.AreEqual(1, result.Links.Count);
             ClassicAssert.AreEqual($"{OsuGameBase.OSU_PROTOCOL}chan/#english", result.Links[0].Url);
             ClassicAssert.AreEqual(26, result.Links[0].Index);
-            ClassicAssert.AreEqual(19, result.Links[0].Length);
+            ClassicAssert.AreEqual(22, result.Links[0].Length);
 
             result = MessageFormatter.FormatMessage(new Message { Content = $"This is a [custom protocol]({OsuGameBase.OSU_PROTOCOL}chan/#english)." });
 
