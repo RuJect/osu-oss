@@ -10,7 +10,7 @@ using osu.Framework.Platform;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Provisioning
 {
     /// <summary>
     /// Fetches the official (measured) assemblies in the background so that a

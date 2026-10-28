@@ -2,10 +2,11 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using osu.Game.Auth.Isolation;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace osu.Game.Auth.Isolation.Supervisor
+namespace osu.Game.Auth.Supervisor
 {
     /// <summary>
     /// Seccomp user-notification supervisor. Spawned by the game before the filter is installed; it

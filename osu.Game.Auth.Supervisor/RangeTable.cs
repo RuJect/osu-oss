@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace osu.Game.Auth.Isolation.Supervisor
+namespace osu.Game.Auth.Supervisor
 {
     /// <summary>
     /// The set of proprietary-module mappings published by the game. Overlapping ranges are merged

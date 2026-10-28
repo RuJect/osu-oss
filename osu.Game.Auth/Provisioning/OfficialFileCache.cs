@@ -15,7 +15,7 @@ using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.IO;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Provisioning
 {
     /// <summary>
     /// Manages pristine official copies of the assemblies measured by the native auth

@@ -3,6 +3,7 @@
 
 using System;
 using osu.Framework.Logging;
+using osu.Game.Auth.Redirect;
 
 namespace osu.Game.Auth.Isolation
 {

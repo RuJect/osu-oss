@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using osu.Framework.Logging;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Redirect
 {
     /// <summary>
     /// Locates and (on Windows) loads the measurement redirect shim (<c>authredirect</c>)

@@ -8,8 +8,10 @@ using System.Runtime.Loader;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game.Auth.Isolation;
+using osu.Game.Auth.Provisioning;
+using osu.Game.Auth.Redirect;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Transplant
 {
     /// <summary>
     /// Signing method which transplants the proprietary managed auth module from the

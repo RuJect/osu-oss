@@ -100,7 +100,7 @@ namespace osu.Game.Auth.Isolation
                 cbuf[i] = 0;
 
             var cmsg = (CMsgHdr*)cbuf;
-            cmsg->Len = (nuint)(cmsghdr_size + sizeof(int)); // CMSG_LEN(sizeof(int))
+            cmsg->Len = cmsghdr_size + sizeof(int); // CMSG_LEN(sizeof(int))
             cmsg->Level = SOL_SOCKET;
             cmsg->Type = SCM_RIGHTS;
             *(int*)(cbuf + cmsghdr_size) = fdToSend;
@@ -110,7 +110,7 @@ namespace osu.Game.Auth.Isolation
                 Iov = &iov,
                 Iovlen = 1,
                 Control = cbuf,
-                Controllen = (nuint)(cmsghdr_size + 8), // CMSG_SPACE(sizeof(int))
+                Controllen = cmsghdr_size + 8, // CMSG_SPACE(sizeof(int))
             };
 
             return sendmsg(socket, &msg, MSG_NOSIGNAL) >= 0;
@@ -131,18 +131,18 @@ namespace osu.Game.Auth.Isolation
                 Iov = &iov,
                 Iovlen = 1,
                 Control = cbuf,
-                Controllen = (nuint)(cmsghdr_size + 8),
+                Controllen = cmsghdr_size + 8,
             };
 
             if (recvmsg(socket, &msg, 0) < 0)
                 return -1;
 
-            if (msg.Controllen < (nuint)cmsghdr_size)
+            if (msg.Controllen < cmsghdr_size)
                 return -1;
 
             var cmsg = (CMsgHdr*)cbuf;
 
-            if (cmsg->Level != SOL_SOCKET || cmsg->Type != SCM_RIGHTS || cmsg->Len < (nuint)(cmsghdr_size + sizeof(int)))
+            if (cmsg->Level != SOL_SOCKET || cmsg->Type != SCM_RIGHTS || cmsg->Len < cmsghdr_size + sizeof(int))
                 return -1;
 
             return *(int*)(cbuf + cmsghdr_size);

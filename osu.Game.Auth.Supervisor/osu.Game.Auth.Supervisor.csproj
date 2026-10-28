@@ -5,7 +5,7 @@
     <AssemblyName>osu-auth-supervisor</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);CA1401</NoWarn>
-    <StartupObject>osu.Game.Auth.Isolation.Supervisor.Program</StartupObject>
+    <StartupObject>osu.Game.Auth.Supervisor.Program</StartupObject>
     <Description>Seccomp user-notification supervisor for the osu! auth isolation.</Description>
   </PropertyGroup>
 

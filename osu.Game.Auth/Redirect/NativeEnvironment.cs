@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Redirect
 {
     /// <summary>
     /// Sets environment variables in the process' native environment.

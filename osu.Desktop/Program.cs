@@ -18,6 +18,7 @@ using osu.Game.API.Plugins;
 using osu.Game.API.UI.Commands;
 using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
+using osu.Game.Auth.Redirect;
 using osu.Game.IPC;
 using osu.Game.Recording;
 using osu.Game.Tournament;

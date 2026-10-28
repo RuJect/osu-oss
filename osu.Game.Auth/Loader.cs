@@ -4,6 +4,9 @@
 using System;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
+using osu.Game.Auth.Provisioning;
+using osu.Game.Auth.Redirect;
+using osu.Game.Auth.Transplant;
 
 namespace osu.Game.Auth
 {

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using osu.Framework.Logging;
 
-namespace osu.Game.Auth
+namespace osu.Game.Auth.Redirect
 {
     /// <summary>
     /// Makes the measurement redirect shim transparent on Linux/macOS.
