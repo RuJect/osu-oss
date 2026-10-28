@@ -143,6 +143,8 @@ namespace osu.Game.Tests.Visual
 
             Dependencies = isolatedBaseDependencies;
 
+            Dependencies.CacheAs<INotificationOverlay>(new TestNotificationOverlay());
+
             Beatmap.Default = parent.Get<Bindable<WorkingBeatmap>>().Default;
             Beatmap.SetDefault();
 
