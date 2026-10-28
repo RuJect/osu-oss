@@ -162,4 +162,4 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
       - name: Mark release as prerelease
-        run: gh release edit "$VERSION" --prerelease --title "osu!oss nightly $VERSION"
+        run: gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" --prerelease --title "osu!oss nightly $VERSION"
