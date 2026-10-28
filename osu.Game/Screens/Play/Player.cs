@@ -1424,7 +1424,7 @@ namespace osu.Game.Screens.Play
             }
 
             // A restart also routes through exit; in that case the dedicated restart event covers it.
-            if (GameplayState.HasQuit && !isRestarting)
+            if (GameplayState?.HasQuit == true && !isRestarting)
                 events.Publish(new GameplayExitedEvent(this) { UI = this });
 
             // GameplayClockContainer performs seeks / start / stop operations on the beatmap's track.
