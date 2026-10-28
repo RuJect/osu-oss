@@ -3,11 +3,17 @@
 
 using osu.Framework.Platform;
 using osu.Framework.Testing;
+using osu.Game.Online.Server;
+using osu.Game.Tests.Visual;
 
 namespace osu.Game.Tests
 {
     public partial class OsuTestBrowser : OsuGameBase
     {
+        protected override IServerRegistry CreateServerRegistry() => new TestServerRegistry();
+
+        protected override IServerManager CreateServerManager(IServerRegistry registry) => new TestServerManager(registry);
+
         protected override void LoadComplete()
         {
             base.LoadComplete();

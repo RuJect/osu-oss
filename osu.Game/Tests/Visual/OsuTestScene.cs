@@ -26,6 +26,7 @@ using osu.Game.Beatmaps;
 using osu.Game.Database;
 using osu.Game.Graphics;
 using osu.Game.Online.API;
+using osu.Game.Online.Server;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
@@ -571,6 +572,10 @@ namespace osu.Game.Tests.Visual
         public partial class OsuTestSceneTestRunner : OsuGameBase, ITestSceneTestRunner
         {
             private TestSceneTestRunner.TestRunner runner;
+
+            protected override IServerRegistry CreateServerRegistry() => new TestServerRegistry();
+
+            protected override IServerManager CreateServerManager(IServerRegistry registry) => new TestServerManager(registry);
 
             protected override void LoadAsyncComplete()
             {

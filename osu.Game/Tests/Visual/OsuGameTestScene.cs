@@ -20,6 +20,7 @@ using osu.Game.Database;
 using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Online.API;
+using osu.Game.Online.Server;
 using osu.Game.Online.Spectator;
 using osu.Game.Overlays;
 using osu.Game.Rulesets;
@@ -163,6 +164,10 @@ namespace osu.Game.Tests.Visual
             public override string Version => "test game";
 
             protected override Loader CreateLoader() => new TestLoader();
+
+            protected override IServerRegistry CreateServerRegistry() => new TestServerRegistry();
+
+            protected override IServerManager CreateServerManager(IServerRegistry registry) => new TestServerManager(registry);
 
             public new void PerformFromScreen(Action<IScreen> action, IEnumerable<Type> validScreens = null) => base.PerformFromScreen(action, validScreens);
 
