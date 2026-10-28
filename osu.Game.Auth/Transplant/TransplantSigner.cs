@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game;
 using osu.Game.Auth.Isolation;
 
 namespace osu.Game.Auth
@@ -47,7 +46,7 @@ namespace osu.Game.Auth
 
             try
             {
-                string path = ResolvePath();
+                string path = resolvePath();
 
                 context = new TransplantLoadContext(path);
                 Assembly assembly = context.LoadFromAssemblyPath(path);
@@ -68,7 +67,7 @@ namespace osu.Game.Auth
             isolation = startedIsolation;
         }
 
-        private string ResolvePath()
+        private string resolvePath()
         {
             string? overridePath = Environment.GetEnvironmentVariable(path_env);
 

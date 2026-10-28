@@ -335,12 +335,12 @@ namespace osu.Game.Auth
             startInfo.ArgumentList.Add("--appimage-extract");
             startInfo.ArgumentList.Add($"{appimage_source_dir}/{fileName}");
 
-            using var process = Process.Start(startInfo) ?? throw new Exception("Failed to start the AppImage extractor.");
+            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start the AppImage extractor.");
 
             await process.WaitForExitAsync(token).ConfigureAwait(false);
 
             if (process.ExitCode != 0)
-                throw new Exception($"AppImage extraction of {fileName} failed (exit code {process.ExitCode}).");
+                throw new InvalidOperationException($"AppImage extraction of {fileName} failed (exit code {process.ExitCode}).");
         }
 
         private void publish(string sourceDirectory)

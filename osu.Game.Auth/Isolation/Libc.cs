@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Runtime.InteropServices;
 
 namespace osu.Game.Auth.Isolation
@@ -13,21 +12,21 @@ namespace osu.Game.Auth.Isolation
     /// </summary>
     public static unsafe class Libc
     {
-        public const int AfUnix = 1;
-        public const int SockSeqpacket = 5;
-        public const int SockCloexec = 0x80000;
+        public const int AF_UNIX = 1;
+        public const int SOCK_SEQPACKET = 5;
+        public const int SOCK_CLOEXEC = 0x80000;
 
-        public const int FGetFd = 1;
-        public const int FSetFd = 2;
-        public const int FdCloexec = 1;
+        public const int F_GETFD = 1;
+        public const int F_SETFD = 2;
+        public const int FD_CLOEXEC = 1;
 
-        public const int SolSocket = 1;
-        public const int ScmRights = 1;
+        public const int SOL_SOCKET = 1;
+        public const int SCM_RIGHTS = 1;
 
-        public const int MsgNosignal = 0x4000;
+        public const int MSG_NOSIGNAL = 0x4000;
 
-        public const short PollIn = 0x001;
-        public const short PollHup = 0x010;
+        public const short POLLIN = 0x001;
+        public const short POLLHUP = 0x010;
 
         private const int cmsghdr_size = 16; // size_t(8) + int(4) + int(4) on x86_64
 
@@ -102,8 +101,8 @@ namespace osu.Game.Auth.Isolation
 
             var cmsg = (CMsgHdr*)cbuf;
             cmsg->Len = (nuint)(cmsghdr_size + sizeof(int)); // CMSG_LEN(sizeof(int))
-            cmsg->Level = SolSocket;
-            cmsg->Type = ScmRights;
+            cmsg->Level = SOL_SOCKET;
+            cmsg->Type = SCM_RIGHTS;
             *(int*)(cbuf + cmsghdr_size) = fdToSend;
 
             var msg = new MsgHdr
@@ -114,7 +113,7 @@ namespace osu.Game.Auth.Isolation
                 Controllen = (nuint)(cmsghdr_size + 8), // CMSG_SPACE(sizeof(int))
             };
 
-            return sendmsg(socket, &msg, MsgNosignal) >= 0;
+            return sendmsg(socket, &msg, MSG_NOSIGNAL) >= 0;
         }
 
         /// <summary>Receives a single fd sent with <see cref="SendFileDescriptor"/>; returns -1 on failure.</summary>
@@ -143,7 +142,7 @@ namespace osu.Game.Auth.Isolation
 
             var cmsg = (CMsgHdr*)cbuf;
 
-            if (cmsg->Level != SolSocket || cmsg->Type != ScmRights || cmsg->Len < (nuint)(cmsghdr_size + sizeof(int)))
+            if (cmsg->Level != SOL_SOCKET || cmsg->Type != SCM_RIGHTS || cmsg->Len < (nuint)(cmsghdr_size + sizeof(int)))
                 return -1;
 
             return *(int*)(cbuf + cmsghdr_size);
@@ -151,6 +150,6 @@ namespace osu.Game.Auth.Isolation
 
         /// <summary>Sends a raw fixed-size datagram, preserving message boundaries (<c>SOCK_SEQPACKET</c>).</summary>
         public static bool SendMessage(int socket, void* buffer, nuint length)
-            => send(socket, buffer, length, MsgNosignal) == (nint)length;
+            => send(socket, buffer, length, MSG_NOSIGNAL) == (nint)length;
     }
 }

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using osu.Framework.Allocation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game;
 using osu.Game.Overlays;
 using osu.Game.Overlays.Notifications;
 

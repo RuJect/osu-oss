@@ -23,7 +23,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
         private static readonly object log_lock = new object();
 
-        private static TextWriter? log;
+        private static TextWriter? logWriter;
         private static bool audit;
         private static bool net_deny = true;
 
@@ -50,7 +50,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
                 {
                     try
                     {
-                        log = new StreamWriter(arg[4..], append: true) { AutoFlush = true };
+                        logWriter = new StreamWriter(arg[4..], append: true) { AutoFlush = true };
                     }
                     catch
                     {
@@ -65,15 +65,15 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
             if (listener < 0)
             {
-                Log("did not receive listener fd; exiting");
+                log("did not receive listener fd; exiting");
                 return 1;
             }
 
-            Log($"supervisor started (target={targetPid}, net={(net_deny ? "deny" : "allow")}, mode={(audit ? "audit" : "enforce")})");
+            log($"supervisor started (target={targetPid}, net={(net_deny ? "deny" : "allow")}, mode={(audit ? "audit" : "enforce")})");
 
             if (Seccomp.seccomp_notify_alloc(out IntPtr req, out IntPtr resp) != 0)
             {
-                Log("seccomp_notify_alloc failed; exiting");
+                log("seccomp_notify_alloc failed; exiting");
                 return 1;
             }
 
@@ -82,8 +82,8 @@ namespace osu.Game.Auth.Isolation.Supervisor
             unsafe
             {
                 var fds = stackalloc Libc.PollFd[2];
-                fds[0] = new Libc.PollFd { Fd = listener, Events = Libc.PollIn };
-                fds[1] = new Libc.PollFd { Fd = ctrl, Events = Libc.PollIn };
+                fds[0] = new Libc.PollFd { Fd = listener, Events = Libc.POLLIN };
+                fds[1] = new Libc.PollFd { Fd = ctrl, Events = Libc.POLLIN };
 
                 while (true)
                 {
@@ -96,14 +96,14 @@ namespace osu.Game.Auth.Isolation.Supervisor
                         if (err == eintr)
                             continue;
 
-                        Log($"poll failed (errno={err}); exiting");
+                        log($"poll failed (errno={err}); exiting");
                         break;
                     }
 
-                    if ((fds[0].Revents & Libc.PollIn) != 0 && !handleNotify(listener, req, resp, ranges))
+                    if ((fds[0].Revents & Libc.POLLIN) != 0 && !handleNotify(listener, req, resp, ranges))
                         break;
 
-                    if ((fds[1].Revents & (Libc.PollIn | Libc.PollHup)) != 0 && !handleControl(ctrl, ranges))
+                    if ((fds[1].Revents & (Libc.POLLIN | Libc.POLLHUP)) != 0 && !handleControl(ctrl, ranges))
                         break;
                 }
             }
@@ -129,7 +129,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
                     return true;
 
                 // ENOENT means the target task is gone.
-                Log($"notif recv failed (rc={rc}, errno={Marshal.GetLastPInvokeError()}); exiting");
+                log($"notif recv failed (rc={rc}, errno={Marshal.GetLastPInvokeError()}); exiting");
                 return false;
             }
 
@@ -144,7 +144,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
             if (allow)
             {
-                resp.Flags = Seccomp.UserNotifFlagContinue;
+                resp.Flags = Seccomp.USER_NOTIF_FLAG_CONTINUE;
                 resp.Error = 0;
                 resp.Val = 0;
             }
@@ -163,14 +163,14 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
                 if (err == enoent)
                 {
-                    Log("target gone while replying; exiting");
+                    log("target gone while replying; exiting");
                     return false;
                 }
 
-                Log($"notif send failed (errno={err})");
+                log($"notif send failed (errno={err})");
             }
             else
-                Log($"{(wouldDeny ? (audit ? "WOULD-DENY" : "DENY") : "allow")} nr={notif.Data.Nr} ip=0x{notif.Data.InstructionPointer:x}");
+                log($"{(wouldDeny ? (audit ? "WOULD-DENY" : "DENY") : "allow")} nr={notif.Data.Nr} ip=0x{notif.Data.InstructionPointer:x}");
 
             return true;
         }
@@ -189,7 +189,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
             if (n == 0)
             {
-                Log("control channel closed; exiting");
+                log("control channel closed; exiting");
                 return false;
             }
 
@@ -203,10 +203,10 @@ namespace osu.Game.Auth.Isolation.Supervisor
             {
                 var message = MemoryMarshal.Read<ControlProtocol.RangeMessage>(buffer);
 
-                if (message.Magic == ControlProtocol.RangeMagic)
+                if (message.Magic == ControlProtocol.RANGE_MAGIC)
                 {
                     ranges.Add(message.Base, message.End);
-                    Log($"published range [0x{message.Base:x},0x{message.End:x})");
+                    log($"published range [0x{message.Base:x},0x{message.End:x})");
                 }
             }
 
@@ -215,7 +215,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
 
         private static bool decide(in SeccompNotif notif, RangeTable ranges)
         {
-            if (notif.Data.Arch != IsolationPolicy.AuditArchX86_64)
+            if (notif.Data.Arch != IsolationPolicy.AUDIT_ARCH_X86_64)
                 return true;
 
             if (!ranges.Contains(notif.Data.InstructionPointer))
@@ -224,7 +224,7 @@ namespace osu.Game.Auth.Isolation.Supervisor
             int nr = notif.Data.Nr;
 
             if (nr == IsolationPolicy.CloneSyscall)
-                return (notif.Data.Arg0 & IsolationPolicy.CloneThread) != 0;
+                return (notif.Data.Arg0 & IsolationPolicy.CLONE_THREAD) != 0;
 
             // clone3 (struct in target memory) cannot be inspected here; allow it (documented gap).
             if (nr == IsolationPolicy.Clone3Syscall)
@@ -236,12 +236,12 @@ namespace osu.Game.Auth.Isolation.Supervisor
             return false;
         }
 
-        private static void Log(string message)
+        private static void log(string message)
         {
             lock (log_lock)
             {
-                if (log != null)
-                    log.WriteLine($"[supervisor {Environment.ProcessId}] {message}");
+                if (logWriter != null)
+                    logWriter.WriteLine($"[supervisor {Environment.ProcessId}] {message}");
                 else
                     Console.Error.WriteLine($"[supervisor {Environment.ProcessId}] {message}");
             }

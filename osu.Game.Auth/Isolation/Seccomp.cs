@@ -19,28 +19,28 @@ namespace osu.Game.Auth.Isolation
         private const string library = "libseccomp.so.2";
 
         /// <summary><c>SCMP_ACT_ALLOW</c>.</summary>
-        public const uint ActAllow = 0x7fff0000u;
+        public const uint ACT_ALLOW = 0x7fff0000u;
 
         /// <summary><c>SCMP_ACT_NOTIFY</c>.</summary>
-        public const uint ActNotify = 0x7fc00000u;
+        public const uint ACT_NOTIFY = 0x7fc00000u;
 
         /// <summary><c>SCMP_FLTATR_CTL_NNP</c> (load the filter with <c>NO_NEW_PRIVS</c>).</summary>
-        public const int FltAttrCtlNnp = 3;
+        public const int FLTATTR_CTL_NNP = 3;
 
         /// <summary><c>SCMP_FLTATR_CTL_TSYNC</c> (synchronise all threads on load).</summary>
-        public const int FltAttrCtlTsync = 4;
+        public const int FLTATTR_CTL_TSYNC = 4;
 
         /// <summary>
-        /// libseccomp API level that first supports <see cref="FltAttrCtlTsync"/> together with
+        /// libseccomp API level that first supports <see cref="FLTATTR_CTL_TSYNC"/> together with
         /// the notify APIs. See <c>seccomp_api_get(3)</c>.
         /// </summary>
-        public const uint ApiTsyncAndNotify = 6;
+        public const uint API_TSYNC_AND_NOTIFY = 6;
 
         /// <summary><c>SECCOMP_USER_NOTIF_FLAG_CONTINUE</c>.</summary>
-        public const uint UserNotifFlagContinue = 1;
+        public const uint USER_NOTIF_FLAG_CONTINUE = 1;
 
         /// <summary>Sentinel returned by <see cref="seccomp_syscall_resolve_name"/> on failure.</summary>
-        public const int SyscallResolveError = -1;
+        public const int SYSCALL_RESOLVE_ERROR = -1;
 
         [DllImport(library, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint seccomp_api_get();

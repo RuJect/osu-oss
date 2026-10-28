@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using osu.Game.Auth.Isolation;
 
 namespace osu.Game.Auth.Isolation.Supervisor
 {

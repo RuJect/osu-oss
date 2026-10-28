@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Collections.Generic;
 
 namespace osu.Game.Auth.Isolation
@@ -46,8 +45,8 @@ namespace osu.Game.Auth.Isolation
 
         private static int[]? notifySyscalls;
         private static int[]? networkSyscalls;
-        private static int cloneSyscall = Seccomp.SyscallResolveError;
-        private static int clone3Syscall = Seccomp.SyscallResolveError;
+        private static int cloneSyscall = Seccomp.SYSCALL_RESOLVE_ERROR;
+        private static int clone3Syscall = Seccomp.SYSCALL_RESOLVE_ERROR;
 
         /// <summary>All syscalls the filter notifies on (deny set + network set).</summary>
         public static int[] NotifySyscalls => notifySyscalls ??= resolve(deny, network);
@@ -83,7 +82,7 @@ namespace osu.Game.Auth.Isolation
                 {
                     int nr = Seccomp.seccomp_syscall_resolve_name(name);
 
-                    if (nr != Seccomp.SyscallResolveError && !result.Contains(nr))
+                    if (nr != Seccomp.SYSCALL_RESOLVE_ERROR && !result.Contains(nr))
                         result.Add(nr);
                 }
             }
@@ -104,9 +103,9 @@ namespace osu.Game.Auth.Isolation
         }
 
         /// <summary>Architecture guard: only x86_64 filters are honoured (matches the filter's arch check).</summary>
-        public const uint AuditArchX86_64 = 0xC000003Eu;
+        public const uint AUDIT_ARCH_X86_64 = 0xC000003Eu;
 
         /// <summary><c>CLONE_THREAD</c>; thread creation is legitimate, process creation is not.</summary>
-        public const ulong CloneThread = 0x00010000UL;
+        public const ulong CLONE_THREAD = 0x00010000UL;
     }
 }

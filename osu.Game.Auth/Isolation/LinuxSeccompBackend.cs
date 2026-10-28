@@ -50,7 +50,7 @@ namespace osu.Game.Auth.Isolation
                 return;
             }
 
-            string supervisorPath = ResolveSupervisor();
+            string supervisorPath = resolveSupervisor();
 
             if (!File.Exists(supervisorPath))
             {
@@ -60,7 +60,7 @@ namespace osu.Game.Auth.Isolation
 
             uint api = Seccomp.seccomp_api_get();
 
-            if (api < Seccomp.ApiTsyncAndNotify)
+            if (api < Seccomp.API_TSYNC_AND_NOTIFY)
             {
                 logger.Add($"Auth blob isolation: libseccomp API {api} lacks TSYNC+notify support; disabled.");
                 return;
@@ -70,7 +70,7 @@ namespace osu.Game.Auth.Isolation
 
             int[] sv = new int[2];
 
-            if (Libc.socketpair(Libc.AfUnix, Libc.SockSeqpacket, 0, sv) != 0)
+            if (Libc.socketpair(Libc.AF_UNIX, Libc.SOCK_SEQPACKET, 0, sv) != 0)
             {
                 logger.Add($"Auth blob isolation: socketpair failed (errno {Marshal.GetLastPInvokeError()}).");
                 return;
@@ -81,8 +81,8 @@ namespace osu.Game.Auth.Isolation
 
             // The parent end must not leak into later children; the child end must be inherited by
             // the supervisor (cleared FD_CLOEXEC).
-            Libc.fcntl(parentFd, Libc.FSetFd, Libc.FdCloexec);
-            Libc.fcntl(childFd, Libc.FSetFd, 0);
+            Libc.fcntl(parentFd, Libc.F_SETFD, Libc.FD_CLOEXEC);
+            Libc.fcntl(childFd, Libc.F_SETFD, 0);
 
             try
             {
@@ -142,7 +142,7 @@ namespace osu.Game.Auth.Isolation
 
         private int installFilter()
         {
-            ctx = Seccomp.seccomp_init(Seccomp.ActAllow);
+            ctx = Seccomp.seccomp_init(Seccomp.ACT_ALLOW);
 
             if (ctx == IntPtr.Zero)
             {
@@ -150,10 +150,10 @@ namespace osu.Game.Auth.Isolation
                 return -1;
             }
 
-            if (Seccomp.seccomp_attr_set(ctx, Seccomp.FltAttrCtlNnp, 1) != 0)
+            if (Seccomp.seccomp_attr_set(ctx, Seccomp.FLTATTR_CTL_NNP, 1) != 0)
                 logger.Add("Auth blob isolation: could not set NNP attribute.");
 
-            if (Seccomp.seccomp_attr_set(ctx, Seccomp.FltAttrCtlTsync, 1) != 0)
+            if (Seccomp.seccomp_attr_set(ctx, Seccomp.FLTATTR_CTL_TSYNC, 1) != 0)
                 logger.Add("Auth blob isolation: could not set TSYNC attribute.");
 
             int added = 0;
@@ -163,7 +163,7 @@ namespace osu.Game.Auth.Isolation
                 if (nr < 0)
                     continue;
 
-                if (Seccomp.seccomp_rule_add(ctx, Seccomp.ActNotify, nr, 0) == 0)
+                if (Seccomp.seccomp_rule_add(ctx, Seccomp.ACT_NOTIFY, nr, 0) == 0)
                     added++;
                 else
                     logger.Add($"Auth blob isolation: could not add rule for syscall {nr}.");
@@ -248,7 +248,7 @@ namespace osu.Game.Auth.Isolation
 
                     var message = new ControlProtocol.RangeMessage
                     {
-                        Magic = ControlProtocol.RangeMagic,
+                        Magic = ControlProtocol.RANGE_MAGIC,
                         Base = start,
                         End = end,
                     };
@@ -287,7 +287,7 @@ namespace osu.Game.Auth.Isolation
             return false;
         }
 
-        private static string ResolveSupervisor()
+        private static string resolveSupervisor()
         {
             string? @override = Environment.GetEnvironmentVariable("AUTHSUPERVISOR");
 

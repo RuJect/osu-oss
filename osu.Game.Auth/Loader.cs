@@ -4,7 +4,6 @@
 using System;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
-using osu.Game;
 
 namespace osu.Game.Auth
 {
@@ -26,10 +25,10 @@ namespace osu.Game.Auth
 
         public Loader(GameHost host, OsuGameBase game)
         {
-            implementation = CreateImplementation(host, game);
+            implementation = createImplementation(host, game);
         }
 
-        private static IDisposable? CreateImplementation(GameHost host, OsuGameBase game)
+        private static IDisposable? createImplementation(GameHost host, OsuGameBase game)
         {
             OfficialFileCache files;
 

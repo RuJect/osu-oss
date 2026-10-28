@@ -140,7 +140,7 @@ namespace osu.Game.Auth
 
         private static IntPtr[] toNative(string[] values)
         {
-            var result = new IntPtr[values.Length + 1];
+            nint[] result = new IntPtr[values.Length + 1];
 
             for (int i = 0; i < values.Length; i++)
                 result[i] = Marshal.StringToCoTaskMemUTF8(values[i]);

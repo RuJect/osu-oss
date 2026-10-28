@@ -11,7 +11,7 @@ namespace osu.Game.Auth.Isolation
     public static class ControlProtocol
     {
         /// <summary>Magic of a published mapping range message (<c>"AUR0"</c>).</summary>
-        public const uint RangeMagic = 0x41555230u;
+        public const uint RANGE_MAGIC = 0x41555230u;
 
         /// <summary>A single mapping (<c>[base, end)</c>) of a proprietary module.</summary>
         [StructLayout(LayoutKind.Sequential)]
