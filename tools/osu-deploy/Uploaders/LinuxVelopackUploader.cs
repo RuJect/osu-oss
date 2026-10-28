@@ -16,7 +16,7 @@ namespace osu.Desktop.Deploy.Uploaders
         public override void PublishBuild(string version)
         {
             base.PublishBuild(version);
-            RenameAsset($"{Program.PackId}-{channel}.AppImage", "osuoss.AppImage");
+            RenameAsset($"{Program.PackId}-{channel}.AppImage", "osuoss.AppImage", version);
         }
     }
 }

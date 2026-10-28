@@ -16,7 +16,7 @@ namespace osu.Desktop.Deploy.Uploaders
         public override void PublishBuild(string version)
         {
             base.PublishBuild(version);
-            RenameAsset($"{Program.PackId}-{channel}-Setup.exe", "osuoss-setup.exe");
+            RenameAsset($"{Program.PackId}-{channel}-Setup.exe", "osuoss-setup.exe", version);
         }
     }
 }

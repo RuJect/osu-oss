@@ -35,7 +35,7 @@ namespace osu.Desktop.Deploy.Uploaders
                     throw new Exception($"Unrecognised channel: {channel}");
             }
 
-            RenameAsset($"{Program.PackId}-{channel}-Portable.zip", $"osuoss.app.{suffix}.zip");
+            RenameAsset($"{Program.PackId}-{channel}-Portable.zip", $"osuoss.app.{suffix}.zip", version);
         }
     }
 }

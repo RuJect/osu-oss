@@ -193,6 +193,13 @@ namespace osu.Desktop.Deploy
             return req.ResponseObject.FirstOrDefault(r => includeDrafts || !r.Draft);
         }
 
+        public static GitHubRelease? GetGithubRelease(string tag)
+        {
+            var req = new JsonWebRequest<GitHubRelease>($"{GitHubApiEndpoint}/tags/{Uri.EscapeDataString(tag)}");
+            req.AuthenticatedBlockingPerform();
+            return req.ResponseObject;
+        }
+
         private static string findDeployRoot()
         {
             string? directory = Environment.CurrentDirectory;

@@ -2,6 +2,7 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Threading;
 using System.Linq;
 using System.Net.Http;
 using osu.Framework.IO.Network;
@@ -77,18 +78,37 @@ namespace osu.Desktop.Deploy.Uploaders
             }
         }
 
-        protected void RenameAsset(string fromName, string toName)
+        protected void RenameAsset(string fromName, string toName, string version)
         {
             if (!Program.CanGitHub || !Program.GitHubUpload)
                 return;
 
             Logger.Write($"Renaming asset '{fromName}' to '{toName}'");
 
-            GitHubRelease targetRelease = Program.GetLastGithubRelease(true)
-                                          ?? throw new Exception("Release not found.");
+            GitHubAsset? asset = null;
 
-            GitHubAsset asset = targetRelease.Assets.SingleOrDefault(a => a.Name == fromName)
-                                ?? throw new Exception($"Asset '{fromName}' not found in the release.");
+            for (int attempt = 1; attempt <= 10; attempt++)
+            {
+                try
+                {
+                    GitHubRelease release = Program.GetGithubRelease(version)
+                                            ?? throw new Exception("Release not found.");
+
+                    asset = release.Assets.SingleOrDefault(a => a.Name == fromName);
+
+                    if (asset != null)
+                        break;
+                }
+                catch (Exception e) when (attempt < 10)
+                {
+                    Logger.Write($"Release not ready for rename ({e.Message}); retrying...");
+                }
+
+                Thread.Sleep(1000 * attempt);
+            }
+
+            if (asset == null)
+                throw new Exception($"Asset '{fromName}' not found in release '{version}'.");
 
             var req = new WebRequest(asset.Url)
             {
