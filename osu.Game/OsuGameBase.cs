@@ -140,6 +140,8 @@ namespace osu.Game
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
 
+        public bool IsDeployedBuild => AssemblyVersion.Major > 0;
+
         /// <summary>
         /// MD5 representation of the game executable.
         /// </summary>
@@ -810,7 +812,9 @@ namespace osu.Game
             // may be non-null for certain tests
             Storage ??= host.Storage;
 
-            LocalConfig ??= new OsuConfigManager(Storage);
+            LocalConfig ??= DebugUtils.IsDebugBuild
+                ? new DevelopmentOsuConfigManager(Storage)
+                : new OsuConfigManager(Storage);
             SpecialConfig ??= new SpecialConfigManager(SpecialStorage.GetRoot(Storage));
 
             host.ExceptionThrown += onExceptionThrown;
