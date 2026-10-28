@@ -426,7 +426,7 @@ namespace osu.Game
         private void onWindowDragDrop(string path)
         {
             // on macOS/iOS, URL associations are handled via SDL_DROPFILE events.
-            if (path.StartsWith(OSU_PROTOCOL, StringComparison.Ordinal))
+            if (isOsuProtocolLink(path))
             {
                 HandleLink(path);
                 return;
@@ -1514,6 +1514,9 @@ namespace osu.Game
             if (!((Drawable)currentScreen).IsLoaded || (currentScreen.AllowUserExit && !currentScreen.OnBackButton())) ScreenStack.Exit();
         }
 
+        private static bool isOsuProtocolLink(string path) =>
+            path.StartsWith(OSU_PROTOCOL, StringComparison.Ordinal) || path.StartsWith("osu://", StringComparison.Ordinal);
+
         private void handleStartupImport()
         {
             if (args?.Length > 0)
@@ -1524,7 +1527,7 @@ namespace osu.Game
                 {
                     string firstPath = paths.First();
 
-                    if (firstPath.StartsWith(OSU_PROTOCOL, StringComparison.Ordinal))
+                    if (isOsuProtocolLink(firstPath))
                     {
                         HandleLink(firstPath);
                     }

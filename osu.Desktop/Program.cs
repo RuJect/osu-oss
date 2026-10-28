@@ -268,7 +268,7 @@ namespace osu.Desktop
 
         private static bool trySendIPCMessage(IIpcHost host, string cwd, string[] args)
         {
-            if (args.Length == 1 && args[0].StartsWith(OsuGameBase.OSU_PROTOCOL, StringComparison.Ordinal))
+            if (args.Length == 1 && (args[0].StartsWith(OsuGameBase.OSU_PROTOCOL, StringComparison.Ordinal) || args[0].StartsWith("osu://", StringComparison.Ordinal)))
             {
                 var osuSchemeLinkHandler = new OsuSchemeLinkIPCChannel(host);
                 if (!osuSchemeLinkHandler.HandleLinkAsync(args[0]).Wait(3000))
