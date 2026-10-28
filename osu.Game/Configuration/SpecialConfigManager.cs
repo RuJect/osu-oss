@@ -1,6 +1,7 @@
 ﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System;
 using osu.Framework.Configuration;
 using osu.Framework.Platform;
 using osu.Game.IO;
@@ -14,6 +15,11 @@ namespace osu.Game.Configuration
     /// </summary>
     public class SpecialConfigManager : IniConfigManager<SpecialSetting>
     {
+        /// <summary>
+        /// Environment variable used by tests to restore upstream-compatible defaults for fork features.
+        /// </summary>
+        public const string DISABLE_FORK_DEFAULTS_ENV = "OSU_OSS_DISABLE_FORK_DEFAULTS";
+
         protected override string Filename => SpecialStorage.CONFIG_FILENAME;
 
         public SpecialConfigManager(Storage storage)
@@ -25,13 +31,15 @@ namespace osu.Game.Configuration
         {
             base.InitialiseDefaults();
 
+            bool forkDefaults = !isTruthy(Environment.GetEnvironmentVariable(DISABLE_FORK_DEFAULTS_ENV));
+
             SetDefault(SpecialSetting.ShowDevBuildBanner, false);
             SetDefault(SpecialSetting.AllowIncompatibleMods, false);
             SetDefault(SpecialSetting.ShowSystemMods, false);
             SetDefault(SpecialSetting.ShowFavouriteBeatmapsDownloadButton, false);
             SetDefault(SpecialSetting.AllowBreakSkip, false);
             SetDefault(SpecialSetting.AutoSkip, AutoSkipMode.None);
-            SetDefault(SpecialSetting.UseSkinCursor, true);
+            SetDefault(SpecialSetting.UseSkinCursor, forkDefaults);
             SetDefault(SpecialSetting.ToolbarPosition, ToolbarPosition.Top);
             SetDefault(SpecialSetting.InvertToolbar, false);
             SetDefault(SpecialSetting.NotificationPanelPosition, NotificationPanelPosition.Right);
@@ -41,17 +49,32 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.NotificationTransparency, false);
             SetDefault(SpecialSetting.MuteToastNotifications, false);
             SetDefault(SpecialSetting.Theme, ThemeManager.DEFAULT_THEME);
-            SetDefault(SpecialSetting.ThemeGlassEffects, true);
-            SetDefault(SpecialSetting.AggressiveTinting, true);
-            SetDefault(SpecialSetting.ScriptingEnabled, true);
-            SetDefault(SpecialSetting.AllowClrAccess, true);
-            SetDefault(SpecialSetting.UseSkinModIcons, true);
-            SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, true);
+            SetDefault(SpecialSetting.ThemeGlassEffects, forkDefaults);
+            SetDefault(SpecialSetting.AggressiveTinting, forkDefaults);
+            SetDefault(SpecialSetting.ScriptingEnabled, forkDefaults);
+            SetDefault(SpecialSetting.AllowClrAccess, forkDefaults);
+            SetDefault(SpecialSetting.UseSkinModIcons, forkDefaults);
+            SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, forkDefaults);
             SetDefault(SpecialSetting.UnlockLocalSupporterFeatures, false);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
-            SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, true);
+            SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, forkDefaults);
             SetDefault(SpecialSetting.BlockUnsuccessfulScoreSubmission, false);
+
+            if (!forkDefaults)
+            {
+                GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = false;
+                GetBindable<bool>(SpecialSetting.ThemeGlassEffects).Value = false;
+                GetBindable<bool>(SpecialSetting.AggressiveTinting).Value = false;
+                GetBindable<bool>(SpecialSetting.ScriptingEnabled).Value = false;
+                GetBindable<bool>(SpecialSetting.AllowClrAccess).Value = false;
+                GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = false;
+                GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting).Value = false;
+                GetBindable<bool>(SpecialSetting.BlockIncompatibleModsSubmission).Value = false;
+            }
         }
+
+        private static bool isTruthy(string? value)
+            => value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
 
