@@ -4,9 +4,9 @@
 using System;
 using NUnit.Framework;
 using osu.Framework.Localisation;
+using osu.Game.Rulesets.Mania.Mods;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Mods;
-using osu.Game.Rulesets.Mania.Mods;
 
 namespace osu.Game.Tests.Rulesets.Mods
 {
@@ -44,7 +44,7 @@ namespace osu.Game.Tests.Rulesets.Mods
         public void TestKnownMods(Type modType, string expectedTextureName)
         {
             var mod = (Mod)Activator.CreateInstance(modType)!;
-            var result = ModSkinTextureResolver.GetTextureName(mod);
+            string result = ModSkinTextureResolver.GetTextureName(mod);
             Assert.That(result, Is.EqualTo(expectedTextureName));
         }
 
@@ -53,7 +53,7 @@ namespace osu.Game.Tests.Rulesets.Mods
         {
             // Use a mod that doesn't have a mapping
             var mod = new TestUnknownMod();
-            var result = ModSkinTextureResolver.GetTextureName(mod);
+            string result = ModSkinTextureResolver.GetTextureName(mod);
             Assert.That(result, Is.EqualTo("selection-mod-xyz.png"));
         }
 

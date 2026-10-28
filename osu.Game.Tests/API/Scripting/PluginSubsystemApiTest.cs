@@ -136,7 +136,7 @@ namespace osu.Game.Tests.API.Scripting
         private static byte[] toBytes(JsValue value)
         {
             JsArray array = value.AsArray();
-            var result = new byte[array.Length];
+            byte[] result = new byte[array.Length];
 
             for (uint i = 0; i < array.Length; i++)
                 result[i] = (byte)value.Get(i.ToString()).AsNumber();

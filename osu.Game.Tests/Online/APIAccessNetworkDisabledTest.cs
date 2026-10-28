@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using NUnit.Framework;
-using osu.Framework.Platform;
 using osu.Game.Online.API;
 
 namespace osu.Game.Tests.Online

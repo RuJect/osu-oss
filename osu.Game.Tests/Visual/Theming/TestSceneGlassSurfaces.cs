@@ -5,7 +5,6 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Shapes;
-using osu.Framework.Platform;
 using osu.Framework.Testing;
 using osu.Game.Graphics.Backdrops;
 using osu.Game.Theming;

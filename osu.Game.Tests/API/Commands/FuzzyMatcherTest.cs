@@ -17,7 +17,7 @@ namespace osu.Game.Tests.API.Commands
             var match = FuzzyMatcher.Match(string.Empty, "anything");
 
             ClassicAssert.IsNotNull(match);
-            ClassicAssert.IsEmpty(match.Value.Indices);
+            ClassicAssert.IsEmpty(match.GetValueOrDefault().Indices);
         }
 
         [Test]
@@ -26,7 +26,7 @@ namespace osu.Game.Tests.API.Commands
             var match = FuzzyMatcher.Match("abc", "axbxc");
 
             ClassicAssert.IsNotNull(match);
-            ClassicAssert.AreEqual(new[] { 0, 2, 4 }, match.Value.Indices.ToArray());
+            ClassicAssert.AreEqual(new[] { 0, 2, 4 }, match.GetValueOrDefault().Indices.ToArray());
         }
 
         [Test]
@@ -49,7 +49,7 @@ namespace osu.Game.Tests.API.Commands
 
             ClassicAssert.IsNotNull(contiguous);
             ClassicAssert.IsNotNull(scattered);
-            ClassicAssert.Greater(contiguous.Value.Score, scattered.Value.Score);
+            ClassicAssert.Greater(contiguous.GetValueOrDefault().Score, scattered.GetValueOrDefault().Score);
         }
 
         [Test]
@@ -60,7 +60,7 @@ namespace osu.Game.Tests.API.Commands
 
             ClassicAssert.IsNotNull(shorter);
             ClassicAssert.IsNotNull(longer);
-            ClassicAssert.Greater(shorter.Value.Score, longer.Value.Score);
+            ClassicAssert.Greater(shorter.GetValueOrDefault().Score, longer.GetValueOrDefault().Score);
         }
     }
 }

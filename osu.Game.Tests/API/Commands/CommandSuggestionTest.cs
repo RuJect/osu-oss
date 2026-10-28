@@ -162,9 +162,9 @@ namespace osu.Game.Tests.API.Commands
         }
 
         private static string insert(CommandCompletion completion, string argument)
-            => argument.Substring(0, completion.ReplacementSpan.Start)
+            => argument[..completion.ReplacementSpan.Start]
                + completion.Suggestions[0].InsertText
-               + argument.Substring(completion.ReplacementSpan.End);
+               + argument[completion.ReplacementSpan.End..];
 
         private enum Mode
         {

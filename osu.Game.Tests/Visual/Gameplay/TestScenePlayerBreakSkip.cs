@@ -12,7 +12,6 @@ using osu.Game.Rulesets;
 using osu.Game.Rulesets.Osu;
 using osu.Game.Rulesets.Osu.Objects;
 using osu.Game.Rulesets.Osu.UI;
-using osu.Game.Tests.Visual;
 
 namespace osu.Game.Tests.Visual.Gameplay
 {

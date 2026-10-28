@@ -1,7 +1,6 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
-using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -53,7 +52,8 @@ namespace osu.Game.Tests.API.Commands
             var result = registry.Execute("mods nm, hr dt");
 
             ClassicAssert.IsTrue(result.Succeeded);
-            CollectionAssert.AreEqual(new[] { "nm", "hr", "dt" }, captured);
+            ClassicAssert.IsNotNull(captured);
+            CollectionAssert.AreEqual(new[] { "nm", "hr", "dt" }, captured!);
         }
 
         [Test]
@@ -65,7 +65,8 @@ namespace osu.Game.Tests.API.Commands
             var result = registry.Execute("mods [nm, \"Hard Rock\"]");
 
             ClassicAssert.IsTrue(result.Succeeded);
-            CollectionAssert.AreEqual(new[] { "nm", "Hard Rock" }, captured);
+            ClassicAssert.IsNotNull(captured);
+            CollectionAssert.AreEqual(new[] { "nm", "Hard Rock" }, captured!);
         }
 
         [Test]
