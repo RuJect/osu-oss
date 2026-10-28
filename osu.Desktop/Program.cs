@@ -12,7 +12,6 @@ using osu.Framework.Development;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
 using osu.Game;
-using osu.Game.Events;
 using osu.Game.API.Commands;
 using osu.Game.API.Events;
 using osu.Game.API.Plugins;
@@ -120,6 +119,7 @@ namespace osu.Desktop
                         break;
 
                     case "--debug-client-id":
+                        if (!DebugUtils.IsDebugBuild)
                             throw new InvalidOperationException("Cannot use this argument in a non-debug build.");
 
                         if (!int.TryParse(val, out int clientID))
@@ -160,8 +160,8 @@ namespace osu.Desktop
             if (recordingOptions?.Enabled == true)
             {
                 // Use provided data path or default
-                string recordingDataPath = dataPath ?? GetDefaultDataPath();
-                
+                string recordingDataPath = dataPath ?? getDefaultDataPath();
+
                 try
                 {
                     Directory.CreateDirectory(recordingDataPath);
@@ -293,7 +293,7 @@ namespace osu.Desktop
             return false;
         }
 
-        private static string GetDefaultDataPath()
+        private static string getDefaultDataPath()
         {
             // Use the same logic as OsuGameBase for default data path
             string basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);

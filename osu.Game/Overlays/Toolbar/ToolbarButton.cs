@@ -51,7 +51,7 @@ namespace osu.Game.Overlays.Toolbar
         {
             Placement = placement;
             Vertical = placement is ToolbarPosition.Left or ToolbarPosition.Right;
-            updateLayout();
+            UpdateLayout();
         }
 
         public void SetIcon(Drawable icon)
@@ -184,7 +184,7 @@ namespace osu.Game.Overlays.Toolbar
         /// <summary>
         /// Applies an orientation to this button based on the containing toolbar's <see cref="Placement"/>.
         /// </summary>
-        protected virtual void updateLayout()
+        protected virtual void UpdateLayout()
         {
             if (Vertical)
             {
@@ -300,7 +300,7 @@ namespace osu.Game.Overlays.Toolbar
             base.LoadComplete();
 
             // The toolbar may have been given a placement before this button was added to the tree.
-            updateLayout();
+            UpdateLayout();
         }
 
         protected override bool OnMouseDown(MouseDownEvent e) => false;

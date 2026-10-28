@@ -337,10 +337,10 @@ namespace osu.Game.API.UI.Scripting.Editor
             getOrderedSelection(out int startLine, out int startColumn, out int endLine, out int endColumn);
 
             if (startLine == endLine)
-                return lines[startLine].Substring(startColumn, endColumn - startColumn);
+                return lines[startLine][startColumn..endColumn];
 
             var builder = new StringBuilder();
-            builder.Append(lines[startLine].Substring(startColumn));
+            builder.Append(lines[startLine][startColumn..]);
             builder.Append('\n');
 
             for (int i = startLine + 1; i < endLine; i++)
@@ -349,7 +349,7 @@ namespace osu.Game.API.UI.Scripting.Editor
                 builder.Append('\n');
             }
 
-            builder.Append(lines[endLine].Substring(0, endColumn));
+            builder.Append(lines[endLine][..endColumn]);
             return builder.ToString();
         }
 
@@ -382,7 +382,7 @@ namespace osu.Game.API.UI.Scripting.Editor
 
         public void PushUndo()
         {
-            undoHistory.Add(Capture());
+            undoHistory.Add(capture());
 
             if (undoHistory.Count > max_history)
                 undoHistory.RemoveAt(0);
@@ -395,7 +395,7 @@ namespace osu.Game.API.UI.Scripting.Editor
             if (undoHistory.Count == 0)
                 return;
 
-            redoHistory.Add(Capture());
+            redoHistory.Add(capture());
             restore(undoHistory[undoHistory.Count - 1]);
             undoHistory.RemoveAt(undoHistory.Count - 1);
         }
@@ -405,7 +405,7 @@ namespace osu.Game.API.UI.Scripting.Editor
             if (redoHistory.Count == 0)
                 return;
 
-            undoHistory.Add(Capture());
+            undoHistory.Add(capture());
             restore(redoHistory[redoHistory.Count - 1]);
             redoHistory.RemoveAt(redoHistory.Count - 1);
         }
@@ -418,7 +418,7 @@ namespace osu.Game.API.UI.Scripting.Editor
                 lines[startLine] = lines[startLine].Remove(startColumn, endColumn - startColumn);
             else
             {
-                lines[startLine] = lines[startLine].Substring(0, startColumn) + lines[endLine].Substring(endColumn);
+                lines[startLine] = lines[startLine][..startColumn] + lines[endLine][endColumn..];
                 lines.RemoveRange(startLine + 1, endLine - startLine);
             }
 
@@ -434,8 +434,8 @@ namespace osu.Game.API.UI.Scripting.Editor
 
         private void getOrderedSelection(out int startLine, out int startColumn, out int endLine, out int endColumn)
         {
-            int caretIndex = IndexOf(CaretLine, CaretColumn);
-            int anchorIndex = IndexOf(AnchorLine, AnchorColumn);
+            int caretIndex = indexOf(CaretLine, CaretColumn);
+            int anchorIndex = indexOf(AnchorLine, AnchorColumn);
 
             if (caretIndex <= anchorIndex)
             {
@@ -453,7 +453,7 @@ namespace osu.Game.API.UI.Scripting.Editor
             }
         }
 
-        private int IndexOf(int line, int column)
+        private int indexOf(int line, int column)
         {
             int index = 0;
 
@@ -488,7 +488,7 @@ namespace osu.Game.API.UI.Scripting.Editor
             clampCaret();
         }
 
-        private Snapshot Capture() => new Snapshot(Text, CaretLine, CaretColumn, AnchorLine, AnchorColumn);
+        private Snapshot capture() => new Snapshot(Text, CaretLine, CaretColumn, AnchorLine, AnchorColumn);
 
         private static string normalise(string text) => text.Replace("\r\n", "\n").Replace('\r', '\n');
 

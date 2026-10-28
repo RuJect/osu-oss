@@ -54,7 +54,7 @@ namespace osu.Game.Theming
             Author = json.Value<string>("author") ?? string.Empty;
             Description = json.Value<string>("description") ?? string.Empty;
 
-            colourExpressions = ThemeJsonExtensions.readStringDictionary(json["colors"] as JObject);
+            colourExpressions = ThemeJsonExtensions.ReadStringDictionary(json["colors"] as JObject);
 
             var resolvedColours = new Dictionary<string, Colour4>(StringComparer.OrdinalIgnoreCase);
 
@@ -77,7 +77,7 @@ namespace osu.Game.Theming
             GlassBlur = glass?.Value<int?>("blur") ?? DEFAULT_GLASS_BLUR;
 
             var surfaces = json["surfaces"] as JObject;
-            surfaceAlpha = ThemeJsonExtensions.readFloatDictionary(surfaces);
+            surfaceAlpha = ThemeJsonExtensions.ReadFloatDictionary(surfaces);
             surfaceAlphaMultiplier = surfaces?.Value<float?>("alphaMultiplier") ?? 1;
 
             readOverlay(json["overlay"] as JObject);
@@ -192,7 +192,7 @@ namespace osu.Game.Theming
 
     public static class ThemeJsonExtensions
     {
-        internal static Dictionary<string, string> readStringDictionary(JObject? json)
+        internal static Dictionary<string, string> ReadStringDictionary(JObject? json)
         {
             var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -210,7 +210,7 @@ namespace osu.Game.Theming
             return result;
         }
 
-        internal static Dictionary<string, float> readFloatDictionary(JObject? json)
+        internal static Dictionary<string, float> ReadFloatDictionary(JObject? json)
         {
             var result = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
 

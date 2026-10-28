@@ -35,7 +35,7 @@ namespace osu.Game.Screens.Menu
         protected override string SeeyaSampleName => "Intro/Welcome/seeya";
 
         [Resolved(canBeNull: true)]
-        private SpecialConfigManager? specialConfig { get; set; }
+        private SpecialConfigManager specialConfig { get; set; }
 
         public IntroWelcome([CanBeNull] Func<MainMenu> createNextScreen = null)
             : base(createNextScreen)
@@ -115,7 +115,7 @@ namespace osu.Game.Screens.Menu
             public LogoVisualisation LogoVisualisation { get; private set; }
 
             [Resolved(canBeNull: true)]
-            private SpecialConfigManager? specialConfig { get; set; }
+            private SpecialConfigManager specialConfig { get; set; }
 
             [BackgroundDependencyLoader]
             private void load(TextureStore textures, IAPIProvider api)

@@ -18,7 +18,6 @@ using osu.Framework.Audio;
 using osu.Framework.Bindables;
 using osu.Framework.Configuration;
 using osu.Framework.Extensions.IEnumerableExtensions;
-using osu.Framework.Extensions.TypeExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
@@ -52,7 +51,6 @@ using osu.Game.Localisation;
 using osu.Game.Online;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
-using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Online.Chat;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Online.Rooms;
@@ -80,12 +78,12 @@ using osu.Game.Screens.OnlinePlay.Playlists;
 using osu.Game.Screens.Play;
 using osu.Game.Screens.Play.Leaderboards;
 using osu.Game.Screens.Ranking;
-using osu.Game.Users;
 using osu.Game.Screens.Select;
 using osu.Game.Seasonal;
 using osu.Game.Skinning;
 using osu.Game.Theming;
 using osu.Game.Updater;
+using osu.Game.Users;
 using osu.Game.Utils;
 using osuTK;
 using osuTK.Graphics;
@@ -383,10 +381,10 @@ namespace osu.Game
 
         protected new DependencyContainer Dependencies { get; private set; }
 
-        private Container? screenInsetContainer;
+        private Container screenInsetContainer;
 
         // Non-null only while the active theme requests glass surfaces.
-        private BufferedContainer? sceneCaptureBuffer;
+        private BufferedContainer sceneCaptureBuffer;
 
         /// <summary>
         /// Wraps the screen scene in a buffer so glass panels can sample and blur what is behind them.
@@ -653,9 +651,9 @@ namespace osu.Game
         /// </summary>
         /// <param name="userQuery">Username or ID of the user. If omitted, shows current user's profile.</param>
         /// <param name="rulesetName">Ruleset short name (e.g. osu, taiko, fruits, mania). If omitted, uses user's default playmode.</param>
-        public void ShowUserProfile(string? userQuery = null, string? rulesetName = null)
+        public void ShowUserProfile(string userQuery = null, string rulesetName = null)
         {
-            IRulesetInfo? ruleset = null;
+            IRulesetInfo ruleset = null;
 
             if (!string.IsNullOrWhiteSpace(rulesetName))
             {
@@ -684,7 +682,7 @@ namespace osu.Game
 
             // Fire the request ourselves so we can handle success/failure with user notifications
             GetUserRequest request;
-            if (long.TryParse(userQuery, out var userId))
+            if (long.TryParse(userQuery, out long userId))
             {
                 request = new GetUserRequest(userId, ruleset);
             }

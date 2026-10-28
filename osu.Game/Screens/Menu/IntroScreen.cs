@@ -87,7 +87,7 @@ namespace osu.Game.Screens.Menu
         private RulesetStore rulesets { get; set; }
 
         [Resolved(canBeNull: true)]
-        private SpecialConfigManager? specialConfig { get; set; }
+        private SpecialConfigManager specialConfig { get; set; }
 
         /// <summary>
         /// Whether the <see cref="Track"/> is provided by osu! resources, rather than a user beatmap.

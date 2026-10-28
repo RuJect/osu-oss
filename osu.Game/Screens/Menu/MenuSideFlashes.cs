@@ -49,9 +49,9 @@ namespace osu.Game.Screens.Menu
         private OsuColour colours { get; set; }
 
         [Resolved(canBeNull: true)]
-        private SpecialConfigManager? specialConfig { get; set; }
+        private SpecialConfigManager specialConfig { get; set; }
 
-        private IBindable<bool>? unlockLocalSupporterFeatures;
+        private IBindable<bool> unlockLocalSupporterFeatures;
 
         public MenuSideFlashes()
         {

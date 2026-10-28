@@ -101,7 +101,7 @@ namespace osu.Game.Overlays.Toolbar
                 digital.Anchor = digital.Origin = vertical ? Anchor.Centre : Anchor.CentreLeft;
             }
 
-            update((ToolbarClockDisplayMode?)null);
+            update(null);
         }
 
         private void update(ToolbarClockDisplayMode? displayMode)

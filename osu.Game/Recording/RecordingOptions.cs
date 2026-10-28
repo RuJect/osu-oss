@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using System.ComponentModel;
 using System.IO;
 
 namespace osu.Game.Recording
@@ -12,12 +11,12 @@ namespace osu.Game.Recording
     /// </summary>
     public class RecordingOptions
     {
-        public const string ArgumentName = "--recording";
-        public const string OutputArgumentName = "--recording-output";
-        public const string DurationArgumentName = "--recording-duration";
-        public const string DryRunArgumentName = "--recording-dry-run";
-        public const string CodecArgumentName = "--recording-codec";
-        public const string PresetArgumentName = "--recording-preset";
+        public const string ARGUMENT_NAME = "--recording";
+        public const string OUTPUT_ARGUMENT_NAME = "--recording-output";
+        public const string DURATION_ARGUMENT_NAME = "--recording-duration";
+        public const string DRY_RUN_ARGUMENT_NAME = "--recording-dry-run";
+        public const string CODEC_ARGUMENT_NAME = "--recording-codec";
+        public const string PRESET_ARGUMENT_NAME = "--recording-preset";
 
         /// <summary>
         /// Whether recording mode is enabled.
@@ -78,11 +77,11 @@ namespace osu.Game.Recording
             {
                 string arg = args[i];
 
-                if (arg.StartsWith(ArgumentName + "=", StringComparison.OrdinalIgnoreCase))
+                if (arg.StartsWith(ARGUMENT_NAME + "=", StringComparison.OrdinalIgnoreCase))
                 {
-                    string value = arg.Substring(ArgumentName.Length + 1);
-                    if (!TryParseResolutionAndFps(value, out int w, out int h, out int fps))
-                        throw new ArgumentException($"Invalid {ArgumentName} format. Expected: WIDTHxHEIGHT@FPS (e.g. 1920x1080@60)");
+                    string value = arg[(ARGUMENT_NAME.Length + 1)..];
+                    if (!tryParseResolutionAndFps(value, out int w, out int h, out int fps))
+                        throw new ArgumentException($"Invalid {ARGUMENT_NAME} format. Expected: WIDTHxHEIGHT@FPS (e.g. 1920x1080@60)");
 
                     options.Width = w;
                     options.Height = h;
@@ -90,27 +89,27 @@ namespace osu.Game.Recording
                     options.Enabled = true;
                     foundRecordingArg = true;
                 }
-                else if (arg.StartsWith(OutputArgumentName + "=", StringComparison.OrdinalIgnoreCase))
+                else if (arg.StartsWith(OUTPUT_ARGUMENT_NAME + "=", StringComparison.OrdinalIgnoreCase))
                 {
-                    options.OutputPath = arg.Substring(OutputArgumentName.Length + 1);
+                    options.OutputPath = arg[(OUTPUT_ARGUMENT_NAME.Length + 1)..];
                 }
-                else if (arg.StartsWith(DurationArgumentName + "=", StringComparison.OrdinalIgnoreCase))
+                else if (arg.StartsWith(DURATION_ARGUMENT_NAME + "=", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!int.TryParse(arg.Substring(DurationArgumentName.Length + 1), out int duration) || duration < 0)
-                        throw new ArgumentException($"Invalid {DurationArgumentName} value. Must be non-negative integer.");
+                    if (!int.TryParse(arg[(DURATION_ARGUMENT_NAME.Length + 1)..], out int duration) || duration < 0)
+                        throw new ArgumentException($"Invalid {DURATION_ARGUMENT_NAME} value. Must be non-negative integer.");
                     options.MaxDurationSeconds = duration;
                 }
-                else if (arg.Equals(DryRunArgumentName, StringComparison.OrdinalIgnoreCase))
+                else if (arg.Equals(DRY_RUN_ARGUMENT_NAME, StringComparison.OrdinalIgnoreCase))
                 {
                     options.DryRun = true;
                 }
-                else if (arg.StartsWith(CodecArgumentName + "=", StringComparison.OrdinalIgnoreCase))
+                else if (arg.StartsWith(CODEC_ARGUMENT_NAME + "=", StringComparison.OrdinalIgnoreCase))
                 {
-                    options.Codec = arg.Substring(CodecArgumentName.Length + 1).ToLowerInvariant();
+                    options.Codec = arg[(CODEC_ARGUMENT_NAME.Length + 1)..].ToLowerInvariant();
                 }
-                else if (arg.StartsWith(PresetArgumentName + "=", StringComparison.OrdinalIgnoreCase))
+                else if (arg.StartsWith(PRESET_ARGUMENT_NAME + "=", StringComparison.OrdinalIgnoreCase))
                 {
-                    options.Preset = arg.Substring(PresetArgumentName.Length + 1).ToLowerInvariant();
+                    options.Preset = arg[(PRESET_ARGUMENT_NAME.Length + 1)..].ToLowerInvariant();
                 }
             }
 
@@ -128,7 +127,7 @@ namespace osu.Game.Recording
             return options;
         }
 
-        private static bool TryParseResolutionAndFps(string input, out int width, out int height, out int fps)
+        private static bool tryParseResolutionAndFps(string input, out int width, out int height, out int fps)
         {
             width = height = fps = 0;
 
@@ -137,8 +136,8 @@ namespace osu.Game.Recording
             if (atIndex <= 0)
                 return false;
 
-            string resolutionPart = input.Substring(0, atIndex);
-            string fpsPart = input.Substring(atIndex + 1);
+            string resolutionPart = input[..atIndex];
+            string fpsPart = input[(atIndex + 1)..];
 
             if (!int.TryParse(fpsPart, out fps))
                 return false;
@@ -147,9 +146,9 @@ namespace osu.Game.Recording
             if (xIndex <= 0 || xIndex >= resolutionPart.Length - 1)
                 return false;
 
-            if (!int.TryParse(resolutionPart.Substring(0, xIndex), out width))
+            if (!int.TryParse(resolutionPart[..xIndex], out width))
                 return false;
-            if (!int.TryParse(resolutionPart.Substring(xIndex + 1), out height))
+            if (!int.TryParse(resolutionPart[(xIndex + 1)..], out height))
                 return false;
 
             return true;

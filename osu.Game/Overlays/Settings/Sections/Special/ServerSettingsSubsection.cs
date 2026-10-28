@@ -9,7 +9,6 @@ using osu.Framework.Bindables;
 using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Game.Configuration;
-using osu.Game.Graphics.UserInterface;
 using osu.Game.Localisation;
 using osu.Game.Online.Server;
 
@@ -23,7 +22,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
         private readonly Bindable<IServer> selectedServer = new Bindable<IServer>();
 
         [BackgroundDependencyLoader(true)]
-        private void load(OsuConfigManager config, IServerRegistry? registry, IServerManager? serverManager)
+        private void load(OsuConfigManager config, IServerRegistry registry, IServerManager serverManager)
         {
             // The server subsystem is only wired on builds that reference osu.Game.API
             // (e.g. the desktop game). In other contexts (tests, tournament client) the

@@ -110,21 +110,21 @@ namespace osu.Game
         /// persisted server preference. Only populated when the server subsystem is wired
         /// (see <see cref="CreateServerRegistry"/> / <see cref="CreateServerManager"/>).
         /// </summary>
-        protected IServerManager? ServerManager { get; set; }
+        protected IServerManager ServerManager { get; set; }
 
         /// <summary>
         /// Hook for subclasses that reference <c>osu.Game.API</c> (e.g. the desktop game) to
         /// provide a concrete <see cref="IServerRegistry"/> instance. Returns <c>null</c> by default,
         /// in which case the legacy <see cref="CreateEndpoints"/> path is used.
         /// </summary>
-        protected virtual IServerRegistry? CreateServerRegistry() => null;
+        protected virtual IServerRegistry CreateServerRegistry() => null;
 
         /// <summary>
         /// Hook for subclasses that reference <c>osu.Game.API</c> (e.g. the desktop game) to
         /// wire the <see cref="IServerManager"/> from a <see cref="IServerRegistry"/>.
         /// Returns <c>null</c> by default, in which case the legacy <see cref="CreateEndpoints"/> path is used.
         /// </summary>
-        protected virtual IServerManager? CreateServerManager(IServerRegistry? registry) => null;
+        protected virtual IServerManager CreateServerManager(IServerRegistry registry) => null;
 
         /// <summary>
         /// Whether all outbound network access should be disabled for this run.

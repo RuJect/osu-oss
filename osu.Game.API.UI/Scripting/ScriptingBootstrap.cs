@@ -2,7 +2,6 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
-using osu.Game;
 using osu.Game.API.Plugins;
 using osu.Game.API.Scripting;
 

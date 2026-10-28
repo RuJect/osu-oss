@@ -46,12 +46,12 @@ namespace osu.Game.Theming
         /// </summary>
         public static bool AggressiveTinting { get; private set; }
 
-        public static IReadOnlyList<ThemeSnapshot> AvailableThemes => availableThemes;
+        public static IReadOnlyList<ThemeSnapshot> AvailableThemes => available_themes;
 
-        public static IReadOnlyList<string> LoadErrors => loadErrors;
+        public static IReadOnlyList<string> LoadErrors => load_errors;
 
-        private static readonly List<ThemeSnapshot> availableThemes = new List<ThemeSnapshot>();
-        private static readonly List<string> loadErrors = new List<string>();
+        private static readonly List<ThemeSnapshot> available_themes = new List<ThemeSnapshot>();
+        private static readonly List<string> load_errors = new List<string>();
 
         private static Storage? themeStorage;
 
@@ -71,8 +71,8 @@ namespace osu.Game.Theming
 
             var definitions = new Dictionary<string, JObject>(StringComparer.OrdinalIgnoreCase);
             var userThemeIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            availableThemes.Clear();
-            loadErrors.Clear();
+            available_themes.Clear();
+            load_errors.Clear();
 
             foreach (var (id, json) in loadBuiltInDefinitions())
                 definitions[id] = json;
@@ -85,28 +85,28 @@ namespace osu.Game.Theming
 
             var resolutionStack = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var id in definitions.Keys.ToArray())
+            foreach (string? id in definitions.Keys.ToArray())
             {
                 try
                 {
                     JObject merged = mergeDefinition(id, definitions, resolutionStack);
-                    availableThemes.Add(new ThemeSnapshot(id, merged, !userThemeIds.Contains(id)));
+                    available_themes.Add(new ThemeSnapshot(id, merged, !userThemeIds.Contains(id)));
                 }
                 catch (Exception e)
                 {
                     string message = $"Failed to load theme '{id}': {e.Message}";
-                    loadErrors.Add(message);
+                    load_errors.Add(message);
                     Logger.Error(e, message, LoggingTarget.Runtime);
                 }
             }
 
-            availableThemes.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+            available_themes.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
-            ThemeSnapshot? requested = availableThemes.FirstOrDefault(t => string.Equals(t.Id, themeId, StringComparison.OrdinalIgnoreCase));
+            ThemeSnapshot? requested = available_themes.FirstOrDefault(t => string.Equals(t.Id, themeId, StringComparison.OrdinalIgnoreCase));
 
             if (requested == null)
             {
-                requested = availableThemes.FirstOrDefault(t => string.Equals(t.Id, DEFAULT_THEME, StringComparison.OrdinalIgnoreCase));
+                requested = available_themes.FirstOrDefault(t => string.Equals(t.Id, DEFAULT_THEME, StringComparison.OrdinalIgnoreCase));
 
                 if (requested != null)
                     Logger.Log($"Theme '{themeId}' was not found, falling back to '{requested.Id}'.", LoggingTarget.Runtime, LogLevel.Important);
@@ -174,7 +174,7 @@ namespace osu.Game.Theming
                 catch (Exception e)
                 {
                     string message = $"Failed to read theme file '{file}': {e.Message}";
-                    loadErrors.Add(message);
+                    load_errors.Add(message);
                     Logger.Error(e, message, LoggingTarget.Runtime);
                 }
             }
@@ -191,7 +191,7 @@ namespace osu.Game.Theming
             catch (JsonException e)
             {
                 string message = $"Theme '{id}' contains invalid JSON: {e.Message}";
-                loadErrors.Add(message);
+                load_errors.Add(message);
                 Logger.Error(e, message, LoggingTarget.Runtime);
                 return null;
             }

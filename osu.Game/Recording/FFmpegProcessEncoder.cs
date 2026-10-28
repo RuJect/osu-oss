@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using osu.Framework.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using osu.Game.Recording;
 
 namespace osu.Game.Recording
 {
@@ -38,7 +37,7 @@ namespace osu.Game.Recording
         public async Task InitializeAsync()
         {
             // Check if ffmpeg exists
-            if (!IsFFmpegAvailable())
+            if (!isFFmpegAvailable())
             {
                 throw new InvalidOperationException(
                     "FFmpeg not found. Please install FFmpeg and ensure it's in PATH, " +
@@ -46,7 +45,7 @@ namespace osu.Game.Recording
             }
 
             // Build FFmpeg arguments
-            string arguments = BuildFFmpegArguments();
+            string arguments = buildFFmpegArguments();
 
             Logger.Log($"Starting FFmpeg: ffmpeg {arguments}", LoggingTarget.Runtime, LogLevel.Important);
 
@@ -84,7 +83,7 @@ namespace osu.Game.Recording
             stdinStream = ffmpegProcess.StandardInput.BaseStream;
         }
 
-        private string BuildFFmpegArguments()
+        private string buildFFmpegArguments()
         {
             string codec = options.Codec switch
             {
@@ -109,7 +108,7 @@ namespace osu.Game.Recording
                    $"\"{outputPath}\"";
         }
 
-        private bool IsFFmpegAvailable()
+        private bool isFFmpegAvailable()
         {
             try
             {

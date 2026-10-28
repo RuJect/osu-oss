@@ -46,9 +46,9 @@ namespace osu.Game.Overlays.Toolbar
             ButtonContent.AutoSizeAxes = Axes.X;
         }
 
-        protected override void updateLayout()
+        protected override void UpdateLayout()
         {
-            base.updateLayout();
+            base.UpdateLayout();
 
             if (!Vertical)
                 ButtonContent.AutoSizeAxes = Axes.X;

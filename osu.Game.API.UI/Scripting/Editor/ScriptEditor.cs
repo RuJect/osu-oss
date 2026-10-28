@@ -406,7 +406,7 @@ namespace osu.Game.API.UI.Scripting.Editor
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i];
-                var prefix = new float[line.Length + 1];
+                float[] prefix = new float[line.Length + 1];
                 float x = 0;
 
                 for (int c = 0; c < line.Length; c++)

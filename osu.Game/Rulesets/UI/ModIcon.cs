@@ -81,7 +81,7 @@ namespace osu.Game.Rulesets.UI
         [Resolved(canBeNull: true)]
         private SpecialConfigManager? specialConfig { get; set; } = null!;
 
-        private bool UseSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
+        private bool useSkinModIcons => specialConfig?.Get<bool>(SpecialSetting.UseSkinModIcons) == true;
 
         private IBindable<bool>? useSkinModIconsBindable;
 
@@ -260,9 +260,9 @@ namespace osu.Game.Rulesets.UI
 
             bool skinIconUsed = false;
 
-            if (UseSkinModIcons && value is Mod skinMod)
+            if (useSkinModIcons && value is Mod skinMod)
             {
-                var skinTextureName = ModSkinTextureResolver.GetTextureName(skinMod);
+                string skinTextureName = ModSkinTextureResolver.GetTextureName(skinMod);
                 var skinTexture = skin.GetTexture(skinTextureName);
 
                 if (skinTexture != null)

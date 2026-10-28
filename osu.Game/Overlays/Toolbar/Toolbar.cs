@@ -238,26 +238,26 @@ namespace osu.Game.Overlays.Toolbar
                 placementBindable.BindValueChanged(p =>
                 {
                     placement = p.NewValue;
-                    ApplyLayout();
+                    applyLayout();
                 }, true);
 
                 invertBindable = specialConfig.GetBindable<bool>(SpecialSetting.InvertToolbar);
                 invertBindable.BindValueChanged(i =>
                 {
                     inverted = i.NewValue;
-                    ApplyLayout();
+                    applyLayout();
                 }, true);
             }
             else
             {
-                ApplyLayout();
+                applyLayout();
             }
         }
 
         /// <summary>
         /// Reconfigures the toolbar layout to match the current <see cref="placement"/> and inversion state.
         /// </summary>
-        private void ApplyLayout()
+        private void applyLayout()
         {
             bool vertical = isVertical;
             bool bottom = placement == ToolbarPosition.Bottom;

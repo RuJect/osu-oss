@@ -80,9 +80,9 @@ namespace osu.Game.Overlays.Toolbar
                 };
             }
 
-            protected override void updateLayout()
+            protected override void UpdateLayout()
             {
-                base.updateLayout();
+                base.UpdateLayout();
 
                 ButtonContent.Padding = Vertical
                     ? new MarginPadding(PADDING) { Right = 5 }

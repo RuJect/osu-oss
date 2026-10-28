@@ -40,9 +40,9 @@ namespace osu.Game.Screens.Backgrounds
         private GameHost gameHost { get; set; }
 
         [Resolved(canBeNull: true)]
-        private SpecialConfigManager? specialConfig { get; set; }
+        private SpecialConfigManager specialConfig { get; set; }
 
-        private IBindable<bool>? unlockLocalSupporterFeatures;
+        private IBindable<bool> unlockLocalSupporterFeatures;
 
         protected virtual bool AllowStoryboardBackground => true;
 

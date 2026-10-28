@@ -4,8 +4,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using osu.Framework.Audio;
-using osu.Framework.Threading;
 using osu.Game.Recording;
 
 namespace osu.Game.Audio.Recording

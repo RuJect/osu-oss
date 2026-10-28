@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using osu.Framework.Configuration;
-using osu.Game;
 using osu.Game.Recording;
 
 namespace osu.Desktop.Recording

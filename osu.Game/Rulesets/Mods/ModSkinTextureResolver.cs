@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Mods
         /// <summary>
         /// Maps a mod's <see cref="Mod.Acronym"/> to the stable skin texture name.
         /// </summary>
-        private static readonly Dictionary<string, string> SKIN_TEXTURE_NAME_MAP = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> skin_texture_name_map = new Dictionary<string, string>
         {
             // osu!
             { "DT", "doubletime" },
@@ -60,9 +60,9 @@ namespace osu.Game.Rulesets.Mods
         {
             ArgumentNullException.ThrowIfNull(mod);
 
-            var acronym = mod.Acronym;
+            string acronym = mod.Acronym;
 
-            if (SKIN_TEXTURE_NAME_MAP.TryGetValue(acronym, out var name))
+            if (skin_texture_name_map.TryGetValue(acronym, out string? name))
                 return $"selection-mod-{name}.png";
 
             return $"selection-mod-{acronym.ToLowerInvariant()}.png";

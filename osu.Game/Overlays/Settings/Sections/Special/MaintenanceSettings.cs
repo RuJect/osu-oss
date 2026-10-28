@@ -4,7 +4,6 @@
 using System;
 using System.IO;
 using osu.Framework.Allocation;
-using osu.Framework.Graphics;
 using osu.Framework.Localisation;
 using osu.Framework.Logging;
 using osu.Framework.Platform;
