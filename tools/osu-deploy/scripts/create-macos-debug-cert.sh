@@ -45,6 +45,11 @@ security unlock-keychain -p "$keychain_password" "$keychain"
 security import "$out_dir/osuoss-debug.p12" -k "$keychain" -P "$p12_password" -A -T /usr/bin/codesign
 security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain"
 
+if ! security find-identity -v -p codesigning "$keychain" | grep -F "$identity" >/dev/null; then
+    echo "Could not find code signing identity: $identity" >&2
+    exit 1
+fi
+
 echo "Created $keychain"
 echo "Set OSU_DEPLOY_AppleCodeSignCertName=$identity"
 echo "Set OSU_DEPLOY_AppleKeyChainPath=$keychain"

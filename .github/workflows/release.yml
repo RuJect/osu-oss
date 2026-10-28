@@ -105,6 +105,13 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Ensure dotnet is on PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Join-Path $env:ProgramFiles "dotnet" | Out-File -FilePath $env:GITHUB_PATH -Append
+          where.exe dotnet
+
       - name: Create Windows debug certificate
         if: runner.os == 'Windows'
         shell: pwsh

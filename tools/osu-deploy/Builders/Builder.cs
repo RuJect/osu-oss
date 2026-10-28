@@ -23,7 +23,7 @@ namespace osu.Desktop.Deploy.Builders
         {
             Version = version;
 
-            refreshDirectory(Program.STAGING_FOLDER);
+            refreshDirectory(Program.StagingPath);
         }
 
         public abstract Uploader CreateUploader();
