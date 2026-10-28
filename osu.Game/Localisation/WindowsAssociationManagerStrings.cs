@@ -25,9 +25,9 @@ namespace osu.Game.Localisation
         public static LocalisableString OsuSkin => new TranslatableString(getKey(@"osu_skin"), @"osu! Skin");
 
         /// <summary>
-        /// "osu!"
+        /// "osu!oss"
         /// </summary>
-        public static LocalisableString OsuProtocol => new TranslatableString(getKey(@"osu_protocol"), @"osu!");
+        public static LocalisableString OsuProtocol => new TranslatableString(getKey(@"osu_protocol"), @"osu!oss");
 
         /// <summary>
         /// "osu! Multiplayer"

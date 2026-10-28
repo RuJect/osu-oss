@@ -1,0 +1,153 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*.*.*-lazer*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version or tag
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      nightly: ${{ steps.version.outputs.nightly }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            version="$GITHUB_REF_NAME"
+          elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$INPUT_VERSION"
+          else
+            base=$(sed -n 's/.*<OsuGameVersion>\(.*\)<\/OsuGameVersion>.*/\1/p' Directory.Build.props)
+            version="${base}-nightly.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}.sha${GITHUB_SHA:0:7}"
+          fi
+
+          if [[ "$version" == *"-nightly."* ]]; then
+            nightly=true
+          else
+            nightly=false
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "nightly=$nightly" >> "$GITHUB_OUTPUT"
+          echo "Release version: $version (nightly=$nightly)"
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            runner: windows-latest
+            platform: Windows
+            rid: win-x64
+          - name: linux-x64
+            runner: ubuntu-22.04
+            platform: Linux
+            rid: linux-x64
+          - name: macos-x64
+            runner: macos-15-intel
+            platform: macOS
+            arch: x64
+            rid: osx-x64
+          - name: macos-arm64
+            runner: macos-14
+            platform: macOS
+            arch: arm64
+            rid: osx-arm64
+    env:
+      CI: "true"
+      VERSION: ${{ needs.prepare.outputs.version }}
+      OSU_DEPLOY_GitHubUpload: "true"
+      OSU_DEPLOY_GitHubPreRelease: ${{ needs.prepare.outputs.nightly }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y squashfs-tools libseccomp-dev
+
+      - name: Enable MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Create Windows debug certificate
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "osuoss-debug.pfx"
+          pwsh -File tools/osu-deploy/scripts/create-windows-debug-cert.ps1 -OutFile $pfx -Password "osuoss-debug"
+          "OSU_DEPLOY_WINDOWS_SIGN_PARAMS=/fd sha256 /td sha256 /f `"$pfx`" /p osuoss-debug" >> $env:GITHUB_ENV
+
+      - name: Create macOS debug certificate
+        if: runner.os == 'macOS'
+        run: |
+          tools/osu-deploy/scripts/create-macos-debug-cert.sh "osu!oss Debug" "$RUNNER_TEMP/osuoss-debug-signing"
+          echo "OSU_DEPLOY_AppleCodeSignCertName=osu!oss Debug" >> "$GITHUB_ENV"
+          echo "OSU_DEPLOY_AppleKeyChainPath=$RUNNER_TEMP/osuoss-debug-signing/osuoss-debug.keychain-db" >> "$GITHUB_ENV"
+
+      - name: Publish release
+        shell: bash
+        env:
+          BUILD_RID: ${{ matrix.rid }}
+          BUILD_PLATFORM: ${{ matrix.platform }}
+          BUILD_ARCH: ${{ matrix.arch }}
+        run: |
+          if [ -n "${BUILD_ARCH:-}" ]; then
+            dotnet run --project tools/osu-deploy -- "" "$VERSION" "$BUILD_PLATFORM" "$BUILD_ARCH"
+          else
+            dotnet run --project tools/osu-deploy -- "" "$VERSION" "$BUILD_PLATFORM"
+          fi
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: osuoss-${{ matrix.rid }}
+          path: tools/osu-deploy/releases/*
+          if-no-files-found: error
+
+  finalize-nightly:
+    name: Mark nightly release
+    needs: [prepare, build]
+    if: needs.prepare.outputs.nightly == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Mark release as prerelease
+        run: gh release edit "$VERSION" --prerelease --title "osu!oss nightly $VERSION"

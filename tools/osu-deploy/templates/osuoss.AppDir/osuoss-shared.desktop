@@ -1,0 +1,13 @@
+# Desktop Entry Specification: https://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+[Desktop Entry]
+Version=1.5
+Type=Application
+Name=osu!oss (shared)
+Comment=osu!oss using osu!lazer data
+Icon=osuoss
+Exec=osuoss --shared %u
+Terminal=false
+Categories=Game;
+StartupWMClass=osuoss
+SingleMainWindow=true
+StartupNotify=true

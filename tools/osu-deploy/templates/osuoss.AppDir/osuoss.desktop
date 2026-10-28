@@ -1,0 +1,14 @@
+# Desktop Entry Specification: https://standards.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html
+[Desktop Entry]
+Version=1.5
+Type=Application
+Name=osu!oss
+Comment=A source-built osu! client
+Icon=osuoss
+Exec=osuoss %u
+Terminal=false
+MimeType=application/x-osu-beatmap-archive;application/x-osu-skin-archive;application/x-osu-beatmap;application/x-osu-storyboard;application/x-osu-replay;x-scheme-handler/osuoss;
+Categories=Game;
+StartupWMClass=osuoss
+SingleMainWindow=true
+StartupNotify=true

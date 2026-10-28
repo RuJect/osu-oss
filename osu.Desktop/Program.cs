@@ -29,7 +29,7 @@ namespace osu.Desktop
 {
     public static class Program
     {
-        private const string base_game_name = @"osu";
+        private const string base_game_name = @"osu-oss";
 
         private static LegacyTcpIpcProvider? legacyIpc;
 
@@ -88,6 +88,7 @@ namespace osu.Desktop
             string? dataPath = null;
             bool tournamentClient = false;
             bool noNetwork = false;
+            bool sharedData = false;
             RecordingOptions? recordingOptions = null;
 
             foreach (string arg in args)
@@ -105,6 +106,10 @@ namespace osu.Desktop
 
                     case "--no-network":
                         noNetwork = true;
+                        break;
+
+                    case "--shared":
+                        sharedData = true;
                         break;
 
                     case "--data-path":
@@ -132,6 +137,12 @@ namespace osu.Desktop
                         // These will be parsed by RecordingOptions.Parse
                         break;
                 }
+            }
+
+            if (sharedData && dataPath == null)
+            {
+                dataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "osu");
+                Logger.Log($@"Using shared osu! data path ""{dataPath}"".", LoggingTarget.Runtime, LogLevel.Important);
             }
 
             // Parse recording options
@@ -184,7 +195,7 @@ namespace osu.Desktop
 
             var hostOptions = new HostOptions
             {
-                IPCPipeName = !tournamentClient ? OsuGame.IPC_PIPE_NAME : null,
+                IPCPipeName = tournamentClient ? null : sharedData ? $"{OsuGame.IPC_PIPE_NAME}-shared" : OsuGame.IPC_PIPE_NAME,
                 FriendlyGameName = OsuGameBase.GAME_NAME,
             };
 
@@ -286,7 +297,7 @@ namespace osu.Desktop
         {
             // Use the same logic as OsuGameBase for default data path
             string basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(basePath, "osu");
+            return Path.Combine(basePath, "osu-oss");
         }
 
         private static void setupVelopack(string[] args)
@@ -323,9 +334,23 @@ namespace osu.Desktop
         [SupportedOSPlatform("windows")]
         private static void configureWindows(VelopackApp app)
         {
-            app.OnFirstRun(_ => WindowsAssociationManager.InstallAssociations());
-            app.OnAfterUpdateFastCallback(_ => WindowsAssociationManager.UpdateAssociations());
-            app.OnBeforeUninstallFastCallback(_ => WindowsAssociationManager.UninstallAssociations());
+            app.OnFirstRun(_ =>
+            {
+                WindowsAssociationManager.InstallAssociations();
+                SharedShortcutManager.Install();
+            });
+
+            app.OnAfterUpdateFastCallback(_ =>
+            {
+                WindowsAssociationManager.UpdateAssociations();
+                SharedShortcutManager.Install();
+            });
+
+            app.OnBeforeUninstallFastCallback(_ =>
+            {
+                WindowsAssociationManager.UninstallAssociations();
+                SharedShortcutManager.Uninstall();
+            });
         }
     }
 }

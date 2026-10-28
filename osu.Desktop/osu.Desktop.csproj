@@ -4,11 +4,11 @@
     <OutputType>WinExe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>A free-to-win rhythm game. Rhythm is just a *click* away!</Description>
-    <AssemblyName>osu!</AssemblyName>
-    <AssemblyTitle>osu!(lazer)</AssemblyTitle>
-    <Title>osu!</Title>
-    <Product>osu!(lazer)</Product>
-    <ApplicationIcon>lazer.ico</ApplicationIcon>
+    <AssemblyName>osuoss</AssemblyName>
+    <AssemblyTitle>osu!oss</AssemblyTitle>
+    <Title>osu!oss</Title>
+    <Product>osu!oss</Product>
+    <ApplicationIcon>osuoss.ico</ApplicationIcon>
     <Version>$(OsuGameVersion)</Version>
   </PropertyGroup>
 
@@ -86,7 +86,8 @@
     <PackageReference Include="Velopack" Version="1.2.0"/>
   </ItemGroup>
   <ItemGroup Label="Resources">
-    <EmbeddedResource Include="lazer.ico"/>
+    <EmbeddedResource Include="osuoss.ico"/>
+    <EmbeddedResource Include="osuoss.png"/>
   </ItemGroup>
   <ItemGroup Label="Windows Icons">
     <Content Include="*.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>

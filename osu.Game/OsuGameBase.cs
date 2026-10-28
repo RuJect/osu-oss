@@ -80,9 +80,9 @@ namespace osu.Game
     [Cached(typeof(OsuGameBase))]
     public partial class OsuGameBase : Framework.Game, ICanAcceptFiles, IBeatSyncProvider
     {
-        public const string GAME_NAME = "osu!";
+        public const string GAME_NAME = "osu!oss";
 
-        public const string OSU_PROTOCOL = "osu://";
+        public const string OSU_PROTOCOL = "osuoss://";
 
         /// <summary>
         /// The filename of the main client database.

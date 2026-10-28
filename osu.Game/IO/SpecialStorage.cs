@@ -9,8 +9,9 @@ namespace osu.Game.IO
 {
     /// <summary>
     /// Resolves the scoped <c>osu-oss</c> storage directory which holds all files specific to
-    /// this fork (configuration, downloaded blobs, caches, ...). The directory lives inside the
-    /// main osu! storage root, e.g. <c>&lt;user storage&gt;/osu/osu-oss</c>.
+    /// this fork (configuration, downloaded blobs, caches, ...). The directory lives inside a
+    /// storage root, e.g. <c>&lt;user storage&gt;/osu-oss/osu-oss</c> for fork data or
+    /// <c>&lt;user storage&gt;/osu/osu-oss</c> for official-server auth blobs.
     /// </summary>
     public static class SpecialStorage
     {

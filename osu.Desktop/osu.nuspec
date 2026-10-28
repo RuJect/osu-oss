@@ -1,18 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>osulazer</id>
+        <id>osuoss</id>
         <version>0.0.0</version>
-        <title>osu!</title>
-        <authors>ppy Pty Ltd</authors>
-        <owners>Dean Herbert</owners>
-        <projectUrl>https://osu.ppy.sh/</projectUrl>
-        <iconUrl>https://github.com/ppy/osu/blob/master/assets/lazer-nuget.png?raw=true</iconUrl>
+        <title>osu!oss</title>
+        <authors>RuJect</authors>
+        <owners>RuJect</owners>
+        <projectUrl>https://github.com/RuJect/osu-oss</projectUrl>
+        <iconUrl>https://github.com/RuJect/osu-oss/blob/master/assets/osu-oss/osu-oss.svg</iconUrl>
         <icon>icon.png</icon>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>A free-to-win rhythm game. Rhythm is just a *click* away!</description>
         <releaseNotes>testing</releaseNotes>
-        <copyright>Copyright (c) 2025 ppy Pty Ltd</copyright>
+        <copyright>Copyright (c) 2025 ppy Pty Ltd; fork modifications (c) 2026 RuJect</copyright>
         <language>en-AU</language>
     </metadata>
     <files>

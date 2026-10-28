@@ -54,13 +54,13 @@
   </PropertyGroup>
   <PropertyGroup Label="Nuget">
     <IsPackable>false</IsPackable>
-    <Authors>ppy Pty Ltd</Authors>
+    <Authors>RuJect</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/ppy/osu</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/ppy/osu</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/RuJect/osu-oss</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RuJect/osu-oss</RepositoryUrl>
     <PackageReleaseNotes>Automated release.</PackageReleaseNotes>
-    <Company>ppy Pty Ltd</Company>
-    <Copyright>Copyright (c) 2025 ppy Pty Ltd</Copyright>
-    <PackageTags>osu game</PackageTags>
+    <Company>RuJect</Company>
+    <Copyright>Copyright (c) 2025 ppy Pty Ltd; fork modifications (c) 2026 RuJect</Copyright>
+    <PackageTags>osu oss game</PackageTags>
   </PropertyGroup>
 </Project>

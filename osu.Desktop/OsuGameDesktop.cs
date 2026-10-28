@@ -186,7 +186,7 @@ namespace osu.Desktop
             // Apple operating systems use a better icon provided via external assets.
             if (!RuntimeInfo.IsApple)
             {
-                var iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(GetType(), "lazer.ico");
+                var iconStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(GetType(), "osuoss.png");
                 if (iconStream != null)
                     host.Window.SetIconFromStream(iconStream);
             }
