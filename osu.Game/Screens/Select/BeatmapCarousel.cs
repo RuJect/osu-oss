@@ -708,8 +708,13 @@ namespace osu.Game.Screens.Select
         {
             clearAdjustedStarRatings();
 
-            if (Criteria != null)
-                Scheduler.AddOnce(() => Filter(Criteria));
+            if (!useAdjustedStarRating || Criteria == null)
+                return;
+
+            if (currentMods.Value.Count == 0 && !Criteria.AllowConvertedBeatmaps)
+                return;
+
+            Scheduler.AddOnce(() => Filter(Criteria));
         }
 
         private void updateAdjustedStarRatings(GroupedBeatmapSet set)
