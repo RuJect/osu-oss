@@ -1,6 +1,7 @@
 // Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
+using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Audio.Track;
 using osu.Framework.Bindables;
@@ -15,10 +16,12 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Game.Beatmaps.ControlPoints;
+using osu.Game.Configuration;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
@@ -44,6 +47,10 @@ namespace osu.Game.Screens.Select
         private Drawable keyboardSelectionLayer = null!;
 
         private PulsatingBox selectionLayer = null!;
+
+        private FavouriteBeatmapSetHighlight favouriteHighlight = null!;
+        private Bindable<bool>? highlightFavouriteBeatmapSets;
+        private readonly IBindableList<int> favouriteBeatmapSets = new BindableList<int>();
 
         public Container TopLevelContent { get; private set; } = null!;
 
@@ -95,6 +102,14 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private BeatmapCarousel? carousel { get; set; }
 
+        [Resolved]
+        private IAPIProvider api { get; set; } = null!;
+
+        [Resolved]
+        private SpecialConfigManager specialConfig { get; set; } = null!;
+
+        protected virtual int? RepresentedBeatmapSetId => null;
+
         [BackgroundDependencyLoader]
         private void load(OverlayColourProvider colourProvider, OsuColour colours)
         {
@@ -132,6 +147,7 @@ namespace osu.Game.Screens.Select
                             Masking = true,
                         },
                     },
+                    favouriteHighlight = new FavouriteBeatmapSetHighlight(),
                     hoverLayer = new Box
                     {
                         Alpha = 0,
@@ -280,6 +296,14 @@ namespace osu.Game.Screens.Select
 
                 updateXOffset();
             }, true);
+
+            favouriteBeatmapSets.BindTo(api.LocalUserState.FavouriteBeatmapSets);
+            favouriteBeatmapSets.BindCollectionChanged((_, _) => updateFavouriteState());
+
+            highlightFavouriteBeatmapSets = specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets);
+            highlightFavouriteBeatmapSets.BindValueChanged(_ => updateFavouriteState());
+
+            updateFavouriteState();
         }
 
         protected override void PrepareForUse()
@@ -294,6 +318,7 @@ namespace osu.Game.Screens.Select
 
             updateXOffset(animated: false);
             updateSelectedState(animated: false);
+            updateFavouriteState();
 
             this.FadeIn(DURATION, Easing.OutQuint);
         }
@@ -306,6 +331,8 @@ namespace osu.Game.Screens.Select
 
             // Important to set this to null to handle reuse scenarios correctly, see `Item` implementation.
             item = null;
+
+            updateFavouriteState();
         }
 
         protected override bool OnClick(ClickEvent e)
@@ -317,6 +344,18 @@ namespace osu.Game.Screens.Select
                 carousel?.Activate(item);
 
             return true;
+        }
+
+        private void updateFavouriteState()
+        {
+            if (highlightFavouriteBeatmapSets == null)
+                return;
+
+            int? beatmapSetId = RepresentedBeatmapSetId;
+            favouriteHighlight.Active.Value = highlightFavouriteBeatmapSets.Value
+                                             && beatmapSetId is int onlineId
+                                             && onlineId > 0
+                                             && favouriteBeatmapSets.Any(id => id == onlineId);
         }
 
         private void updateAccentColour()

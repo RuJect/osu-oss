@@ -67,6 +67,8 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private ISongSelect? songSelect { get; set; }
 
+        protected override int? RepresentedBeatmapSetId => Item == null ? null : beatmap.BeatmapSet?.OnlineID;
+
         private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
 
         public PanelBeatmap()

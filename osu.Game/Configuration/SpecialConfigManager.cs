@@ -56,6 +56,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.UseSkinModIcons, forkDefaults);
             SetDefault(SpecialSetting.ShowBeatmapSkinDownloadButton, forkDefaults);
             SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, forkDefaults);
+            SetDefault(SpecialSetting.HighlightFavouriteBeatmapSets, forkDefaults);
             SetDefault(SpecialSetting.UnlockLocalSupporterFeatures, false);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
             SetDefault(SpecialSetting.BlockIncompatibleModsSubmission, forkDefaults);
@@ -71,6 +72,7 @@ namespace osu.Game.Configuration
                 GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = false;
                 GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = false;
                 GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting).Value = false;
+                GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).Value = false;
                 GetBindable<bool>(SpecialSetting.BlockIncompatibleModsSubmission).Value = false;
             }
         }
@@ -162,6 +164,9 @@ namespace osu.Game.Configuration
         /// for the current ruleset and mods rather than the beatmap's stored star rating.
         /// </summary>
         UseAdjustedStarRatingForSorting,
+
+        /// <summary>Whether favourited beatmap sets should be highlighted in song select.</summary>
+        HighlightFavouriteBeatmapSets,
 
         /// <summary>
         /// Whether client-side cosmetic features normally requiring osu!supporter should be unlocked.

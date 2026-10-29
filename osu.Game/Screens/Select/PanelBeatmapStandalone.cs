@@ -71,6 +71,8 @@ namespace osu.Game.Screens.Select
 
         private Box backgroundBorder = null!;
 
+        protected override int? RepresentedBeatmapSetId => Item == null ? null : beatmap.BeatmapSet?.OnlineID;
+
         private BeatmapInfo beatmap => ((GroupedBeatmap)Item!.Model).Beatmap;
 
         public PanelBeatmapStandalone()

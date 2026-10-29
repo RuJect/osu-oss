@@ -6,10 +6,15 @@ using NUnit.Framework;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
+using osu.Framework.Graphics.Shapes;
+using osu.Framework.Graphics.Sprites;
+using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Cursor;
+using osu.Game.Online.API;
 using osu.Game.Overlays;
 using osu.Game.Screens.Select;
 using osu.Game.Tests.Resources;
@@ -22,6 +27,9 @@ namespace osu.Game.Tests.Visual.SongSelect
     {
         [Resolved]
         private BeatmapManager beatmaps { get; set; } = null!;
+
+        [Resolved]
+        private SpecialConfigManager specialConfig { get; set; } = null!;
 
         private BeatmapSetInfo beatmapSet = null!;
 
@@ -42,6 +50,34 @@ namespace osu.Game.Tests.Visual.SongSelect
         public void TestDisplay()
         {
             AddStep("display", () => CreateThemedContent(OverlayColourScheme.Aquamarine));
+        }
+
+        [Test]
+        public void TestFavouriteHighlight()
+        {
+            AddStep("enable highlighting", () => specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).Value = true);
+            AddStep("display", () => CreateThemedContent(OverlayColourScheme.Aquamarine));
+
+            AddUntilStep("highlights hidden", () => this.ChildrenOfType<FavouriteBeatmapSetHighlight>().Any()
+                                                    && this.ChildrenOfType<FavouriteBeatmapSetHighlight>().All(h => !h.Active.Value));
+
+            AddStep("favourite set", () =>
+            {
+                if (beatmapSet.OnlineID <= 0)
+                    beatmapSet.OnlineID = 12345;
+
+                ((DummyAPIAccess)API).LocalUserState.FavouriteBeatmapSets.Add(beatmapSet.OnlineID);
+            });
+            AddUntilStep("highlights shown", () => this.ChildrenOfType<FavouriteBeatmapSetHighlight>().Any(h => h.Active.Value));
+            AddUntilStep("particles shown", () => this.ChildrenOfType<FavouriteBeatmapSetHighlight>().Any(h => h.Active.Value
+                                                                                                                 && h.ChildrenOfType<FastCircle>().Any()
+                                                                                                                 && h.ChildrenOfType<SpriteIcon>().Any()));
+
+            AddStep("disable highlighting", () => specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).Value = false);
+            AddUntilStep("highlights hidden by setting", () => this.ChildrenOfType<FavouriteBeatmapSetHighlight>().All(h => !h.Active.Value));
+
+            AddStep("reset highlighting", () => specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).SetDefault());
+            AddStep("remove favourite", () => ((DummyAPIAccess)API).LocalUserState.FavouriteBeatmapSets.Remove(beatmapSet.OnlineID));
         }
 
         [Test]

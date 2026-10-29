@@ -12,8 +12,10 @@ using osu.Framework.Graphics.Containers;
 using osu.Framework.Testing;
 using osu.Framework.Utils;
 using osu.Game.Beatmaps;
+using osu.Game.Configuration;
 using osu.Game.Graphics.Carousel;
 using osu.Game.Graphics.Cursor;
+using osu.Game.Online.API;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Overlays;
 using osu.Game.Rulesets.Mania;
@@ -30,6 +32,9 @@ namespace osu.Game.Tests.Visual.SongSelect
     {
         [Resolved]
         private BeatmapManager beatmaps { get; set; } = null!;
+
+        [Resolved]
+        private SpecialConfigManager specialConfig { get; set; } = null!;
 
         private BeatmapInfo beatmap = null!;
 
@@ -52,6 +57,25 @@ namespace osu.Game.Tests.Visual.SongSelect
         public void TestDisplay()
         {
             AddStep("display", () => CreateThemedContent(OverlayColourScheme.Aquamarine));
+        }
+
+        [Test]
+        public void TestFavouriteHighlight()
+        {
+            AddStep("enable highlighting", () => specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).Value = true);
+            AddStep("display", () => CreateThemedContent(OverlayColourScheme.Aquamarine));
+
+            AddStep("favourite set", () =>
+            {
+                if (beatmap.BeatmapSet!.OnlineID <= 0)
+                    beatmap.BeatmapSet.OnlineID = 12345;
+
+                ((DummyAPIAccess)API).LocalUserState.FavouriteBeatmapSets.Add(beatmap.BeatmapSet.OnlineID);
+            });
+            AddUntilStep("highlights shown", () => this.ChildrenOfType<FavouriteBeatmapSetHighlight>().Any(h => h.Active.Value));
+
+            AddStep("reset highlighting", () => specialConfig.GetBindable<bool>(SpecialSetting.HighlightFavouriteBeatmapSets).SetDefault());
+            AddStep("remove favourite", () => ((DummyAPIAccess)API).LocalUserState.FavouriteBeatmapSets.Remove(beatmap.BeatmapSet!.OnlineID));
         }
 
         [Test]

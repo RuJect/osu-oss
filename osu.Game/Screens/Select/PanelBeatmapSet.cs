@@ -72,6 +72,8 @@ namespace osu.Game.Screens.Select
         [Resolved]
         private IBindable<RulesetInfo> ruleset { get; set; } = null!;
 
+        protected override int? RepresentedBeatmapSetId => Item == null ? null : groupedBeatmapSet.BeatmapSet.OnlineID;
+
         private GroupedBeatmapSet groupedBeatmapSet
         {
             get
