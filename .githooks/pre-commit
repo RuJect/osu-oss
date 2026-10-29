@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+dotnet clean ./osu.Desktop.slnf --verbosity=q
+dotnet build -c Debug -warnaserror ./osu.Desktop.slnf -p:EnforceCodeStyleInBuild=true

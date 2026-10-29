@@ -8,7 +8,6 @@ using System.Linq;
 using NUnit.Framework;
 using osu.Framework.Graphics;
 using osu.Game.Beatmaps;
-using osu.Game.Extensions;
 using osu.Game.Models;
 using osu.Game.Skinning;
 using osu.Game.Storyboards;

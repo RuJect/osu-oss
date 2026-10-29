@@ -44,12 +44,12 @@ namespace osu.Game.Skinning
         }
 
         public static MemoryStream? CreateArchive(WorkingBeatmap beatmap, out string filename)
-            => CreateArchive(beatmap.BeatmapInfo.BeatmapSet, beatmap.Storyboard, beatmap.GetStream, beatmap.Skin as LegacySkin, out filename);
+            => createArchive(beatmap.BeatmapInfo.BeatmapSet, beatmap.Storyboard, beatmap.GetStream, beatmap.Skin as LegacySkin, out filename);
 
         public static MemoryStream? CreateArchive(IBeatmapSetInfo? beatmapSet, Storyboard storyboard, Func<string, Stream?> getStream, out string filename)
-            => CreateArchive(beatmapSet, storyboard, getStream, null, out filename);
+            => createArchive(beatmapSet, storyboard, getStream, null, out filename);
 
-        private static MemoryStream? CreateArchive(IBeatmapSetInfo? beatmapSet, Storyboard storyboard, Func<string, Stream?> getStream, LegacySkin? legacySkin, out string filename)
+        private static MemoryStream? createArchive(IBeatmapSetInfo? beatmapSet, Storyboard storyboard, Func<string, Stream?> getStream, LegacySkin? legacySkin, out string filename)
         {
             filename = string.Empty;
 
