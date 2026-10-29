@@ -63,6 +63,7 @@ namespace osu.Game.Screens.Select
 
         private StatisticPlayCount playCount = null!;
         private FavouriteButton favouriteButton = null!;
+        private DownloadSkinButton downloadSkinButton = null!;
         private Statistic lengthStatistic = null!;
         private Statistic bpmStatistic = null!;
 
@@ -158,6 +159,7 @@ namespace osu.Game.Screens.Select
                                     Margin = new MarginPadding { Left = -SongSelect.WEDGE_CONTENT_MARGIN },
                                 },
                                 favouriteButton = new FavouriteButton(),
+                                downloadSkinButton = new DownloadSkinButton(),
                                 lengthStatistic = new Statistic(OsuIcon.Clock),
                                 bpmStatistic = new Statistic(OsuIcon.Metronome)
                                 {
@@ -245,6 +247,7 @@ namespace osu.Game.Screens.Select
 
             updateLengthAndBpmStatistics();
             updateOnlineDisplay();
+            downloadSkinButton.SetBeatmap(working.Value);
         }
 
         private CancellationTokenSource? lengthBpmCancellationSource;

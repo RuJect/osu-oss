@@ -48,6 +48,7 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                 config.GetBindable<AutoSkipMode>(SpecialSetting.AutoSkip).Value = AutoSkipMode.None;
                 config.GetBindable<bool>(SpecialSetting.UseSkinCursor).Value = true;
                 config.GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = true;
+                config.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = true;
                 config.GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting).Value = true;
                 config.GetBindable<bool>(SpecialSetting.UnlockLocalSupporterFeatures).Value = false;
                 config.GetBindable<ToolbarPosition>(SpecialSetting.ToolbarPosition).Value = ToolbarPosition.Top;

@@ -29,6 +29,12 @@ namespace osu.Game.Overlays.Settings.Sections.Special
                     TooltipText = "Use mod icons from the current skin when available.",
                     Current = config.GetBindable<bool>(SpecialSetting.UseSkinModIcons),
                 },
+                new SettingsCheckbox
+                {
+                    LabelText = "Show beatmap skin download button",
+                    TooltipText = "Show a download button for beatmaps that include a custom skin.",
+                    Current = config.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton),
+                },
             });
         }
     }

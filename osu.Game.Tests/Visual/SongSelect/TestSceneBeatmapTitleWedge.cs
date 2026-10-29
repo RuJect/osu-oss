@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -19,7 +20,11 @@ using osu.Framework.Testing;
 using osu.Game.Beatmaps;
 using osu.Game.Beatmaps.ControlPoints;
 using osu.Game.Beatmaps.Drawables;
+using osu.Game.Configuration;
+using osu.Game.Extensions;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Models;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
 using osu.Game.Online.API.Requests.Responses;
@@ -37,6 +42,12 @@ namespace osu.Game.Tests.Visual.SongSelect
     public partial class TestSceneBeatmapTitleWedge : SongSelectComponentsTestScene
     {
         private RulesetStore rulesets = null!;
+
+        [Resolved]
+        private SpecialConfigManager specialConfig { get; set; } = null!;
+
+        [Resolved]
+        private SkinManager skins { get; set; } = null!;
 
         private BeatmapTitleWedge titleWedge = null!;
         private BeatmapTitleWedge.DifficultyDisplay difficultyDisplay => titleWedge.ChildrenOfType<BeatmapTitleWedge.DifficultyDisplay>().Single();
@@ -163,6 +174,54 @@ namespace osu.Game.Tests.Visual.SongSelect
             });
             AddUntilStep("play count is -", () => this.ChildrenOfType<BeatmapTitleWedge.Statistic>().ElementAt(0).Text.ToString(), () => Is.EqualTo("-"));
             AddUntilStep("favourites count is -", () => this.ChildrenOfType<BeatmapTitleWedge.FavouriteButton>().Single().Text.ToString(), () => Is.EqualTo("-"));
+        }
+
+        [Test]
+        public void TestDownloadSkinButtonVisibility()
+        {
+            BeatmapTitleWedge.DownloadSkinButton? button = null;
+
+            AddStep("enable download button", () => specialConfig.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = true);
+            AddAssert("button hidden without skin", () => this.ChildrenOfType<BeatmapTitleWedge.DownloadSkinButton>().All(b => b.State.Value == Visibility.Hidden));
+
+            AddStep("select beatmap with skin", () =>
+            {
+                var (working, lookupResult) = createTestBeatmap();
+                working.BeatmapSetInfo.Files.Add(new RealmNamedFileUsage(new RealmFile { Hash = Guid.NewGuid().ToString() }, "hitcircle.png"));
+
+                Beatmap.Value = working;
+                onlineLookupResult.Value = lookupResult;
+            });
+            AddUntilStep("button visible", () => (button = this.ChildrenOfType<BeatmapTitleWedge.DownloadSkinButton>().SingleOrDefault())?.State.Value, () => Is.EqualTo(Visibility.Visible));
+            AddAssert("button height matches adjacent statistics", () => this.ChildrenOfType<BeatmapTitleWedge.FavouriteButton>().Single().DrawHeight == button!.DrawHeight
+                                                                       && this.ChildrenOfType<BeatmapTitleWedge.StatisticPlayCount>().Single().DrawHeight == button.DrawHeight);
+
+            AddStep("disable download button", () => specialConfig.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = false);
+            AddUntilStep("button hidden when disabled", () => button!.State.Value, () => Is.EqualTo(Visibility.Hidden));
+
+            AddStep("reset download button setting", () => specialConfig.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).SetDefault());
+        }
+
+        [Test]
+        public void TestDownloadSkinButtonInstallsSkin()
+        {
+            AddStep("enable download button", () => specialConfig.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = true);
+            AddStep("select beatmap with skin", () =>
+            {
+                var (working, lookupResult) = createTestBeatmapWithSkin();
+
+                Beatmap.Value = working;
+                onlineLookupResult.Value = lookupResult;
+            });
+
+            AddUntilStep("button visible", () => this.ChildrenOfType<BeatmapTitleWedge.DownloadSkinButton>().Single().State.Value, () => Is.EqualTo(Visibility.Visible));
+            AddStep("click download", () => this.ChildrenOfType<BeatmapTitleWedge.DownloadSkinButton>().Single()
+                                                       .ChildrenOfType<OsuClickableContainer>().Single().TriggerClick());
+
+            AddUntilStep("skin imported", () => skins.GetAllUsableSkins().Any(s => s.Value.Name.Contains("Beatmap Skin", StringComparison.Ordinal)));
+            AddUntilStep("skin selected", () => skins.CurrentSkinInfo.Value.Value.Name, () => Does.Contain("Beatmap Skin"));
+
+            AddStep("reset download button setting", () => specialConfig.GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).SetDefault());
         }
 
         [Test]
@@ -322,6 +381,24 @@ namespace osu.Game.Tests.Visual.SongSelect
             return (working, Screens.Select.SongSelect.BeatmapSetLookupResult.Completed(onlineSet));
         }
 
+        private (WorkingBeatmap, Screens.Select.SongSelect.BeatmapSetLookupResult) createTestBeatmapWithSkin()
+        {
+            var (working, lookupResult) = createTestBeatmap();
+            var files = new Dictionary<string, byte[]>();
+
+            addFile(working.BeatmapSetInfo, files, "hitcircle.png", new byte[] { 1 });
+            addFile(working.BeatmapSetInfo, files, "approachcircle.png", new byte[] { 1 });
+
+            return (new FileWorkingBeatmap(working.BeatmapInfo, Audio, files), lookupResult);
+
+            static void addFile(BeatmapSetInfo beatmapSet, Dictionary<string, byte[]> contents, string filename, byte[] data)
+            {
+                var usage = new RealmNamedFileUsage(new RealmFile { Hash = Guid.NewGuid().ToString() }, filename);
+                beatmapSet.Files.Add(usage);
+                contents[usage.File.GetStoragePath()] = data;
+            }
+        }
+
         private static IBeatmap createTestBeatmapFromRuleset(RulesetInfo ruleset)
         {
             List<HitObject> objects = new List<HitObject>();
@@ -349,6 +426,23 @@ namespace osu.Game.Tests.Visual.SongSelect
         }
 
         private class TestHitObject : ConvertHitObject;
+
+        private class FileWorkingBeatmap : WorkingBeatmap
+        {
+            private readonly Dictionary<string, byte[]> files;
+
+            public FileWorkingBeatmap(BeatmapInfo beatmapInfo, AudioManager audioManager, Dictionary<string, byte[]> files)
+                : base(beatmapInfo, audioManager)
+            {
+                this.files = files;
+            }
+
+            protected override IBeatmap GetBeatmap() => new Beatmap { BeatmapInfo = BeatmapInfo };
+            public override Texture? GetBackground() => null;
+            protected override Track? GetBeatmapTrack() => null;
+            protected internal override ISkin? GetSkin() => null;
+            public override Stream GetStream(string storagePath) => new MemoryStream(files[storagePath]);
+        }
 
         private class HeavyWorkingBeatmap : WorkingBeatmap
         {

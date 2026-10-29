@@ -54,6 +54,7 @@ namespace osu.Game.Configuration
             SetDefault(SpecialSetting.ScriptingEnabled, forkDefaults);
             SetDefault(SpecialSetting.AllowClrAccess, forkDefaults);
             SetDefault(SpecialSetting.UseSkinModIcons, forkDefaults);
+            SetDefault(SpecialSetting.ShowBeatmapSkinDownloadButton, forkDefaults);
             SetDefault(SpecialSetting.UseAdjustedStarRatingForSorting, forkDefaults);
             SetDefault(SpecialSetting.UnlockLocalSupporterFeatures, false);
             SetDefault(SpecialSetting.DisableScoreSubmission, false);
@@ -68,6 +69,7 @@ namespace osu.Game.Configuration
                 GetBindable<bool>(SpecialSetting.ScriptingEnabled).Value = false;
                 GetBindable<bool>(SpecialSetting.AllowClrAccess).Value = false;
                 GetBindable<bool>(SpecialSetting.UseSkinModIcons).Value = false;
+                GetBindable<bool>(SpecialSetting.ShowBeatmapSkinDownloadButton).Value = false;
                 GetBindable<bool>(SpecialSetting.UseAdjustedStarRatingForSorting).Value = false;
                 GetBindable<bool>(SpecialSetting.BlockIncompatibleModsSubmission).Value = false;
             }
@@ -151,6 +153,9 @@ namespace osu.Game.Configuration
 
         /// <summary>Whether mod icons should be resolved from the current skin.</summary>
         UseSkinModIcons,
+
+        /// <summary>Whether beatmaps with custom skins should display a button to install the skin.</summary>
+        ShowBeatmapSkinDownloadButton,
 
         /// <summary>
         /// Whether difficulties within an expanded beatmap set should be ordered using the star rating
