@@ -136,6 +136,12 @@ namespace osu.Game
         /// </summary>
         public string DataPath { get; init; }
 
+        /// <summary>
+        /// The central storage used for osu!oss-specific data.
+        /// When not set, osu!oss data is stored inside the active game storage.
+        /// </summary>
+        public Storage SpecialStorageRoot { get; init; }
+
         protected override OnlineStore CreateOnlineStore() => NoNetwork ? new OfflineOnlineStore() : new TrustedDomainOnlineStore();
 
         public virtual Version AssemblyVersion => Assembly.GetEntryAssembly()?.GetName().Version ?? new Version();
@@ -815,6 +821,10 @@ namespace osu.Game
             LocalConfig ??= DebugUtils.IsDebugBuild
                 ? new DevelopmentOsuConfigManager(Storage)
                 : new OsuConfigManager(Storage);
+
+            if (Storage is OsuStorage { SpecialStorageRoot: not null })
+                SpecialStorage.MigrateLegacyStorage(host, SpecialStorage.GetRoot(Storage), Storage.GetFullPath(string.Empty));
+
             SpecialConfig ??= new SpecialConfigManager(SpecialStorage.GetRoot(Storage));
 
             host.ExceptionThrown += onExceptionThrown;
@@ -912,7 +922,7 @@ namespace osu.Game
 
         protected virtual Container CreateScalingContainer() => new DrawSizePreservingFillContainer();
 
-        protected override Storage CreateStorage(GameHost host, Storage defaultStorage) => new OsuStorage(host, defaultStorage, DataPath);
+        protected override Storage CreateStorage(GameHost host, Storage defaultStorage) => new OsuStorage(host, defaultStorage, DataPath, SpecialStorageRoot);
 
         /// <summary>
         /// Creates an input settings subsection for an <see cref="InputHandler"/>.

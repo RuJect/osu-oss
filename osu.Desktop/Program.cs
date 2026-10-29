@@ -19,6 +19,7 @@ using osu.Game.API.UI.Commands;
 using osu.Game.API.UI.Scripting;
 using osu.Game.Auth;
 using osu.Game.Auth.Redirect;
+using osu.Game.IO;
 using osu.Game.IPC;
 using osu.Game.Recording;
 using osu.Game.Tournament;
@@ -202,6 +203,8 @@ namespace osu.Desktop
 
             using (DesktopGameHost host = Host.GetSuitableDesktopHost(gameName, hostOptions))
             {
+                Storage specialStorage = host.GetStorage(SpecialStorage.GetDefaultRootPath());
+
                 if (!host.IsPrimaryInstance)
                 {
                     if (trySendIPCMessage(host, cwd, args))
@@ -213,6 +216,8 @@ namespace osu.Desktop
 
                 if (host.IsPrimaryInstance)
                 {
+                    SpecialStorage.MigrateLegacyAuthStorage(host, specialStorage);
+
                     try
                     {
                         Logger.Log("Starting legacy IPC provider...");
@@ -226,7 +231,7 @@ namespace osu.Desktop
                 }
 
                 if (tournamentClient)
-                    host.Run(new TournamentGame { DataPath = dataPath });
+                    host.Run(new TournamentGame { DataPath = dataPath, SpecialStorageRoot = specialStorage });
                 else
                 {
                     var game = new OsuGameDesktop(args)
@@ -235,6 +240,7 @@ namespace osu.Desktop
                         EnableWebSocketServer = Environment.GetEnvironmentVariable("OSU_WEBSOCKET_SERVER") == "1",
                         NoNetwork = noNetwork,
                         DataPath = dataPath,
+                        SpecialStorageRoot = specialStorage,
                     };
 
                     // Proprietary auth transplant: initialises APIRequest.Sign /
@@ -294,12 +300,7 @@ namespace osu.Desktop
             return false;
         }
 
-        private static string getDefaultDataPath()
-        {
-            // Use the same logic as OsuGameBase for default data path
-            string basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            return Path.Combine(basePath, "osu-oss");
-        }
+        private static string getDefaultDataPath() => SpecialStorage.GetDefaultRootPath();
 
         private static void setupVelopack(string[] args)
         {

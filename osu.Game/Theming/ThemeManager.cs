@@ -25,7 +25,7 @@ namespace osu.Game.Theming
     public static class ThemeManager
     {
         public const string DEFAULT_THEME = "midnight-violet";
-        public const string THEMES_FOLDER = "themes";
+        public const string THEMES_FOLDER = SpecialStorage.THEMES_FOLDER;
 
         private const string builtin_resource_marker = ".Theming.BuiltIn.";
 

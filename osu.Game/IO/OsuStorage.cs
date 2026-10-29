@@ -23,6 +23,11 @@ namespace osu.Game.IO
         public string? CustomStoragePath => storageConfig.Get<string>(StorageConfig.FullPath);
 
         /// <summary>
+        /// The central storage used for osu!oss-specific data, or <c>null</c> to use a directory inside this storage.
+        /// </summary>
+        public Storage? SpecialStorageRoot { get; }
+
+        /// <summary>
         /// The default storage path to be used if a custom storage path hasn't been selected or is not accessible.
         /// </summary>
         public string DefaultStoragePath => defaultStorage.GetFullPath(".");
@@ -31,21 +36,39 @@ namespace osu.Game.IO
         private readonly StorageConfigManager storageConfig;
         private readonly Storage defaultStorage;
 
-        public override string[] IgnoreDirectories => new[]
-        {
-            "cache",
-        };
+        public override string[] IgnoreDirectories => SpecialStorageRoot == null
+            ? new[] { "cache" }
+            : new[]
+            {
+                "cache",
+                SpecialStorage.AUTH_BLOBS_FOLDER,
+                SpecialStorage.PLUGINS_FOLDER,
+                SpecialStorage.SCRIPTS_FOLDER,
+                SpecialStorage.THEMES_FOLDER,
+            };
 
-        public override string[] IgnoreFiles => new[]
-        {
-            "framework.ini",
-            "storage.ini",
+        public override string[] IgnoreFiles => SpecialStorageRoot == null
+            ? new[]
+            {
+                "framework.ini",
+                "storage.ini",
 
-            // These may not be safe to move around.
-            "AuthNative.dll",
-            "AuthNative.so",
-            "AuthNative.dylib"
-        };
+                // These may not be safe to move around.
+                "AuthNative.dll",
+                "AuthNative.so",
+                "AuthNative.dylib"
+            }
+            : new[]
+            {
+                "framework.ini",
+                "storage.ini",
+                SpecialStorage.CONFIG_FILENAME,
+
+                // These may not be safe to move around.
+                "AuthNative.dll",
+                "AuthNative.so",
+                "AuthNative.dylib"
+            };
 
         public override string[] IgnoreSuffixes => new[]
         {
@@ -55,11 +78,12 @@ namespace osu.Game.IO
             ".management",
         };
 
-        public OsuStorage(GameHost host, Storage defaultStorage, string? dataPath = null)
+        public OsuStorage(GameHost host, Storage defaultStorage, string? dataPath = null, Storage? specialStorageRoot = null)
             : base(defaultStorage, string.Empty)
         {
             this.host = host;
             this.defaultStorage = defaultStorage;
+            SpecialStorageRoot = specialStorageRoot;
 
             storageConfig = new StorageConfigManager(defaultStorage);
 

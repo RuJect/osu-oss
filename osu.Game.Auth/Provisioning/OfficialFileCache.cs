@@ -78,37 +78,15 @@ namespace osu.Game.Auth.Provisioning
         private readonly Storage directory;
 
         /// <summary>
-        /// Resolves the osu! user storage directory which owns the auth cache.
+        /// Resolves the central osu!oss storage directory which owns the auth cache.
         /// </summary>
-        internal static Storage ResolveStorage(GameHost host)
+        internal static Storage ResolveStorage(GameHost host, Storage? specialStorageRoot)
+            => specialStorageRoot ?? host.GetStorage(SpecialStorage.GetDefaultRootPath());
+
+        public OfficialFileCache(Storage specialStorageRoot, string gameVersion, bool isTachyon)
         {
-            foreach (string path in host.UserStoragePaths)
-            {
-                Storage storage = host.GetStorage(path);
-
-                if (storage.ExistsDirectory("osu"))
-                    return storage.GetStorageForDirectory("osu");
-            }
-
-            foreach (string path in host.UserStoragePaths)
-            {
-                try
-                {
-                    return host.GetStorage(path).GetStorageForDirectory("osu");
-                }
-                catch
-                {
-                    // try next path.
-                }
-            }
-
-            throw new InvalidOperationException("No valid user storage path could be resolved.");
-        }
-
-        public OfficialFileCache(Storage rootStorage, string gameVersion, bool isTachyon)
-        {
-            directory = SpecialStorage.GetAuthBlobs(rootStorage);
-            Directory = SpecialStorage.GetRoot(rootStorage).GetFullPath(SpecialStorage.AUTH_BLOBS_FOLDER, true);
+            directory = specialStorageRoot.GetStorageForDirectory(SpecialStorage.AUTH_BLOBS_FOLDER);
+            Directory = specialStorageRoot.GetFullPath(SpecialStorage.AUTH_BLOBS_FOLDER, true);
             ReleaseTag = $"{normalizeVersion(gameVersion)}-{(isTachyon ? "tachyon" : "lazer")}";
         }
 

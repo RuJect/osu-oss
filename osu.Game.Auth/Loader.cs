@@ -37,7 +37,7 @@ namespace osu.Game.Auth
 
             try
             {
-                files = new OfficialFileCache(OfficialFileCache.ResolveStorage(host), game.Version, isTachyon(game));
+                files = new OfficialFileCache(OfficialFileCache.ResolveStorage(host, game.SpecialStorageRoot), game.Version, isTachyon(game));
             }
             catch (Exception e)
             {
